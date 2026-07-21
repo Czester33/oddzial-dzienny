@@ -17,6 +17,7 @@ import {
 } from "@/lib/physio-utils";
 import { vacationStaff } from "@/lib/vacation-utils";
 import { useTheme } from "@/context/ThemeContext";
+import { FitWidthScale } from "@/components/FitWidthScale";
 
 const MONTH_COLORS = [
   { header: "#9ec5e8", zebra: "#e8f3fb" },
@@ -117,7 +118,8 @@ function ArchivedVacationMonthTable({
   });
 
   return (
-    <div className="mx-auto max-w-5xl overflow-hidden rounded-sm shadow-md ring-1 ring-black/15 dark:ring-slate-600/50">
+    <FitWidthScale>
+      <div className="w-[64rem] max-w-none overflow-hidden rounded-sm shadow-md ring-1 ring-black/15 dark:ring-slate-600/50">
       <div
         className={`physio-name-header border-b px-3 py-2 text-center text-[21px] font-bold ${
           isDark ? "border-slate-600 text-slate-100" : "border-black/20 text-slate-900"
@@ -130,8 +132,8 @@ function ArchivedVacationMonthTable({
         ) : null}
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[560px] table-fixed border-collapse text-[18px]">
+      <div>
+        <table className="w-full table-fixed border-collapse text-[18px]">
           <thead>
             <tr>
               {WEEKDAY_NAMES_PL.slice(0, 5).map((label) => (
@@ -235,7 +237,8 @@ function ArchivedVacationMonthTable({
           </tbody>
         </table>
       </div>
-    </div>
+      </div>
+    </FitWidthScale>
   );
 }
 
