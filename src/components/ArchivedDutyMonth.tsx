@@ -9,6 +9,7 @@ import {
 } from "@/lib/date-utils";
 import { getPhysioName, resolvePhysioColumnHeaderColor, resolvePhysioRowColor } from "@/lib/physio-utils";
 import { useTheme } from "@/context/ThemeContext";
+import { FitWidthScale } from "@/components/FitWidthScale";
 
 const MONTH_EMOJIS = [
   "❄️⛄🎿",
@@ -115,8 +116,8 @@ export function ArchivedDutyMonthPanel({
   };
 
   return (
-    <div className="overflow-x-auto">
-      <table className="mx-auto w-full max-w-4xl border-collapse">
+    <FitWidthScale>
+      <table className="w-[56rem] max-w-none border-collapse">
         <thead>
           <tr>
             <th
@@ -168,6 +169,6 @@ export function ArchivedDutyMonthPanel({
           })}
         </tbody>
       </table>
-    </div>
+    </FitWidthScale>
   );
 }

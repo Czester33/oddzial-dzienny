@@ -29,6 +29,7 @@ import {
   applyDutyNotes,
   hasAutoArchiveDutyChanges,
 } from "@/lib/duty-utils";
+import { FitWidthScale } from "@/components/FitWidthScale";
 
 const MONTH_EMOJIS = [
   "❄️⛄🎿",
@@ -231,8 +232,8 @@ function DutyMonthTable({
   };
 
   return (
-    <div className="overflow-x-auto">
-      <table className="mx-auto w-full max-w-4xl border-collapse">
+    <FitWidthScale>
+      <table className="w-[56rem] max-w-none border-collapse">
         <thead>
           <tr>
             <th
@@ -284,7 +285,7 @@ function DutyMonthTable({
           })}
         </tbody>
       </table>
-    </div>
+    </FitWidthScale>
   );
 }
 

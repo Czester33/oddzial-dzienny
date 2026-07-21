@@ -17,6 +17,7 @@ import {
 import { adaptHtmlColorsForTheme, stripHtml } from "@/lib/text-format";
 import { useTheme } from "@/context/ThemeContext";
 import { sortAdmissionSlotsByHour } from "@/lib/admission-utils";
+import { FitWidthScale } from "@/components/FitWidthScale";
 
 const ADMISSION_TEXT = "text-[25px]";
 const CELL_BORDER = "border border-black dark:border-slate-600";
@@ -46,7 +47,8 @@ function ArchivedSessionTable({
   );
 
   return (
-    <div className="admission-table-wrap overflow-hidden rounded-sm shadow-md ring-1 ring-black/20 dark:ring-slate-600/50">
+    <FitWidthScale>
+      <div className="admission-table-wrap w-[58rem] max-w-none overflow-hidden rounded-sm shadow-md ring-1 ring-black/20 dark:ring-slate-600/50">
       <div
         className={`${CELL_BORDER} border-b px-4 py-3`}
         style={{ backgroundColor: colors.panel }}
@@ -184,7 +186,8 @@ function ArchivedSessionTable({
           </tbody>
         </table>
       </div>
-    </div>
+      </div>
+    </FitWidthScale>
   );
 }
 

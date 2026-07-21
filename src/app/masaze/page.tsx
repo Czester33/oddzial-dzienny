@@ -10,6 +10,7 @@ import { DatePickerCell } from "@/components/DatePickerCell";
 import { TimePickerCell } from "@/components/TimePickerCell";
 import { FormattedEditor } from "@/components/FormattedEditor";
 import { FloatingTodayCalendar } from "@/components/FloatingTodayCalendar";
+import { FitWidthScale } from "@/components/FitWidthScale";
 import { stripHtml, adaptHtmlColorsForTheme } from "@/lib/text-format";
 import { formatDatePL } from "@/lib/date-utils";
 import { resolvePhysioRowColor } from "@/lib/physio-utils";
@@ -350,89 +351,91 @@ function MasazeContent({ data }: { data: AppData }) {
       </div>
 
       <div className="relative flex justify-center">
-        <div className="relative">
-          <div className="overflow-x-auto border border-black bg-white shadow-sm dark:border-slate-600 dark:bg-slate-900">
-            <table
-              className={`table-fixed border-collapse ${MASSAGE_TABLE_TEXT} ${
-                isDark ? "text-slate-100" : "text-slate-900"
-              }`}
-              style={{ width: TABLE_WIDTH }}
-            >
-              <colgroup>
-                {ACTIVE_COL_WIDTHS.map((width, i) => (
-                  <col key={i} style={{ width }} />
-                ))}
-              </colgroup>
-              <thead>
-                <tr>
-                  <th className={TH}>lp.</th>
-                  <th className={TH}>Pacjent</th>
-                  <th className={TH}>Godzina</th>
-                  <th className={TH}>Do kiedy</th>
-                  <th className={TH}>Od kogo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {activeRows.map((p, index) => (
-                  <tr
-                    key={`row-${index}`}
-                    className="group/row"
-                    style={{ backgroundColor: index % 2 === 0 ? ROW_BG : ROW_BG_ALT }}
-                  >
-                    <td className={`${CELL} text-center font-medium`}>
-                      <div className="flex items-center justify-center gap-0.5">
-                        <span>{index + 1}</span>
-                        {isRowFilled(p) && !p.id.startsWith("empty-") && (
-                          <button
-                            type="button"
-                            onClick={() => deleteActiveAt(index)}
-                            className="text-red-600 opacity-0 transition-opacity hover:text-red-800 focus:opacity-100 group-hover/row:opacity-100 dark:text-red-400 dark:hover:text-red-300"
-                            title="Usuń wiersz"
-                          >
-                            ×
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                    <td className={CELL}>
-                      <PatientNameCell
-                        value={p.name}
-                        onChange={(name) => updateActiveAt(index, { ...p, name }, false)}
-                      />
-                    </td>
-                    <td className={CELL}>
-                      <TimePickerCell
-                        value={p.hour}
-                        onChange={(hour) => updateActiveAt(index, { ...p, hour }, true)}
-                        scheduleHours={scheduleHours}
-                        className={TIME_INPUT_CLASS}
-                      />
-                    </td>
-                    <td className={CELL}>
-                      <DatePickerCell
-                        value={p.lastTreatmentDate}
-                        onChange={(lastTreatmentDate) =>
-                          updateActiveAt(index, { ...p, lastTreatmentDate }, false)
-                        }
-                        title="Do kiedy"
-                        textClassName={MASSAGE_TABLE_TEXT}
-                      />
-                    </td>
-                    <td className={CELL}>
-                      <PhysioSelect
-                        value={p.physiotherapistId}
-                        onChange={(physiotherapistId) =>
-                          updateActiveAt(index, { ...p, physiotherapistId }, false)
-                        }
-                        options={physioOptions(data)}
-                      />
-                    </td>
+        <div className="relative w-full max-w-full">
+          <FitWidthScale>
+            <div className="border border-black bg-white shadow-sm dark:border-slate-600 dark:bg-slate-900">
+              <table
+                className={`table-fixed border-collapse ${MASSAGE_TABLE_TEXT} ${
+                  isDark ? "text-slate-100" : "text-slate-900"
+                }`}
+                style={{ width: TABLE_WIDTH }}
+              >
+                <colgroup>
+                  {ACTIVE_COL_WIDTHS.map((width, i) => (
+                    <col key={i} style={{ width }} />
+                  ))}
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th className={TH}>lp.</th>
+                    <th className={TH}>Pacjent</th>
+                    <th className={TH}>Godzina</th>
+                    <th className={TH}>Do kiedy</th>
+                    <th className={TH}>Od kogo</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="absolute left-full top-0 ml-4">
+                </thead>
+                <tbody>
+                  {activeRows.map((p, index) => (
+                    <tr
+                      key={`row-${index}`}
+                      className="group/row"
+                      style={{ backgroundColor: index % 2 === 0 ? ROW_BG : ROW_BG_ALT }}
+                    >
+                      <td className={`${CELL} text-center font-medium`}>
+                        <div className="flex items-center justify-center gap-0.5">
+                          <span>{index + 1}</span>
+                          {isRowFilled(p) && !p.id.startsWith("empty-") && (
+                            <button
+                              type="button"
+                              onClick={() => deleteActiveAt(index)}
+                              className="text-red-600 opacity-0 transition-opacity hover:text-red-800 focus:opacity-100 group-hover/row:opacity-100 dark:text-red-400 dark:hover:text-red-300"
+                              title="Usuń wiersz"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                      <td className={CELL}>
+                        <PatientNameCell
+                          value={p.name}
+                          onChange={(name) => updateActiveAt(index, { ...p, name }, false)}
+                        />
+                      </td>
+                      <td className={CELL}>
+                        <TimePickerCell
+                          value={p.hour}
+                          onChange={(hour) => updateActiveAt(index, { ...p, hour }, true)}
+                          scheduleHours={scheduleHours}
+                          className={TIME_INPUT_CLASS}
+                        />
+                      </td>
+                      <td className={CELL}>
+                        <DatePickerCell
+                          value={p.lastTreatmentDate}
+                          onChange={(lastTreatmentDate) =>
+                            updateActiveAt(index, { ...p, lastTreatmentDate }, false)
+                          }
+                          title="Do kiedy"
+                          textClassName={MASSAGE_TABLE_TEXT}
+                        />
+                      </td>
+                      <td className={CELL}>
+                        <PhysioSelect
+                          value={p.physiotherapistId}
+                          onChange={(physiotherapistId) =>
+                            updateActiveAt(index, { ...p, physiotherapistId }, false)
+                          }
+                          options={physioOptions(data)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </FitWidthScale>
+          <div className="absolute left-full top-0 ml-4 hidden lg:block">
             <FreeMassageSlotsPanel active={sortedActive} waiting={massages.waiting} />
           </div>
         </div>
@@ -442,109 +445,111 @@ function MasazeContent({ data }: { data: AppData }) {
         Lista oczekujących
       </p>
 
-      <div className="mx-auto w-fit max-w-full overflow-x-auto border border-black bg-white shadow-sm dark:border-slate-600 dark:bg-slate-900">
-        <table
-          className={`table-fixed border-collapse ${MASSAGE_TABLE_TEXT} ${
-            isDark ? "text-slate-100" : "text-slate-900"
-          }`}
-          style={{ width: TABLE_WIDTH }}
-        >
-          <colgroup>
-            {WAITING_COL_WIDTHS.map((width, i) => (
-              <col key={i} style={{ width }} />
-            ))}
-          </colgroup>
-          <thead>
-            <tr>
-              <th className={TH}>Lp.</th>
-              <th className={TH}>Pacjent</th>
-              <th className={TH}>OD kiedy</th>
-              <th className={TH}>Do kiedy</th>
-              <th className={TH}>Od kogo</th>
-              <th className={TH}>dodaj</th>
-            </tr>
-          </thead>
-          <tbody>
-            {massages.waiting.length === 0 ? (
+      <FitWidthScale className="mx-auto">
+        <div className="border border-black bg-white shadow-sm dark:border-slate-600 dark:bg-slate-900">
+          <table
+            className={`table-fixed border-collapse ${MASSAGE_TABLE_TEXT} ${
+              isDark ? "text-slate-100" : "text-slate-900"
+            }`}
+            style={{ width: TABLE_WIDTH }}
+          >
+            <colgroup>
+              {WAITING_COL_WIDTHS.map((width, i) => (
+                <col key={i} style={{ width }} />
+              ))}
+            </colgroup>
+            <thead>
               <tr>
-                <td
-                  colSpan={6}
-                  className={`${CELL} py-4 text-center text-slate-400 dark:bg-slate-900 dark:text-slate-500`}
-                >
-                  Brak oczekujących
-                </td>
+                <th className={TH}>Lp.</th>
+                <th className={TH}>Pacjent</th>
+                <th className={TH}>OD kiedy</th>
+                <th className={TH}>Do kiedy</th>
+                <th className={TH}>Od kogo</th>
+                <th className={TH}>dodaj</th>
               </tr>
-            ) : (
-              massages.waiting.map((p, index) => (
-                <tr key={p.id} className="group/row bg-white dark:bg-slate-900">
-                  <td className={`${CELL} text-center font-medium`}>
-                    <div className="flex items-center justify-center gap-0.5">
-                      <span>{index + 1}</span>
-                      <button
-                        type="button"
-                        onClick={() => deleteWaiting(p.id)}
-                        className="text-red-600 opacity-0 transition-opacity hover:text-red-800 focus:opacity-100 group-hover/row:opacity-100 dark:text-red-400 dark:hover:text-red-300"
-                        title="Usuń"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  </td>
-                  <td className={CELL}>
-                    <PatientNameCell
-                      value={p.name}
-                      onChange={(name) => updateWaiting({ ...p, name })}
-                    />
-                  </td>
-                  <td className={CELL}>
-                    <DatePickerCell
-                      value={p.startDate}
-                      onChange={(startDate) => updateWaiting({ ...p, startDate })}
-                      title="OD kiedy"
-                      textClassName={MASSAGE_TABLE_TEXT}
-                    />
-                  </td>
-                  <td className={CELL}>
-                    <DatePickerCell
-                      value={p.lastTreatmentDate}
-                      onChange={(lastTreatmentDate) => updateWaiting({ ...p, lastTreatmentDate })}
-                      title="Do kiedy"
-                      textClassName={MASSAGE_TABLE_TEXT}
-                    />
-                  </td>
-                  <td className={CELL}>
-                    <PhysioSelect
-                      value={p.physiotherapistId}
-                      onChange={(physiotherapistId) => updateWaiting({ ...p, physiotherapistId })}
-                      options={physioOptions(data)}
-                    />
-                  </td>
-                  <td className={`${CELL} text-center`}>
-                    <button
-                      type="button"
-                      onClick={() => moveToActive(p)}
-                      disabled={massages.active.length >= MAX_ACTIVE}
-                      className={`${MASSAGE_TABLE_TEXT} font-bold text-blue-700 hover:underline disabled:text-slate-400 dark:text-blue-400 dark:disabled:text-slate-500`}
-                      title="Dodaj do aktywnych"
-                    >
-                      +
-                    </button>
+            </thead>
+            <tbody>
+              {massages.waiting.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className={`${CELL} py-4 text-center text-slate-400 dark:bg-slate-900 dark:text-slate-500`}
+                  >
+                    Brak oczekujących
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-        <div className="border-t border-black bg-white px-2 py-1.5 dark:border-slate-600 dark:bg-slate-900">
-          <button
-            type="button"
-            onClick={addWaiting}
-            className={`${MASSAGE_TABLE_TEXT} font-medium text-slate-700 hover:underline dark:text-slate-300`}
-          >
-            + Dodaj oczekującego
-          </button>
+              ) : (
+                massages.waiting.map((p, index) => (
+                  <tr key={p.id} className="group/row bg-white dark:bg-slate-900">
+                    <td className={`${CELL} text-center font-medium`}>
+                      <div className="flex items-center justify-center gap-0.5">
+                        <span>{index + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => deleteWaiting(p.id)}
+                          className="text-red-600 opacity-0 transition-opacity hover:text-red-800 focus:opacity-100 group-hover/row:opacity-100 dark:text-red-400 dark:hover:text-red-300"
+                          title="Usuń"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </td>
+                    <td className={CELL}>
+                      <PatientNameCell
+                        value={p.name}
+                        onChange={(name) => updateWaiting({ ...p, name })}
+                      />
+                    </td>
+                    <td className={CELL}>
+                      <DatePickerCell
+                        value={p.startDate}
+                        onChange={(startDate) => updateWaiting({ ...p, startDate })}
+                        title="OD kiedy"
+                        textClassName={MASSAGE_TABLE_TEXT}
+                      />
+                    </td>
+                    <td className={CELL}>
+                      <DatePickerCell
+                        value={p.lastTreatmentDate}
+                        onChange={(lastTreatmentDate) => updateWaiting({ ...p, lastTreatmentDate })}
+                        title="Do kiedy"
+                        textClassName={MASSAGE_TABLE_TEXT}
+                      />
+                    </td>
+                    <td className={CELL}>
+                      <PhysioSelect
+                        value={p.physiotherapistId}
+                        onChange={(physiotherapistId) => updateWaiting({ ...p, physiotherapistId })}
+                        options={physioOptions(data)}
+                      />
+                    </td>
+                    <td className={`${CELL} text-center`}>
+                      <button
+                        type="button"
+                        onClick={() => moveToActive(p)}
+                        disabled={massages.active.length >= MAX_ACTIVE}
+                        className={`${MASSAGE_TABLE_TEXT} font-bold text-blue-700 hover:underline disabled:text-slate-400 dark:text-blue-400 dark:disabled:text-slate-500`}
+                        title="Dodaj do aktywnych"
+                      >
+                        +
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+          <div className="border-t border-black bg-white px-2 py-1.5 dark:border-slate-600 dark:bg-slate-900">
+            <button
+              type="button"
+              onClick={addWaiting}
+              className={`${MASSAGE_TABLE_TEXT} font-medium text-slate-700 hover:underline dark:text-slate-300`}
+            >
+              + Dodaj oczekującego
+            </button>
+          </div>
         </div>
-      </div>
+      </FitWidthScale>
     </div>
   );
 }
