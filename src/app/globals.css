@@ -38,12 +38,18 @@ html {
   font-size: 19px;
 }
 
-/* Desktop: 67% scale that still fills the browser width (plain zoom leaves a right gap). */
+/* Desktop: 67% scale, centered in the viewport (not stuck to the left edge). */
 @media (min-width: 769px) {
   html {
+    overflow-x: hidden;
+  }
+
+  .app-root {
     --app-zoom: 0.67;
     zoom: var(--app-zoom);
-    width: calc(100% / var(--app-zoom));
+    width: calc(100vw / var(--app-zoom));
+    max-width: calc(1600px / var(--app-zoom));
+    margin-inline: auto;
   }
 }
 

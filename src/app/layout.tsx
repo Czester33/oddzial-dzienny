@@ -39,9 +39,11 @@ export default function RootLayout({
         </Script>
         <ThemeProvider>
           <DataProvider>
-            <Navigation />
-            <TextFieldArrowNavigation />
-            <main className="mx-auto max-w-[1600px] px-3 py-4 sm:px-4 sm:py-6">{children}</main>
+            <div className="app-root">
+              <Navigation />
+              <TextFieldArrowNavigation />
+              <main className="mx-auto max-w-[1600px] px-3 py-4 sm:px-4 sm:py-6">{children}</main>
+            </div>
           </DataProvider>
         </ThemeProvider>
       </body>
