@@ -36,6 +36,8 @@
 
 html {
   font-size: 19px;
+  /* Match Chrome page zoom at 67% */
+  zoom: 0.67;
 }
 
 body {
