@@ -662,13 +662,13 @@ export default function UrlopyPage() {
             Dodaj urlop (dzień lub okres)
           </h3>
         </div>
-        <div className="space-y-4 p-4">
-          <div className="flex flex-wrap items-end gap-4">
-            <div>
-              <span className="mb-1 block text-[19px] font-medium text-slate-700 dark:text-slate-300">
+        <div className="p-4">
+          <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+            <div className="shrink-0">
+              <span className="mb-1 block text-[17px] font-medium text-slate-700 dark:text-slate-300">
                 Od
               </span>
-              <div className="min-w-[10rem] rounded-md border border-slate-300 bg-white px-2 py-1 dark:border-slate-600 dark:bg-slate-800">
+              <div className="w-[9.5rem] rounded-md border border-slate-300 bg-white px-2 py-1 dark:border-slate-600 dark:bg-slate-800">
                 <DatePickerCell
                   value={rangeFrom}
                   onChange={setRangeFrom}
@@ -677,11 +677,11 @@ export default function UrlopyPage() {
                 />
               </div>
             </div>
-            <div>
-              <span className="mb-1 block text-[19px] font-medium text-slate-700 dark:text-slate-300">
+            <div className="shrink-0">
+              <span className="mb-1 block text-[17px] font-medium text-slate-700 dark:text-slate-300">
                 Do
               </span>
-              <div className="min-w-[10rem] rounded-md border border-slate-300 bg-white px-2 py-1 dark:border-slate-600 dark:bg-slate-800">
+              <div className="w-[9.5rem] rounded-md border border-slate-300 bg-white px-2 py-1 dark:border-slate-600 dark:bg-slate-800">
                 <DatePickerCell
                   value={rangeTo}
                   onChange={setRangeTo}
@@ -693,15 +693,15 @@ export default function UrlopyPage() {
                 />
               </div>
             </div>
-            <div>
-              <span className="mb-1 block text-[19px] font-medium text-slate-700 dark:text-slate-300">
+            <div className="shrink-0">
+              <span className="mb-1 block text-[17px] font-medium text-slate-700 dark:text-slate-300">
                 Status
               </span>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5">
                 <button
                   type="button"
                   onClick={() => setRangeCertainty("certain")}
-                  className={`rounded-md px-3 py-1.5 text-[19px] font-medium ${
+                  className={`rounded-md px-2.5 py-1.5 text-[17px] font-medium ${
                     rangeCertainty === "certain"
                       ? "bg-emerald-600 text-white"
                       : "border border-slate-300 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
@@ -712,7 +712,7 @@ export default function UrlopyPage() {
                 <button
                   type="button"
                   onClick={() => setRangeCertainty("uncertain")}
-                  className={`rounded-md px-3 py-1.5 text-[19px] font-medium ${
+                  className={`rounded-md px-2.5 py-1.5 text-[17px] font-medium ${
                     rangeCertainty === "uncertain"
                       ? "bg-amber-500 text-white"
                       : "border border-slate-300 bg-white text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
@@ -722,16 +722,10 @@ export default function UrlopyPage() {
                 </button>
               </div>
             </div>
-            <Btn onClick={applyRange} disabled={!canApplyRange}>
-              Dodaj do kalendarza
-            </Btn>
-          </div>
-
-          <div>
-            <span className="mb-2 block text-[19px] font-medium text-slate-700 dark:text-slate-300">
-              Osoby
-            </span>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex min-w-[min(100%,20rem)] flex-1 flex-wrap items-center gap-2">
+              <span className="shrink-0 text-[17px] font-medium text-slate-700 dark:text-slate-300">
+                Osoby
+              </span>
               {vacationStaff(data).map((p) => {
                 const selected = rangePhysioIds.includes(p.id);
                 const tileBg = physioTileBg(p.color, p.rowColor, isDark);
@@ -740,7 +734,7 @@ export default function UrlopyPage() {
                     key={p.id}
                     type="button"
                     onClick={() => toggleRangePhysio(p.id)}
-                    className={`rounded-md border px-3 py-1.5 text-[19px] font-semibold transition-shadow ${
+                    className={`rounded-md border px-2.5 py-1 text-[17px] font-semibold transition-shadow ${
                       selected
                         ? "ring-2 ring-offset-1 ring-slate-800 dark:ring-white dark:ring-offset-slate-900"
                         : "opacity-80 hover:opacity-100"
@@ -756,6 +750,9 @@ export default function UrlopyPage() {
                 );
               })}
             </div>
+            <Btn onClick={applyRange} disabled={!canApplyRange} className="shrink-0">
+              Dodaj do kalendarza
+            </Btn>
           </div>
         </div>
       </Card>
