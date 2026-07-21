@@ -8,6 +8,7 @@ import { toDateInputValue } from "@/lib/date-utils";
 import { useTheme } from "@/context/ThemeContext";
 import { DatePickerCell } from "@/components/DatePickerCell";
 import { FormattedEditor } from "@/components/FormattedEditor";
+import { stripHtml } from "@/lib/text-format";
 
 const WIDTH_LIMITS: Record<keyof ColumnWidths, { min: number; max: number }> = {
   lp: { min: 36, max: 80 },
@@ -277,6 +278,8 @@ export function PhysiotherapistTable({
       ? allPhysios.find((p) => p.id === patient.ownerPhysiotherapistId)
       : undefined;
 
+  const headerNoteLabel = stripHtml(physio.headerNote ?? "");
+
   return (
     <div className="overflow-hidden border border-slate-200 shadow-sm dark:border-slate-700">
       <div
@@ -285,11 +288,11 @@ export function PhysiotherapistTable({
       >
         <div className="flex min-w-0 flex-1 flex-wrap items-center justify-center gap-2 text-center">
           <span>{physio.name}</span>
-          {physio.headerNote && (
+          {headerNoteLabel ? (
             <span className="rounded bg-yellow-300 px-1.5 py-0.5 text-[19px] font-semibold text-black">
-              {physio.headerNote}
+              {headerNoteLabel}
             </span>
-          )}
+          ) : null}
         </div>
         {substitutesAway > 0 && onReturnSubstitutes ? (
           <button

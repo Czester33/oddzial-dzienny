@@ -416,7 +416,8 @@ export function FormattedEditor({
     if (!el) return;
     const html = el.innerHTML === "<br>" ? "" : el.innerHTML;
     // Persist editor HTML including user-chosen colors/sizes.
-    onChange(html);
+    // Avoid storing literal &nbsp; entities that later show up in plain-text UI.
+    onChange(html.replace(/&nbsp;/gi, " ").replace(/&#160;/g, " "));
   }, [onChange]);
 
   const emit = useCallback(

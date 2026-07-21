@@ -7,6 +7,7 @@ import {
   todayIsoDate,
   toDateInputValue,
 } from "./date-utils";
+import { stripHtml } from "./text-format";
 
 export const DUTY_NOTE_START_MINUTES = 7 * 60;
 
@@ -99,7 +100,7 @@ export function hasAutoArchiveDutyChanges(before: AppData, after: AppData): bool
 }
 
 function stripDutyNote(text: string): string {
-  return text.replace(DUTY_NOTE_RE, " ").replace(/\s+/g, " ").trim();
+  return stripHtml(text.replace(DUTY_NOTE_RE, " ").replace(/\s+/g, " "));
 }
 
 function buildDutyNoteText(dateIso: string): string {

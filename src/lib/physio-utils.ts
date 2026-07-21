@@ -12,7 +12,7 @@ import type {
 import { toDateInputValue } from "./date-utils";
 import { normalizeAdmissions, migrateFlatArchiveToMonths } from "./admission-utils";
 import { normalizeNavLabels, normalizeNavOrder } from "./nav-utils";
-import { stripHtml } from "./text-format";
+import { stripHtml, replaceNbspInHtml } from "./text-format";
 
 export const COLOR_PRESETS = [
   { name: "Różowy", color: "#C2185B", rowColor: "#F48FB1" },
@@ -384,16 +384,23 @@ export function sanitizeAppData(data: AppData): AppData {
     ...data,
     doctors: mergedDoctors,
     admissions: admissionsWithPhysio,
-    physiotherapists: data.physiotherapists.map((p) => ({
-      ...p,
-      columnWidths: getDefaultColumnWidths(p.columnWidths),
-    })),
+    physiotherapists: data.physiotherapists.map((p) => {
+      const headerNote = stripHtml(p.headerNote ?? "");
+      return {
+        ...p,
+        columnWidths: getDefaultColumnWidths(p.columnWidths),
+        ...(headerNote ? { headerNote } : { headerNote: "" }),
+      };
+    }),
     currentPatients,
     massages: {
       active: data.massages?.active ?? [],
       waiting: data.massages?.waiting ?? [],
       scheduleHours: data.massages?.scheduleHours ?? "7:45-13:45",
-      headerNote: data.massages?.headerNote ?? "",
+      headerNote: (() => {
+        const cleaned = replaceNbspInHtml(data.massages?.headerNote ?? "").trim();
+        return stripHtml(cleaned) ? cleaned : "";
+      })(),
     },
     announcements: data.announcements ?? [],
     announcementsSeenAt: data.announcementsSeenAt ?? "",

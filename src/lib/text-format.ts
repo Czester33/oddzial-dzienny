@@ -1,13 +1,22 @@
 /** Decode common HTML entities (also when there are no tags). */
-function decodeHtmlEntities(text: string): string {
+export function decodeHtmlEntities(text: string): string {
   return text
     .replace(/&nbsp;/gi, " ")
     .replace(/&#160;/g, " ")
+    .replace(/\u00a0/g, " ")
     .replace(/&amp;/gi, "&")
     .replace(/&lt;/gi, "<")
     .replace(/&gt;/gi, ">")
     .replace(/&quot;/gi, '"')
     .replace(/&#39;/g, "'");
+}
+
+/** Replace NBSP entities/chars in HTML without stripping tags. */
+export function replaceNbspInHtml(html: string): string {
+  return html
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&#160;/g, " ")
+    .replace(/\u00a0/g, " ");
 }
 
 /** Strip HTML tags for plain display */

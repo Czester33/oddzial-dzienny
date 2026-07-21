@@ -1,5 +1,6 @@
 import type { AppData, ArchivedVacationYear, Physiotherapist, VacationEntry } from "./types";
 import { getLastWorkingDayOfMonth, isoFromParts, isWorkingDay, todayIsoDate, toDateInputValue } from "./date-utils";
+import { stripHtml } from "./text-format";
 
 /** Fixed vacation person for massage therapist (not in physiotherapists list). */
 export const VACATION_KRZYSZTOF_ID = "vacation-krzysztof";
@@ -133,7 +134,7 @@ function formatVacationRange(start: string, end: string): string {
 }
 
 function stripVacationNote(text: string): string {
-  return text.replace(VACATION_NOTE_RE, " ").replace(/\s+/g, " ").trim();
+  return stripHtml(text.replace(VACATION_NOTE_RE, " ").replace(/\s+/g, " "));
 }
 
 function buildVacationNoteText(start: string, end: string): string {
@@ -156,7 +157,7 @@ function stripKrzysztofVacationNote(text: string): string {
       .replace(KRZYSZTOF_VACATION_PLAIN_RE, " ")
       .replace(VACATION_NOTE_RE, " ");
   }
-  return cur.replace(/\s+/g, " ").trim();
+  return stripHtml(cur.replace(/\s+/g, " "));
 }
 
 /** Krzysztof massage note appears 14 days before vacation start. */
