@@ -10,6 +10,7 @@ import {
 /**
  * Scales children down so their intrinsic width fits the container.
  * Used on phones so wide tables stay fully visible without horizontal scroll.
+ * On desktop (scale 1) content stays centered in the available width.
  */
 export function FitWidthScale({
   children,
@@ -54,18 +55,17 @@ export function FitWidthScale({
   return (
     <div
       ref={outerRef}
-      className={`w-full max-w-full ${className}`}
+      className={`flex w-full max-w-full justify-center overflow-hidden ${className}`}
       style={{
         height: innerHeight ? innerHeight * scale : undefined,
-        overflow: "hidden",
       }}
     >
       <div
         ref={innerRef}
-        className="w-max max-w-none"
+        className="w-max max-w-none shrink-0"
         style={{
-          transform: `scale(${scale})`,
-          transformOrigin: "top left",
+          transform: scale < 1 ? `scale(${scale})` : undefined,
+          transformOrigin: "top center",
         }}
       >
         {children}
