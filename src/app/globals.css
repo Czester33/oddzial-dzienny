@@ -1,0 +1,166 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #f1f5f9;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --border: #e2e8f0;
+  --muted: #64748b;
+  --input-bg: #ffffff;
+  --row-hover: #f8fafc;
+  color-scheme: light;
+}
+
+.dark {
+  --background: #0b1220;
+  --foreground: #e2e8f0;
+  --surface: #111827;
+  --surface-2: #1e293b;
+  --border: #334155;
+  --muted: #94a3b8;
+  --input-bg: #1e293b;
+  --row-hover: rgba(30, 41, 59, 0.6);
+  --readable-red: #ef4444;
+  --readable-red-strong: #f87171;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+}
+
+html {
+  font-size: 19px;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 19px;
+  /* Hide text caret / selection everywhere by default */
+  caret-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+input[type="date"] {
+  min-width: 130px;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+th,
+thead {
+  cursor: default;
+}
+
+.physio-name-header {
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.22) 0%,
+    rgba(255, 255, 255, 0.06) 40%,
+    rgba(0, 0, 0, 0.14) 100%
+  );
+  border-bottom: 2px solid rgba(0, 0, 0, 0.18);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+}
+
+.physio-col-header {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 0, 0.055) 3px,
+    rgba(0, 0, 0, 0.055) 4px
+  );
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+}
+
+.dark .physio-col-header {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 3px,
+    rgba(255, 255, 255, 0.07) 3px,
+    rgba(255, 255, 255, 0.07) 4px
+  );
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35);
+}
+
+.duty-col-header {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 0, 0.055) 3px,
+    rgba(0, 0, 0, 0.055) 4px
+  );
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+}
+
+.dark .duty-col-header {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 3px,
+    rgba(255, 255, 255, 0.07) 3px,
+    rgba(255, 255, 255, 0.07) 4px
+  );
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35);
+}
+
+select {
+  cursor: pointer;
+  caret-color: transparent;
+}
+
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  color-scheme: inherit;
+}
+
+/* Re-enable typing caret only in real text fields */
+.formatted-editor,
+input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="file"]),
+textarea,
+[contenteditable="true"] {
+  caret-color: auto;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.formatted-editor:focus {
+  outline: 1px solid rgba(59, 130, 246, 0.45);
+}
+
+.dark .formatted-editor:focus {
+  outline: 1px solid rgba(96, 165, 250, 0.55);
+}
+
+.formatted-editor:empty::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+/* Vivid red text on dark backgrounds (Tailwind red utilities). */
+.dark :where(.text-red-600, .text-red-700) {
+  color: var(--readable-red);
+}
+
+.dark :where(.text-red-400, .text-red-500) {
+  color: var(--readable-red-strong);
+}
+
+.dark :where(.decoration-red-400, .decoration-red-600) {
+  text-decoration-color: var(--readable-red);
+}

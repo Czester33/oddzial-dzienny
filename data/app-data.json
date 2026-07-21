@@ -1,0 +1,1885 @@
+{
+  "physiotherapists": [
+    {
+      "id": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+      "name": "Monika",
+      "color": "#E91E8C",
+      "rowColor": "#FCE4EC",
+      "columnWidths": {
+        "lp": 40,
+        "patient": 280,
+        "discharge": 108
+      },
+      "headerNote": "13:25-21:00"
+    },
+    {
+      "id": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+      "name": "Klaudia",
+      "color": "#2196F3",
+      "rowColor": "#E3F2FD",
+      "columnWidths": {
+        "lp": 40,
+        "patient": 280,
+        "discharge": 108
+      },
+      "headerNote": ""
+    },
+    {
+      "id": "b70a7921-b39f-465d-a963-9d159ddd2438",
+      "name": "Edyta",
+      "color": "#E65100",
+      "rowColor": "#FFB74D",
+      "columnWidths": {
+        "lp": 40,
+        "patient": 280,
+        "discharge": 108
+      },
+      "headerNote": ""
+    },
+    {
+      "id": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+      "name": "Dorota",
+      "color": "#7B1FA2",
+      "rowColor": "#F3E5F5",
+      "columnWidths": {
+        "lp": 40,
+        "patient": 280,
+        "discharge": 108
+      },
+      "headerNote": ""
+    },
+    {
+      "id": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+      "name": "Irek",
+      "color": "#424242",
+      "rowColor": "#BDBDBD",
+      "columnWidths": {
+        "lp": 40,
+        "patient": 280,
+        "discharge": 108
+      }
+    }
+  ],
+  "currentPatients": {
+    "ed605276-3ef0-4e67-9dc4-6df7027eddc7": [
+      {
+        "id": "3fd84c26-0893-45ab-a343-ba73d1e41964",
+        "text": "<span style=\"color: #e2e8f0;\">Bogusława Biegas <span><span><span style=\"color: #ef4444;\">+2 </span></span></span></span>",
+        "dischargeDate": "2026-07-23",
+        "dischargeDateManual": true,
+        "dischargeDateBeforeManual": "2026-07-21"
+      },
+      {
+        "id": "a3434baa-0b42-40c7-ba09-f507e3697e23",
+        "text": "Justyna Matczak&nbsp;",
+        "dischargeDate": "2026-07-27"
+      },
+      {
+        "id": "151221d1-9987-4294-892f-dcff826b5e23",
+        "text": "<span style=\"font-size: 19px;\"><span><span><span><span><span><span><span><span><span><span><span><span><span><span><span>Danuta Karasińska<span>​<span>​<span>​<span>​<span>​<span>​<span>​<span>​<span>​<span>​<span>​<span>​<span>​<span>​<span>​<span>​<span>​<span>​</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span>",
+        "dischargeDate": "2026-07-30"
+      },
+      {
+        "id": "2255d337-d887-47dd-9397-4892e49c39b7",
+        "text": "Elżbieta Gaca",
+        "dischargeDate": "2026-07-30"
+      }
+    ],
+    "a931d2b8-aa19-49e7-9d72-461bba23f939": [
+      {
+        "id": "416c5093-4a9b-495c-8f84-caf70e81666f",
+        "text": "Natalia Olszówka ZSN",
+        "dischargeDate": "2026-07-27"
+      },
+      {
+        "id": "76fce33a-9adc-466b-b481-8ef3541c8294",
+        "text": "Janina Kołodziejczyk",
+        "dischargeDate": "2026-07-28",
+        "ownerPhysiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+      },
+      {
+        "id": "f9d7d137-e3ec-4cec-bc0f-b56e48d73147",
+        "text": "<span style=\"color: rgb(0, 0, 0);\">Ma<span><span><span>rlena Majak</span></span></span></span><span style=\"color: #0f172a;\"><span style=\"color: rgb(228, 3, 3);\"><span style=\"color: rgb(228, 3, 3);\"></span></span></span>",
+        "dischargeDate": "2026-07-30"
+      }
+    ],
+    "b70a7921-b39f-465d-a963-9d159ddd2438": [
+      {
+        "id": "8c9f6d4b-d650-48c2-8e4f-e1500c1555be",
+        "text": "Marzena Adamczyk",
+        "dischargeDate": "2026-07-27"
+      },
+      {
+        "id": "63993a4d-49f4-43ab-b5e7-54c8ca6388cf",
+        "text": "Jan Kowalczyk",
+        "dischargeDate": "2026-07-27"
+      },
+      {
+        "id": "0daa0713-d391-4e29-9ea4-a11d27e4149d",
+        "text": "Beata Smolińska",
+        "dischargeDate": "2026-07-28"
+      },
+      {
+        "id": "a4e74d65-5bb5-4f31-86d3-c8b3274b0dc2",
+        "text": "Justyna Turek",
+        "dischargeDate": "2026-07-30"
+      },
+      {
+        "id": "652b9b9f-06ba-4c2b-9dcf-7ac9f98cc421",
+        "text": "",
+        "dischargeDate": ""
+      }
+    ],
+    "ba71be11-70ae-4888-a69b-21cc2a69110c": [
+      {
+        "id": "fedee904-c146-4bcb-98df-5fe33bcdb191",
+        "text": "Elżbieta Kuna kontr.15.07",
+        "dischargeDate": "2026-07-27"
+      },
+      {
+        "id": "b5ddae9f-a41e-4e10-91ac-f993712e2269",
+        "text": "Marian Filipowicz ZSN",
+        "dischargeDate": "2026-07-27"
+      },
+      {
+        "id": "be873fae-045d-41b2-8957-145df306c6b1",
+        "text": "Mirosława Rajska",
+        "dischargeDate": "2026-07-28"
+      },
+      {
+        "id": "5c325d18-99a5-4a83-be6f-43a76b0f9fb5",
+        "text": "Jadwiga Marczak",
+        "dischargeDate": "2026-07-28"
+      }
+    ],
+    "f726b015-678a-4f49-8b9e-ceb35599ee4b": [
+      {
+        "id": "3e447981-87ca-4ef6-b903-63f9b7aab208",
+        "text": "Robert Matusiak&nbsp;",
+        "dischargeDate": "2026-07-27"
+      },
+      {
+        "id": "4b0eb26d-e662-4661-9cb0-8aa42abc635c",
+        "text": "Mirosław Adamowicz",
+        "dischargeDate": "2026-07-28"
+      },
+      {
+        "id": "03b68e1d-b50d-4250-bf9f-60305b5e99c0",
+        "text": "Danuta Jatczak",
+        "dischargeDate": "2026-07-28"
+      },
+      {
+        "id": "7188fccf-4000-4c4f-b680-2a1d67ce34f5",
+        "text": "Wiesław Rolczyński",
+        "dischargeDate": "2026-07-30"
+      },
+      {
+        "id": "fb588096-bdfa-426b-8065-991d1e0f52fa",
+        "text": "Andrzej Turski",
+        "dischargeDate": "2026-07-30"
+      }
+    ]
+  },
+  "massages": {
+    "active": [
+      {
+        "id": "m1-rajska",
+        "name": "<span style=\"font-size: 23px;\"><span><span><span><span><span><span><span><span><span><span><span>Mirosława Rajska BARKI</span></span></span></span></span></span></span></span></span></span></span></span>",
+        "hour": "07:45",
+        "lastTreatmentDate": "2026-07-28",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
+      },
+      {
+        "id": "m6-filipowicz",
+        "name": "Marian Filipowicz<span style=\"color: #fca5a5;\"> <span><span>ZSN</span></span></span><span style=\"color: #fca5a5\"><span style=\"color: rgb(255, 64, 0);\"></span></span>",
+        "hour": "09:00",
+        "lastTreatmentDate": "2026-07-27",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
+      },
+      {
+        "id": "m7-jatczak",
+        "name": "Danuta Jatczak",
+        "hour": "09:15",
+        "lastTreatmentDate": "2026-07-28",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
+      },
+      {
+        "id": "00a43514-2bd9-4d7a-807c-57210b80999b",
+        "name": "Elżbieta Gaca <span style=\"color: #fca5a5;\"><span style=\"color: rgb(255, 64, 0);\"></span></span>",
+        "hour": "11:15",
+        "lastTreatmentDate": "2026-07-30",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+      },
+      {
+        "id": "m11-olszowka",
+        "name": "Natalia Olszówka <span style=\"color: #fca5a5\"><span style=\"color: rgb(228, 3, 3);\">ZSN (cały kręgosłup)</span></span>",
+        "hour": "12:45",
+        "lastTreatmentDate": "2026-07-27",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939"
+      },
+      {
+        "id": "m12-kowalczyk",
+        "name": "JAN KOWALCZYK<span style=\"color: #fca5a5;\"> L/S<span style=\"color: #fca5a5;\">​</span></span><span style=\"color: #fca5a5;\">​</span>",
+        "hour": "13:15",
+        "lastTreatmentDate": "2026-07-27",
+        "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438"
+      }
+    ],
+    "waiting": [
+      {
+        "id": "dbf7f23f-b254-4cb8-8c27-6d689657a387",
+        "name": "",
+        "startDate": "",
+        "lastTreatmentDate": "",
+        "physiotherapistId": ""
+      }
+    ],
+    "scheduleHours": "7:45-13:45",
+    "headerNote": ""
+  },
+  "duties": {
+    "2026-07": [
+      {
+        "date": "2026-07-02",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+      },
+      {
+        "date": "2026-07-07",
+        "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438"
+      },
+      {
+        "date": "2026-07-09",
+        "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438"
+      },
+      {
+        "date": "2026-07-14",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939"
+      },
+      {
+        "date": "2026-07-16",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939"
+      },
+      {
+        "date": "2026-07-21",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+      },
+      {
+        "date": "2026-07-23",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939"
+      },
+      {
+        "date": "2026-07-28",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+      },
+      {
+        "date": "2026-07-30",
+        "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438"
+      }
+    ],
+    "2026-08": [
+      {
+        "date": "2026-08-04",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
+      },
+      {
+        "date": "2026-08-06",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
+      },
+      {
+        "date": "2026-08-11",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
+      },
+      {
+        "date": "2026-08-13",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
+      },
+      {
+        "date": "2026-08-18",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
+      },
+      {
+        "date": "2026-08-20",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
+      },
+      {
+        "date": "2026-08-25",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
+      },
+      {
+        "date": "2026-08-27",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
+      }
+    ]
+  },
+  "admissions": {
+    "2026-07": [
+      {
+        "id": "c1da774e-18e6-423a-8c3a-1c073e7aad13",
+        "doctorId": "6f314199-bc6b-4d5f-afb4-40292678ad22",
+        "admissionDate": "2026-07-01",
+        "patients": [
+          {
+            "id": "48baa3ff-90e7-4c81-8590-bfb488c2d6f8",
+            "patientName": "<span style=\"font-weight: bold;\"><span style=\"font-weight: normal;\">Anna Kruszyńska</span></span>",
+            "admissionHour": "08:30",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "2faec467-7598-4076-bd9b-8f262d3700c8"
+          },
+          {
+            "id": "e7cbedb5-d7e5-4c81-95bd-5865dcd1d821",
+            "patientName": "Krzysztof Kowalski",
+            "admissionHour": "10:30",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "d2fe43a5-7dc9-4928-bdc6-49e8423ae254"
+          },
+          {
+            "id": "a240074b-775d-47aa-a973-adcf13222cde",
+            "patientName": "<span style=\"color: rgb(226, 232, 240);\">Elżbieta Kotecka </span><span style=\"color: rgb(228, 3, 3);\">ZSN</span>",
+            "admissionHour": "11:30",
+            "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "c2ef395b-7b4c-4dd9-8d22-ed24e652ec17"
+          },
+          {
+            "id": "ed0a96de-7eb7-40f5-811c-8897393d2a75",
+            "patientName": "<span style=\"color: rgb(226, 232, 240);\"><span>Maria Brańska</span></span>",
+            "admissionHour": "12:00",
+            "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "ed29d564-7a57-4668-b7b9-3b860841329d"
+          },
+          {
+            "id": "3cff103f-0440-431e-83a1-dc71316f7320",
+            "patientName": "Bogusława Biegas",
+            "admissionHour": "12:30",
+            "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "3fd84c26-0893-45ab-a343-ba73d1e41964"
+          },
+          {
+            "id": "5070b3c2-d389-446f-bb3a-8934aadb6a0e",
+            "patientName": "Ewa Jóźwiak",
+            "admissionHour": "13:00",
+            "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "cfb2ebf1-f5bc-45f1-a316-5468996fa77c"
+          },
+          {
+            "id": "f376b512-37df-4d68-bfd2-c37b91341f1e",
+            "patientName": "Bogumiła Bloch",
+            "admissionHour": "14:00",
+            "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "2badfb25-b5f1-451c-be89-d93d5dc6dce3"
+          }
+        ]
+      },
+      {
+        "id": "a9049db2-8ccc-4304-a646-88724d31b577",
+        "doctorId": "6f314199-bc6b-4d5f-afb4-40292678ad22",
+        "admissionDate": "2026-07-07",
+        "patients": [
+          {
+            "id": "8b4175e6-0994-4d41-a79c-bb19c5b347a7",
+            "patientName": "Elżbieta Kuna kontr.15.07",
+            "admissionHour": "08:30",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "fedee904-c146-4bcb-98df-5fe33bcdb191"
+          },
+          {
+            "id": "c757ab4e-96e6-43de-a409-4e205e5bac23",
+            "patientName": "Robert Matusiak&nbsp;",
+            "admissionHour": "09:30",
+            "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "3e447981-87ca-4ef6-b903-63f9b7aab208"
+          },
+          {
+            "id": "776f2aaa-7e76-43d9-a9de-eb5e457fadc9",
+            "patientName": "Marian Filipowicz ZSN",
+            "admissionHour": "10:30",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "b5ddae9f-a41e-4e10-91ac-f993712e2269"
+          },
+          {
+            "id": "ebc39913-977e-4356-b24f-aceafd5ced42",
+            "patientName": "Marzena Adamczyk",
+            "admissionHour": "11:30",
+            "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "8c9f6d4b-d650-48c2-8e4f-e1500c1555be"
+          },
+          {
+            "id": "ab713c08-77d2-46d8-82b8-5e266e0169bf",
+            "patientName": "Natalia Olszówka ZSN",
+            "admissionHour": "12:00",
+            "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "416c5093-4a9b-495c-8f84-caf70e81666f"
+          },
+          {
+            "id": "a4bc8941-3223-4f75-9cc9-28f59b0f23cf",
+            "patientName": "Jan Kowalczyk",
+            "admissionHour": "13:30",
+            "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "63993a4d-49f4-43ab-b5e7-54c8ca6388cf"
+          },
+          {
+            "id": "6d177f49-cc98-4ea6-bfd6-8189d618f995",
+            "patientName": "Justyna Matczak&nbsp;",
+            "admissionHour": "14:30",
+            "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "a3434baa-0b42-40c7-ba09-f507e3697e23"
+          }
+        ]
+      },
+      {
+        "id": "d03ecc1c-e78b-4454-a732-58668a4d928c",
+        "doctorId": "6f314199-bc6b-4d5f-afb4-40292678ad22",
+        "admissionDate": "2026-07-08",
+        "patients": [
+          {
+            "id": "298650f3-b467-4f3f-952b-6111dd9d84b5",
+            "patientName": "Mirosław Adamowicz",
+            "admissionHour": "08:30",
+            "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "4b0eb26d-e662-4661-9cb0-8aa42abc635c"
+          },
+          {
+            "id": "c4061146-22f0-4ca6-845b-2b1b87cfa4cf",
+            "patientName": "Mirosława Rajska",
+            "admissionHour": "09:30",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "be873fae-045d-41b2-8957-145df306c6b1"
+          },
+          {
+            "id": "0a4d76e8-a3ab-4a2a-b1ac-4a101d824477",
+            "patientName": "Danuta Jatczak",
+            "admissionHour": "10:30",
+            "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "03b68e1d-b50d-4250-bf9f-60305b5e99c0"
+          },
+          {
+            "id": "33027aa9-6b34-4fcc-90e7-32735266d4f5",
+            "patientName": "Jadwiga Marczak",
+            "admissionHour": "11:30",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "5c325d18-99a5-4a83-be6f-43a76b0f9fb5"
+          },
+          {
+            "id": "75686c76-2e43-4341-8514-18f9ebd22adc",
+            "patientName": "Ilona Ślawska",
+            "admissionHour": "12:30",
+            "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+            "admissionStatus": "disqualified"
+          },
+          {
+            "id": "fe2f61e8-10a3-4fd4-974f-b4233d756151",
+            "patientName": "Beata Smolińska",
+            "admissionHour": "13:00",
+            "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "0daa0713-d391-4e29-9ea4-a11d27e4149d"
+          },
+          {
+            "id": "351ebd30-876e-4af0-a79f-ed3b52604ce7",
+            "patientName": "Janina Kołodziejczyk",
+            "admissionHour": "14:30",
+            "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "76fce33a-9adc-466b-b481-8ef3541c8294"
+          }
+        ]
+      },
+      {
+        "id": "595bc82d-0fb6-400e-a6ec-379adcdae335",
+        "doctorId": "6f314199-bc6b-4d5f-afb4-40292678ad22",
+        "admissionDate": "2026-07-10",
+        "patients": [
+          {
+            "id": "0c875bb3-d9e9-439a-9607-f11ff7962cfb",
+            "patientName": "Wiesław Rolczyński",
+            "admissionHour": "08:30",
+            "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "7188fccf-4000-4c4f-b680-2a1d67ce34f5"
+          },
+          {
+            "id": "67b0bc08-399e-4c5c-9eba-fc8b571c05e2",
+            "patientName": "Elżbieta Gaca",
+            "admissionHour": "09:30",
+            "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "2255d337-d887-47dd-9397-4892e49c39b7"
+          },
+          {
+            "id": "ea2b27cc-e625-4fa1-9ab2-d01a5d246667",
+            "patientName": "Justyna Turek",
+            "admissionHour": "11:30",
+            "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "a4e74d65-5bb5-4f31-86d3-c8b3274b0dc2"
+          },
+          {
+            "id": "ac1c27f6-12a1-4b0d-983e-ec66bcb9e26c",
+            "patientName": "Danuta Karasińska",
+            "admissionHour": "12:30",
+            "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "151221d1-9987-4294-892f-dcff826b5e23"
+          },
+          {
+            "id": "46c88559-f8f3-4839-8238-a162394ec143",
+            "patientName": "Andrzej Turski",
+            "admissionHour": "13:00",
+            "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "fb588096-bdfa-426b-8065-991d1e0f52fa"
+          },
+          {
+            "id": "e770dd1a-d3a6-41be-ad50-848e0a58a5c6",
+            "patientName": "Marlena Majak",
+            "admissionHour": "14:30",
+            "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+            "admissionStatus": "admitted",
+            "linkedPatientId": "f9d7d137-e3ec-4cec-bc0f-b56e48d73147"
+          }
+        ]
+      }
+    ],
+    "2026-06": [],
+    "2026-08": [
+      {
+        "id": "70419447-d8ee-45a2-85aa-7f2d3bd569dc",
+        "doctorId": "9d654d04-08a0-4ad0-97a2-21f8a7f229c7",
+        "admissionDate": "2026-07-22",
+        "patients": [
+          {
+            "id": "c22d48b2-5910-4f09-9213-be3e4bc83db0",
+            "patientName": "Jadwiga Linkiewicz",
+            "admissionHour": "11:30",
+            "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438"
+          },
+          {
+            "id": "7b84ec09-43e2-43cc-9204-e5e45500d1f1",
+            "patientName": "Stanisława Popławska",
+            "admissionHour": "12:00",
+            "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+          },
+          {
+            "id": "fa0ef3fa-6ccf-420d-9fe9-173ee34376c6",
+            "patientName": "<span style=\"color: #e2e8f0;\"><span>Bartosz Flisiński<span style=\"color: rgb(228, 3, 3);\"> ZSN</span></span></span>",
+            "admissionHour": "12:30",
+            "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+          },
+          {
+            "id": "7dc7010d-0900-45ec-a290-c6dc131b8033",
+            "patientName": "Jerzy Dębski",
+            "admissionHour": "13:30",
+            "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+          }
+        ]
+      },
+      {
+        "id": "ec182203-3369-4a50-b253-56748534adf3",
+        "doctorId": "6f314199-bc6b-4d5f-afb4-40292678ad22",
+        "admissionDate": "2026-07-22",
+        "patients": [
+          {
+            "id": "4fa65764-4998-4c2e-a273-4fbb6cff97bc",
+            "patientName": "Wiesława Brudak",
+            "admissionHour": "08:30",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
+          },
+          {
+            "id": "68e44d8f-dee3-4e7f-a8e5-fc831c25384f",
+            "patientName": "Zbigniew Pawlak",
+            "admissionHour": "09:30",
+            "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
+          },
+          {
+            "id": "215d37a1-db1f-4244-a0c9-7427cf22c961",
+            "patientName": "Jakub Grzelak",
+            "admissionHour": "10:30",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
+          }
+        ]
+      },
+      {
+        "id": "cca2cbda-a457-438d-8188-132dbebb7638",
+        "doctorId": "9d654d04-08a0-4ad0-97a2-21f8a7f229c7",
+        "admissionDate": "2026-07-23",
+        "patients": [
+          {
+            "id": "9bf9d23e-2f8c-447f-b38b-94b51e35e0af",
+            "patientName": "Krystyna Sobczyk",
+            "admissionHour": "09:00",
+            "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
+          },
+          {
+            "id": "a968be49-c3ca-46c8-adfb-0afe412231e4",
+            "patientName": "Jerzy Wasiński",
+            "admissionHour": "09:30",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
+          },
+          {
+            "id": "4a08799a-c2d1-4cda-8208-9a4d5a52a8a3",
+            "patientName": "Jacek Olejniczak",
+            "admissionHour": "10:30",
+            "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
+          },
+          {
+            "id": "a12603ca-9d64-4428-b0e0-9b02b695b448",
+            "patientName": "Jolanta Chajdys",
+            "admissionHour": "11:00",
+            "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939"
+          },
+          {
+            "id": "6d53dfd4-6cb0-4f56-8602-1feca17acd77",
+            "patientName": "Czesław Milczarek",
+            "admissionHour": "11:30",
+            "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438"
+          },
+          {
+            "id": "eba45533-b78d-465f-9c61-645932483cd7",
+            "patientName": "Małgorzata Tyburska",
+            "admissionHour": "13:30",
+            "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+          },
+          {
+            "id": "269c19e6-792e-42c0-8657-f3a9f8fb17de",
+            "patientName": "Szczepan Witczak",
+            "admissionHour": "14:00",
+            "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939"
+          }
+        ]
+      },
+      {
+        "id": "bf775c2c-7cb3-4f9e-9c1a-a729e90a2bb0",
+        "doctorId": "9d654d04-08a0-4ad0-97a2-21f8a7f229c7",
+        "admissionDate": "2026-07-30",
+        "patients": [
+          {
+            "id": "7899a2e6-627a-421a-83e0-1d4f53830e01",
+            "patientName": "<span style=\"color: rgb(226, 232, 240);\"><span>Antoni Kubczak<span style=\"color: rgb(228, 3, 3);\">​<span style=\"font-weight: bold;\">​</span></span></span></span>",
+            "admissionHour": "10:00",
+            "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
+          },
+          {
+            "id": "e33defd3-e70e-4848-9c9a-7372028f2414",
+            "patientName": "Lucyna Wojciechowska",
+            "admissionHour": "11:00",
+            "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+          },
+          {
+            "id": "9ae6db3f-4ca9-41e9-8dd2-fe02b1df6f83",
+            "patientName": "Aneta Chmielewska",
+            "admissionHour": "11:30",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
+          },
+          {
+            "id": "726f10d5-60be-4c2e-9118-3a05a9fef16c",
+            "patientName": "Marta Kowalczyk",
+            "admissionHour": "13:00",
+            "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+          }
+        ]
+      },
+      {
+        "id": "e29212d1-183e-4ca3-bb21-9529bdef37d6",
+        "doctorId": "9d654d04-08a0-4ad0-97a2-21f8a7f229c7",
+        "admissionDate": "2026-08-05",
+        "patients": [
+          {
+            "id": "12951ea0-8457-4b77-a3db-822e8910c08a",
+            "patientName": "Teresa Dymkowska 7:00",
+            "admissionHour": "08:30",
+            "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939"
+          },
+          {
+            "id": "951c7974-37bc-4161-ab74-b6925e52e62b",
+            "patientName": "Bożena Michalak",
+            "admissionHour": "09:30",
+            "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438"
+          },
+          {
+            "id": "a3b548a0-2910-4361-a42d-1e3799b4a848",
+            "patientName": "Krystyna Grzelak",
+            "admissionHour": "10:30",
+            "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438"
+          },
+          {
+            "id": "426dfdc9-3ee0-436d-aa65-13c6a02bebb3",
+            "patientName": "Barbara Nowak",
+            "admissionHour": "12:30",
+            "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+          },
+          {
+            "id": "2ba46130-6097-4b87-ab6f-7f44244d7c46",
+            "patientName": "Monika Bojdo",
+            "admissionHour": "14:00",
+            "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
+          }
+        ]
+      },
+      {
+        "id": "053166aa-aa6f-4bad-bf10-368c17223523",
+        "doctorId": "9d654d04-08a0-4ad0-97a2-21f8a7f229c7",
+        "admissionDate": "2026-08-06",
+        "patients": [
+          {
+            "id": "3f1257b4-0452-4360-a582-92f735e2851a",
+            "patientName": "Dorota Rozwens",
+            "admissionHour": "09:00",
+            "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+          },
+          {
+            "id": "e5e5b91c-04a0-4889-8f2b-b12f29ed5db0",
+            "patientName": "Teresa Moraczewska",
+            "admissionHour": "10:30",
+            "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438"
+          },
+          {
+            "id": "4176d815-462b-4e0a-90f1-aa0632943e39",
+            "patientName": "",
+            "admissionHour": "11:00",
+            "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939"
+          },
+          {
+            "id": "0a2a2206-610f-4b19-8458-7db6492d4d9f",
+            "patientName": "Oliwier Kaźmierczak <span style=\"color: rgb(255, 64, 0);\">ZSN</span>",
+            "admissionHour": "11:30",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
+          },
+          {
+            "id": "8b48eaf5-6f3f-4eb2-9638-4145e70d48fe",
+            "patientName": "",
+            "admissionHour": "13:00",
+            "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
+          },
+          {
+            "id": "b72059fe-0891-433a-b8da-32a77354bb27",
+            "patientName": "Bożena Łajszczak",
+            "admissionHour": "13:30",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
+          }
+        ]
+      },
+      {
+        "id": "46ddbb16-4e90-4c01-9574-81ed69c699b2",
+        "doctorId": "6f314199-bc6b-4d5f-afb4-40292678ad22",
+        "admissionDate": "2026-08-11",
+        "patients": [
+          {
+            "id": "4df6546b-eb0e-424f-a589-02ccca515912",
+            "patientName": "Iwona Skowron",
+            "admissionHour": "08:30",
+            "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438"
+          },
+          {
+            "id": "80fcf5b0-9f9a-47b1-aa37-3d0f00ced5ac",
+            "patientName": "Daniela Przybylak",
+            "admissionHour": "09:00",
+            "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939"
+          },
+          {
+            "id": "344ed709-c0fe-4b91-a47d-ffb77aed482b",
+            "patientName": "Edyta Połuch",
+            "admissionHour": "10:00",
+            "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939"
+          },
+          {
+            "id": "6c055cb0-c531-446b-b3d7-6a6ed2019b17",
+            "patientName": "Alicja Krawczyk",
+            "admissionHour": "11:00",
+            "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438"
+          },
+          {
+            "id": "381bc07f-bf05-44e0-bc66-9928d976f58f",
+            "patientName": "Teodora Mikulska",
+            "admissionHour": "13:00",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
+          },
+          {
+            "id": "5a2795d4-e22b-43df-bbdf-69b0084dd462",
+            "patientName": "Alicja Szukała",
+            "admissionHour": "14:00",
+            "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
+          }
+        ]
+      },
+      {
+        "id": "e441d41e-4c77-4c08-ab8a-46b6d559fe16",
+        "doctorId": "",
+        "admissionDate": "",
+        "patients": [
+          {
+            "id": "08cac2c3-2a4d-4b0a-8ebd-cf121f3e8b1d",
+            "patientName": "",
+            "admissionHour": "",
+            "physiotherapistId": ""
+          }
+        ]
+      }
+    ],
+    "2026-09": []
+  },
+  "vacations": {
+    "2026": [
+      {
+        "date": "2026-07-06",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-07-07",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-07-08",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-07-09",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-07-10",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-07-13",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-07-14",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-07-15",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-07-16",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-07-17",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-07-24",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-08-03",
+        "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-08-04",
+        "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-08-05",
+        "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-08-06",
+        "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-08-07",
+        "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-08-10",
+        "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-08-11",
+        "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-08-12",
+        "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-08-13",
+        "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-08-17",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-08-18",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-08-19",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-08-20",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-08-21",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-08-27",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-09-01",
+        "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-09-02",
+        "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-09-11",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-09-14",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-09-15",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-09-16",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-09-17",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-09-18",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-09-21",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-09-22",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-09-23",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-09-24",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-09-25",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-09-25",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-09-28",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-09-28",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-09-29",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-09-30",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-10-01",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-10-02",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-10-07",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+        "certainty": "uncertain"
+      },
+      {
+        "date": "2026-10-08",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+        "certainty": "uncertain"
+      },
+      {
+        "date": "2026-10-09",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+        "certainty": "uncertain"
+      },
+      {
+        "date": "2026-10-12",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+        "certainty": "uncertain"
+      },
+      {
+        "date": "2026-10-13",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+        "certainty": "uncertain"
+      },
+      {
+        "date": "2026-10-14",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+        "certainty": "uncertain"
+      },
+      {
+        "date": "2026-10-15",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+        "certainty": "uncertain"
+      },
+      {
+        "date": "2026-10-16",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+        "certainty": "uncertain"
+      },
+      {
+        "date": "2026-10-19",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+        "certainty": "uncertain"
+      },
+      {
+        "date": "2026-10-20",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+        "certainty": "uncertain"
+      },
+      {
+        "date": "2026-10-21",
+        "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+        "certainty": "uncertain"
+      },
+      {
+        "date": "2026-10-22",
+        "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+        "certainty": "uncertain"
+      },
+      {
+        "date": "2026-10-23",
+        "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+        "certainty": "uncertain"
+      },
+      {
+        "date": "2026-10-26",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-10-27",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-10-28",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-10-29",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-10-30",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-11-09",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-11-10",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-11-12",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-11-13",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-11-16",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-11-17",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-11-18",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-11-19",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-11-20",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-11-23",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-11-24",
+        "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-12-03",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-12-04",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-12-07",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+        "certainty": "uncertain"
+      },
+      {
+        "date": "2026-12-08",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+        "certainty": "uncertain"
+      },
+      {
+        "date": "2026-12-09",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+        "certainty": "uncertain"
+      },
+      {
+        "date": "2026-12-10",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+        "certainty": "uncertain"
+      },
+      {
+        "date": "2026-12-11",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+        "certainty": "uncertain"
+      },
+      {
+        "date": "2026-12-14",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-12-15",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-12-16",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-12-17",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-12-18",
+        "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-12-21",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-12-22",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-12-23",
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-12-28",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-12-29",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-12-30",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+        "certainty": "certain"
+      },
+      {
+        "date": "2026-12-31",
+        "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+        "certainty": "certain"
+      }
+    ]
+  },
+  "archive": [],
+  "announcements": [
+    {
+      "id": "32a9ce82-8ef2-434f-ae6a-3f052aee669d",
+      "text": "Pacjent dyskwalifikowany: Jadwiga Linkiewicz",
+      "createdAt": "2026-07-21T13:50:18.778Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "70419447-d8ee-45a2-85aa-7f2d3bd569dc",
+        "slotId": "c22d48b2-5910-4f09-9213-be3e4bc83db0"
+      },
+      "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438"
+    },
+    {
+      "id": "0d160b95-96f6-45f2-a819-cb38cb43d4e5",
+      "text": "Zmieniono pacjenta: Monika Bojdo — fizjoterapeuta: Irek",
+      "createdAt": "2026-07-21T13:54:26.912Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "e29212d1-183e-4ca3-bb21-9529bdef37d6",
+        "slotId": "2ba46130-6097-4b87-ab6f-7f44244d7c46"
+      },
+      "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
+    },
+    {
+      "id": "f3aa7392-02cf-4f4d-b4bd-f10643395bb5",
+      "text": "Zmieniono pacjenta: Monika Bojdo — fizjoterapeuta: Klaudia",
+      "createdAt": "2026-07-21T17:51:34.351Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "e29212d1-183e-4ca3-bb21-9529bdef37d6",
+        "slotId": "2ba46130-6097-4b87-ab6f-7f44244d7c46"
+      },
+      "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939"
+    },
+    {
+      "id": "f31722a2-9691-4d36-a552-48d3255aa1b4",
+      "text": "Usunięto przyjęcie (Wrzesień 2026)",
+      "createdAt": "2026-07-21T14:53:56.023Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-09",
+        "sessionId": "1f90376c-420a-49d2-82f5-eb1f0f6d7adf"
+      },
+      "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
+    },
+    {
+      "id": "3038cb5d-8186-4f78-a9a4-14caaa507afd",
+      "text": "Pacjent przyjęty: cdfsdfdsdc",
+      "createdAt": "2026-07-21T14:53:03.737Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-09",
+        "sessionId": "1f90376c-420a-49d2-82f5-eb1f0f6d7adf",
+        "slotId": "a1e4d403-ea69-4ce5-9ffc-9f2b39d411be"
+      },
+      "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
+    },
+    {
+      "id": "e80c5403-3e97-4c8b-a451-50ba125caaf2",
+      "text": "Zmieniono pacjenta: Alicja Szukała — fizjoterapeuta: Irek",
+      "createdAt": "2026-07-21T13:57:51.483Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "46ddbb16-4e90-4c01-9574-81ed69c699b2",
+        "slotId": "5a2795d4-e22b-43df-bbdf-69b0084dd462"
+      },
+      "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
+    },
+    {
+      "id": "8e7b7aff-974d-46d6-89e1-e80f5d3a0d1c",
+      "text": "Zmieniono pacjenta: Teodora Mikulska — fizjoterapeuta: Dorota",
+      "createdAt": "2026-07-21T13:57:30.189Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "46ddbb16-4e90-4c01-9574-81ed69c699b2",
+        "slotId": "381bc07f-bf05-44e0-bc66-9928d976f58f"
+      },
+      "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
+    },
+    {
+      "id": "82b5dc8a-1b2d-4209-bde0-4d4177810861",
+      "text": "Zmieniono pacjenta: Alicja Krawczyk — fizjoterapeuta: Edyta",
+      "createdAt": "2026-07-21T13:57:17.069Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "46ddbb16-4e90-4c01-9574-81ed69c699b2",
+        "slotId": "6c055cb0-c531-446b-b3d7-6a6ed2019b17"
+      },
+      "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438"
+    },
+    {
+      "id": "6b29348b-5cb4-46cd-a2a8-8308a4ced979",
+      "text": "Zmieniono pacjenta: Edyta Połuch — fizjoterapeuta: Klaudia",
+      "createdAt": "2026-07-21T13:56:58.314Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "46ddbb16-4e90-4c01-9574-81ed69c699b2",
+        "slotId": "344ed709-c0fe-4b91-a47d-ffb77aed482b"
+      },
+      "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939"
+    },
+    {
+      "id": "ab909c88-8ae1-4177-aa82-4e7cb3d9a130",
+      "text": "Zmieniono pacjenta: Daniela Przybylak — fizjoterapeuta: Klaudia",
+      "createdAt": "2026-07-21T13:56:45.858Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "46ddbb16-4e90-4c01-9574-81ed69c699b2",
+        "slotId": "80fcf5b0-9f9a-47b1-aa37-3d0f00ced5ac"
+      },
+      "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939"
+    },
+    {
+      "id": "f0f36ea7-66fb-408d-b6c3-1c3458874571",
+      "text": "Zmieniono pacjenta: Iwona Skowron — fizjoterapeuta: Edyta",
+      "createdAt": "2026-07-21T13:56:36.522Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "46ddbb16-4e90-4c01-9574-81ed69c699b2",
+        "slotId": "4df6546b-eb0e-424f-a589-02ccca515912"
+      },
+      "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438"
+    },
+    {
+      "id": "b86db810-e82e-4e05-b473-c95ae82984e8",
+      "text": "Zmieniono pacjenta: Bożena Łajszczak — fizjoterapeuta: Dorota",
+      "createdAt": "2026-07-21T13:56:06.374Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "053166aa-aa6f-4bad-bf10-368c17223523",
+        "slotId": "b72059fe-0891-433a-b8da-32a77354bb27"
+      },
+      "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
+    },
+    {
+      "id": "39682987-947e-48c7-95d7-8f4a26e397d2",
+      "text": "Zmieniono pacjenta — fizjoterapeuta: Irek",
+      "createdAt": "2026-07-21T13:55:49.187Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "053166aa-aa6f-4bad-bf10-368c17223523",
+        "slotId": "8b48eaf5-6f3f-4eb2-9638-4145e70d48fe"
+      },
+      "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
+    },
+    {
+      "id": "40fae22b-1afa-44ca-9983-923dd96455b3",
+      "text": "Zmieniono pacjenta: Oliwier Kaźmierczak ZSN — fizjoterapeuta: Dorota",
+      "createdAt": "2026-07-21T13:55:43.584Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "053166aa-aa6f-4bad-bf10-368c17223523",
+        "slotId": "0a2a2206-610f-4b19-8458-7db6492d4d9f"
+      },
+      "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
+    },
+    {
+      "id": "6d28736c-22b6-45bf-bee5-c1f3827cf2f2",
+      "text": "Zmieniono pacjenta — fizjoterapeuta: Klaudia",
+      "createdAt": "2026-07-21T13:55:22.306Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "053166aa-aa6f-4bad-bf10-368c17223523",
+        "slotId": "4176d815-462b-4e0a-90f1-aa0632943e39"
+      },
+      "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939"
+    },
+    {
+      "id": "ebeabb5b-f33f-47e1-8de1-9488dccc525c",
+      "text": "Zmieniono pacjenta: Teresa Moraczewska — fizjoterapeuta: Edyta",
+      "createdAt": "2026-07-21T13:55:13.762Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "053166aa-aa6f-4bad-bf10-368c17223523",
+        "slotId": "e5e5b91c-04a0-4889-8f2b-b12f29ed5db0"
+      },
+      "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438"
+    },
+    {
+      "id": "1f39d9de-8b20-428a-9487-d5ec5557d3c0",
+      "text": "Zmieniono pacjenta: Dorota Rozwens — fizjoterapeuta: Monika",
+      "createdAt": "2026-07-21T13:55:01.917Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "053166aa-aa6f-4bad-bf10-368c17223523",
+        "slotId": "3f1257b4-0452-4360-a582-92f735e2851a"
+      },
+      "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+    },
+    {
+      "id": "488c3904-389a-4df6-813c-efb83a148277",
+      "text": "Zmieniono pacjenta: Barbara Nowak — fizjoterapeuta: Monika",
+      "createdAt": "2026-07-21T13:54:05.393Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "e29212d1-183e-4ca3-bb21-9529bdef37d6",
+        "slotId": "426dfdc9-3ee0-436d-aa65-13c6a02bebb3"
+      },
+      "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+    },
+    {
+      "id": "740c26db-d18b-4b26-9ea8-6a228204986a",
+      "text": "Zmieniono pacjenta: Krystyna Grzelak — fizjoterapeuta: Edyta",
+      "createdAt": "2026-07-21T13:53:52.008Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "e29212d1-183e-4ca3-bb21-9529bdef37d6",
+        "slotId": "a3b548a0-2910-4361-a42d-1e3799b4a848"
+      },
+      "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438"
+    },
+    {
+      "id": "aa9b4c50-5e1f-43a1-82fc-988b9d9f2f5a",
+      "text": "Dodano pacjenta: Krystyna — fizjoterapeuta: Monika; godzina: 10:30",
+      "createdAt": "2026-07-21T13:48:10.824Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "e29212d1-183e-4ca3-bb21-9529bdef37d6",
+        "slotId": "a3b548a0-2910-4361-a42d-1e3799b4a848"
+      },
+      "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+    },
+    {
+      "id": "62b8ec91-fedf-46dc-bf0e-cb8fe7845c0a",
+      "text": "Zmieniono pacjenta: Bożena Michalak — fizjoterapeuta: Edyta",
+      "createdAt": "2026-07-21T13:53:34.722Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "e29212d1-183e-4ca3-bb21-9529bdef37d6",
+        "slotId": "951c7974-37bc-4161-ab74-b6925e52e62b"
+      },
+      "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438"
+    },
+    {
+      "id": "3b88acb5-4c84-4759-b68e-e710563fe7fb",
+      "text": "Dodano pacjenta: Bo — fizjoterapeuta: Monika; godzina: 09:30",
+      "createdAt": "2026-07-21T13:48:09.054Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "e29212d1-183e-4ca3-bb21-9529bdef37d6",
+        "slotId": "951c7974-37bc-4161-ab74-b6925e52e62b"
+      },
+      "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+    },
+    {
+      "id": "2bee8e2d-f47e-4bc0-be12-f26123095b0a",
+      "text": "Zmieniono pacjenta: Teresa Dymkowska 7:00 — fizjoterapeuta: Klaudia",
+      "createdAt": "2026-07-21T13:53:22.456Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "e29212d1-183e-4ca3-bb21-9529bdef37d6",
+        "slotId": "12951ea0-8457-4b77-a3db-822e8910c08a"
+      },
+      "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939"
+    },
+    {
+      "id": "2cf6ec9b-2bad-4239-86b8-3a17f33d194a",
+      "text": "Dodano pacjenta: T — fizjoterapeuta: Monika; godzina: 08:30",
+      "createdAt": "2026-07-21T13:47:47.021Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "e29212d1-183e-4ca3-bb21-9529bdef37d6",
+        "slotId": "12951ea0-8457-4b77-a3db-822e8910c08a"
+      },
+      "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+    },
+    {
+      "id": "f5c46c50-552a-4efc-b7ff-f0d10e31d890",
+      "text": "Zmieniono pacjenta: Marta Kowalczyk — fizjoterapeuta: Monika",
+      "createdAt": "2026-07-21T11:05:52.631Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "bf775c2c-7cb3-4f9e-9c1a-a729e90a2bb0",
+        "slotId": "726f10d5-60be-4c2e-9118-3a05a9fef16c"
+      },
+      "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+    },
+    {
+      "id": "83d0cee1-1589-4455-9f90-571c699531e4",
+      "text": "Dodano pacjenta: Marta — fizjoterapeuta: Dorota; godzina: 13:00",
+      "createdAt": "2026-07-21T11:11:14.721Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "bf775c2c-7cb3-4f9e-9c1a-a729e90a2bb0",
+        "slotId": "726f10d5-60be-4c2e-9118-3a05a9fef16c"
+      },
+      "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
+    },
+    {
+      "id": "59d454ea-21d7-443c-a70f-2f357c51aee9",
+      "text": "Zmieniono pacjenta: Aneta Chmielewska — fizjoterapeuta: Dorota",
+      "createdAt": "2026-07-21T11:05:51.079Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "bf775c2c-7cb3-4f9e-9c1a-a729e90a2bb0",
+        "slotId": "9ae6db3f-4ca9-41e9-8dd2-fe02b1df6f83"
+      },
+      "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
+    },
+    {
+      "id": "6e89cdee-55bb-4b18-aacd-608940aa9fce",
+      "text": "Dodano pacjenta: Aneta",
+      "createdAt": "2026-07-21T11:11:13.529Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "bf775c2c-7cb3-4f9e-9c1a-a729e90a2bb0",
+        "slotId": "9ae6db3f-4ca9-41e9-8dd2-fe02b1df6f83"
+      },
+      "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939"
+    },
+    {
+      "id": "f41f08a8-19cf-49dc-ba54-89588602f590",
+      "text": "Dodano pacjenta: Lucyna",
+      "createdAt": "2026-07-21T12:14:26.768Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "bf775c2c-7cb3-4f9e-9c1a-a729e90a2bb0",
+        "slotId": "e33defd3-e70e-4848-9c9a-7372028f2414"
+      },
+      "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+    },
+    {
+      "id": "2a4c198c-1ca9-4ece-9266-f351a1779c6a",
+      "text": "Zmieniono pacjenta: Antoni Kubczak​​ — fizjoterapeuta: Irek",
+      "createdAt": "2026-07-21T13:52:19.746Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "bf775c2c-7cb3-4f9e-9c1a-a729e90a2bb0",
+        "slotId": "7899a2e6-627a-421a-83e0-1d4f53830e01"
+      },
+      "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
+    },
+    {
+      "id": "09a09200-94f3-4e5f-a18d-97a0a1ae507d",
+      "text": "Zmieniono pacjenta: Szczepan Witczak — fizjoterapeuta: Klaudia",
+      "createdAt": "2026-07-21T13:52:03.051Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "cca2cbda-a457-438d-8188-132dbebb7638",
+        "slotId": "269c19e6-792e-42c0-8657-f3a9f8fb17de"
+      },
+      "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939"
+    },
+    {
+      "id": "8c32dd91-1eb8-4ca9-ab50-beb50ec24ae5",
+      "text": "Dodano pacjenta: mn bnmbv nb bn — fizjoterapeuta: Irek; godzina: 14:00",
+      "createdAt": "2026-07-21T11:11:10.431Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "cca2cbda-a457-438d-8188-132dbebb7638",
+        "slotId": "269c19e6-792e-42c0-8657-f3a9f8fb17de"
+      },
+      "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
+    },
+    {
+      "id": "1653753e-9cf1-4965-9513-9223111edf0f",
+      "text": "Zmieniono pacjenta: Małgorzata Tyburska — fizjoterapeuta: Monika",
+      "createdAt": "2026-07-21T13:51:44.452Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "cca2cbda-a457-438d-8188-132dbebb7638",
+        "slotId": "eba45533-b78d-465f-9c61-645932483cd7"
+      },
+      "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+    },
+    {
+      "id": "d61457ff-ef78-4f09-948e-550e8974b85f",
+      "text": "Dodano pacjenta: Ma — fizjoterapeuta: Edyta; godzina: 13:30",
+      "createdAt": "2026-07-21T11:11:08.846Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "cca2cbda-a457-438d-8188-132dbebb7638",
+        "slotId": "eba45533-b78d-465f-9c61-645932483cd7"
+      },
+      "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438"
+    },
+    {
+      "id": "a8eedd61-7a3d-4001-b174-730357e16f0a",
+      "text": "Zmieniono pacjenta: Czesław Milczarek — godzina: 11:30",
+      "createdAt": "2026-07-21T13:51:16.287Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "cca2cbda-a457-438d-8188-132dbebb7638",
+        "slotId": "6d53dfd4-6cb0-4f56-8602-1feca17acd77"
+      },
+      "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438"
+    },
+    {
+      "id": "50e91061-ec37-4d90-b6e4-0978f4fa0fa9",
+      "text": "Zmieniono pacjenta: Jolanta Chajdys — godzina: 11:00",
+      "createdAt": "2026-07-21T13:51:09.490Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "cca2cbda-a457-438d-8188-132dbebb7638",
+        "slotId": "a12603ca-9d64-4428-b0e0-9b02b695b448"
+      },
+      "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939"
+    },
+    {
+      "id": "0909f951-0c7f-41ad-b2f2-e37d7e023d57",
+      "text": "Zmieniono pacjenta — fizjoterapeuta: Klaudia",
+      "createdAt": "2026-07-21T13:48:06.347Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "e29212d1-183e-4ca3-bb21-9529bdef37d6",
+        "slotId": "951c7974-37bc-4161-ab74-b6925e52e62b"
+      },
+      "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939"
+    },
+    {
+      "id": "880d9230-851e-4c5b-9d23-9e9a508b1a68",
+      "text": "Pacjent dyskwalifikowany: Jadwiga Linkiewicz",
+      "createdAt": "2026-07-21T12:06:14.756Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "70419447-d8ee-45a2-85aa-7f2d3bd569dc",
+        "slotId": "c22d48b2-5910-4f09-9213-be3e4bc83db0"
+      },
+      "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+    },
+    {
+      "id": "44ea3834-7a9b-4df0-aef4-310a1356dc80",
+      "text": "Zmieniono lekarza prowadzącego: Dr Justyna Sosnowska-Gołębiowska",
+      "createdAt": "2026-07-21T12:08:27.661Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "70419447-d8ee-45a2-85aa-7f2d3bd569dc"
+      },
+      "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+    },
+    {
+      "id": "0086a480-a90b-48f2-8cb4-e8e67d9f931b",
+      "text": "Zmieniono pacjenta: vcxvxcv — fizjoterapeuta: Dorota",
+      "createdAt": "2026-07-21T11:11:12.472Z",
+      "source": "admission",
+      "admissionLink": {
+        "monthKey": "2026-08",
+        "sessionId": "bf775c2c-7cb3-4f9e-9c1a-a729e90a2bb0",
+        "slotId": "e33defd3-e70e-4848-9c9a-7372028f2414"
+      },
+      "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
+    }
+  ],
+  "announcementsSeenAt": "2026-07-21T17:55:11.703Z",
+  "navOrder": [
+    "/pacjenci",
+    "/masaze",
+    "/dyzury",
+    "/przyjecia",
+    "/urlopy",
+    "/archiwum",
+    "/fizjoterapeuci"
+  ],
+  "navLabels": {},
+  "doctors": [
+    {
+      "id": "6f314199-bc6b-4d5f-afb4-40292678ad22",
+      "name": "Lek. Izabela Drab",
+      "themeId": "feb"
+    },
+    {
+      "id": "9d654d04-08a0-4ad0-97a2-21f8a7f229c7",
+      "name": "Dr Justyna Sosnowska-Gołębiowska",
+      "themeId": "aug"
+    },
+    {
+      "id": "d9782552-ca69-4774-a3a1-3f862f9e0cfb",
+      "name": "Dr Eugeniusz Rudczyk",
+      "themeId": "may"
+    }
+  ],
+  "admissionTableThemes": {
+    "2026-07": "feb"
+  },
+  "admissionArchive": [],
+  "clinicClosedDays": [],
+  "vacationArchive": [],
+  "dutyArchive": [],
+  "admissionNotificationsSeenAt": {
+    "ed605276-3ef0-4e67-9dc4-6df7027eddc7": "2026-07-21T13:55:01.917Z",
+    "ba71be11-70ae-4888-a69b-21cc2a69110c": "2026-07-21T13:57:30.189Z",
+    "f726b015-678a-4f49-8b9e-ceb35599ee4b": "2026-07-21T13:57:51.483Z",
+    "b70a7921-b39f-465d-a963-9d159ddd2438": "2026-07-21T13:57:17.069Z",
+    "a931d2b8-aa19-49e7-9d72-461bba23f939": "2026-07-21T13:56:58.314Z"
+  },
+  "admissionNotificationsReadIds": {
+    "ed605276-3ef0-4e67-9dc4-6df7027eddc7": [
+      "1f39d9de-8b20-428a-9487-d5ec5557d3c0",
+      "488c3904-389a-4df6-813c-efb83a148277",
+      "1653753e-9cf1-4965-9513-9223111edf0f",
+      "aa9b4c50-5e1f-43a1-82fc-988b9d9f2f5a",
+      "3b88acb5-4c84-4759-b68e-e710563fe7fb",
+      "2cf6ec9b-2bad-4239-86b8-3a17f33d194a",
+      "f41f08a8-19cf-49dc-ba54-89588602f590",
+      "44ea3834-7a9b-4df0-aef4-310a1356dc80",
+      "880d9230-851e-4c5b-9d23-9e9a508b1a68",
+      "f5c46c50-552a-4efc-b7ff-f0d10e31d890"
+    ],
+    "a931d2b8-aa19-49e7-9d72-461bba23f939": [
+      "6b29348b-5cb4-46cd-a2a8-8308a4ced979",
+      "ab909c88-8ae1-4177-aa82-4e7cb3d9a130",
+      "6d28736c-22b6-45bf-bee5-c1f3827cf2f2",
+      "2bee8e2d-f47e-4bc0-be12-f26123095b0a",
+      "09a09200-94f3-4e5f-a18d-97a0a1ae507d",
+      "50e91061-ec37-4d90-b6e4-0978f4fa0fa9",
+      "0909f951-0c7f-41ad-b2f2-e37d7e023d57",
+      "6e89cdee-55bb-4b18-aacd-608940aa9fce"
+    ],
+    "b70a7921-b39f-465d-a963-9d159ddd2438": [
+      "82b5dc8a-1b2d-4209-bde0-4d4177810861",
+      "f0f36ea7-66fb-408d-b6c3-1c3458874571",
+      "ebeabb5b-f33f-47e1-8de1-9488dccc525c",
+      "740c26db-d18b-4b26-9ea8-6a228204986a",
+      "62b8ec91-fedf-46dc-bf0e-cb8fe7845c0a",
+      "a8eedd61-7a3d-4001-b174-730357e16f0a",
+      "32a9ce82-8ef2-434f-ae6a-3f052aee669d",
+      "d61457ff-ef78-4f09-948e-550e8974b85f"
+    ],
+    "ba71be11-70ae-4888-a69b-21cc2a69110c": [
+      "8e7b7aff-974d-46d6-89e1-e80f5d3a0d1c",
+      "b86db810-e82e-4e05-b473-c95ae82984e8",
+      "40fae22b-1afa-44ca-9983-923dd96455b3",
+      "83d0cee1-1589-4455-9f90-571c699531e4",
+      "0086a480-a90b-48f2-8cb4-e8e67d9f931b",
+      "59d454ea-21d7-443c-a70f-2f357c51aee9"
+    ],
+    "f726b015-678a-4f49-8b9e-ceb35599ee4b": [
+      "e80c5403-3e97-4c8b-a451-50ba125caaf2",
+      "39682987-947e-48c7-95d7-8f4a26e397d2",
+      "0d160b95-96f6-45f2-a819-cb38cb43d4e5",
+      "2a4c198c-1ca9-4ece-9266-f351a1779c6a",
+      "8c32dd91-1eb8-4ca9-ab50-beb50ec24ae5",
+      "3038cb5d-8186-4f78-a9a4-14caaa507afd",
+      "f31722a2-9691-4d36-a552-48d3255aa1b4"
+    ]
+  }
+}
