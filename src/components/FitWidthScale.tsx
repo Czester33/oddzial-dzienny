@@ -9,7 +9,7 @@ import {
 
 /**
  * Scales children down so their intrinsic width fits the container.
- * Keeps content horizontally centered (desktop + phone).
+ * On desktop (scale 1) content stays centered; on phones it shrinks to fit.
  */
 export function FitWidthScale({
   children,
@@ -62,7 +62,7 @@ export function FitWidthScale({
     >
       <div
         ref={innerRef}
-        className="w-max max-w-none shrink-0"
+        className="w-max max-w-none"
         style={{
           transform: `scale(${scale})`,
           transformOrigin: "top center",
