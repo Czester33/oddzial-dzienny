@@ -5,10 +5,11 @@ import { TodayCalendar } from "@/components/TodayCalendar";
 import { formatDatePL, isoFromParts } from "@/lib/date-utils";
 
 function getTopBelowNav(): number {
-  if (typeof document === "undefined") return 112;
-  const header = document.querySelector("header.sticky");
-  if (!header) return 112;
-  return Math.ceil(header.getBoundingClientRect().bottom) + 8;
+  if (typeof document === "undefined") return 16;
+  const header = document.querySelector("header.app-header");
+  if (!header) return 16;
+  const bottom = Math.ceil(header.getBoundingClientRect().bottom) + 8;
+  return Math.max(16, bottom);
 }
 
 function loadMinimized(storageKey: string): boolean {
@@ -42,14 +43,16 @@ export function FloatingTodayCalendar({
     const updateTop = () => setTopOffset(getTopBelowNav());
     updateTop();
 
-    const header = document.querySelector("header.sticky");
+    const header = document.querySelector("header.app-header");
     const observer = header ? new ResizeObserver(updateTop) : null;
     if (header) observer?.observe(header);
 
     window.addEventListener("resize", updateTop);
+    window.addEventListener("scroll", updateTop, { passive: true });
     return () => {
       observer?.disconnect();
       window.removeEventListener("resize", updateTop);
+      window.removeEventListener("scroll", updateTop);
     };
   }, [minimized]);
 

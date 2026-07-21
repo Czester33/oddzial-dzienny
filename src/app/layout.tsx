@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Geist } from "next/font/google";
 import "./globals.css";
@@ -20,6 +20,12 @@ export const metadata: Metadata = {
     "Zarządzanie pacjentami, dyżurami i urlopami oddziału dziennego. Aplikacja w fazie testów — nie wszystkie funkcje mogą działać poprawnie.",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -35,7 +41,7 @@ export default function RootLayout({
           <DataProvider>
             <Navigation />
             <TextFieldArrowNavigation />
-            <main className="mx-auto max-w-[1600px] px-4 py-6">{children}</main>
+            <main className="mx-auto max-w-[1600px] px-3 py-4 sm:px-4 sm:py-6">{children}</main>
           </DataProvider>
         </ThemeProvider>
       </body>

@@ -20,7 +20,7 @@ function ThemeToggle() {
     <button
       type="button"
       onClick={toggleTheme}
-      className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-[15px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+      className="rounded-md border border-slate-300 bg-white px-3 py-2 text-[15px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
       title={switchTo}
       aria-label={switchTo}
       suppressHydrationWarning
@@ -92,7 +92,7 @@ function NavTab({
         e.preventDefault();
         onStartEdit();
       }}
-      className={`block rounded-md px-3 py-2 text-[19px] font-medium transition-colors ${
+      className={`block whitespace-nowrap rounded-md px-3 py-2 text-[19px] font-medium transition-colors ${
         active
           ? "bg-blue-600 text-white"
           : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
@@ -165,23 +165,23 @@ export function Navigation() {
   }, [canUndo, saving, undo]);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-      <div className="mx-auto max-w-[1600px] px-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 py-3">
-          <div>
+    <header className="app-header border-b border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="mx-auto max-w-[1600px] px-3 sm:px-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 py-2.5 sm:gap-3 sm:py-3">
+          <div className="min-w-0">
             <h1 className="text-[19px] font-bold text-slate-800 dark:text-slate-100">
               Oddział dzienny (wersja beta)
             </h1>
             <p className="text-[19px] text-slate-500 dark:text-slate-400">Zarządzanie pacjentami i grafikiem</p>
             <p className="text-[15px] text-amber-700 dark:text-amber-400">{APP_BETA_NOTICE}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {saving && <span className="text-[19px] text-blue-600 dark:text-blue-400">Zapisywanie...</span>}
             <button
               type="button"
               onClick={() => void undo()}
               disabled={!canUndo || saving}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-[15px] font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-[15px] font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
               title="Cofnij ostatnią zmianę (Ctrl+Z)"
             >
               Cofnij
@@ -197,7 +197,7 @@ export function Navigation() {
             )}
           </div>
         </div>
-        <nav className="flex flex-wrap gap-1 pb-2">
+        <nav className="-mx-3 flex gap-1 overflow-x-auto px-3 pb-2 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
           {navItems.map((item, index) => {
             const active = pathname.startsWith(item.href);
             const isDragging = draggingIndex === index;
@@ -242,7 +242,7 @@ export function Navigation() {
                   setDragOverIndex(null);
                 }}
                 title="Przeciągnij, aby zmienić kolejność. Kliknij dwukrotnie, aby zmienić nazwę."
-                className={`rounded-md ${isEditing ? "" : "cursor-grab active:cursor-grabbing"} ${
+                className={`shrink-0 rounded-md ${isEditing ? "" : "cursor-grab active:cursor-grabbing"} ${
                   isDragging ? "opacity-50" : ""
                 } ${isDropTarget ? "ring-2 ring-blue-400 ring-offset-1" : ""}`}
               >

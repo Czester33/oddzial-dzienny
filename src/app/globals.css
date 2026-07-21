@@ -36,8 +36,15 @@
 
 html {
   font-size: 19px;
-  /* Match Chrome page zoom at 67% */
+  /* Match Chrome page zoom at 67% on desktop */
   zoom: 0.67;
+}
+
+/* Full scale on phones — denser desktop zoom is hard to use on small screens */
+@media (max-width: 768px) {
+  html {
+    zoom: 1;
+  }
 }
 
 body {
@@ -45,10 +52,12 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
   font-size: 19px;
+  overflow-x: clip;
   /* Hide text caret / selection everywhere by default */
   caret-color: transparent;
   user-select: none;
   -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 input[type="date"] {
