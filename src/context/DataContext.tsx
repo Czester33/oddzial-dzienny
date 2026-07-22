@@ -10,8 +10,27 @@ import {
   type ReactNode,
 } from "react";
 import type { AppData } from "@/lib/types";
+import { deepEqual, mergeAppData } from "@/lib/app-data-merge";
 
 const MAX_UNDO_HISTORY = 50;
+const REMOTE_POLL_MS = 5_000;
+
+type UndoEntry = {
+  /** Snapshot before this client's edit. */
+  before: AppData;
+  /** Snapshot after this client's edit (what was written). */
+  after: AppData;
+};
+
+type ApiDataResponse = {
+  data: AppData;
+  updatedAt: string;
+};
+
+type PersistResult =
+  | { ok: true; updatedAt: string; data: AppData }
+  | { ok: false; conflict?: false }
+  | { ok: false; conflict: true; data: AppData; updatedAt: string };
 
 interface DataContextValue {
   data: AppData | null;
@@ -26,21 +45,22 @@ interface DataContextValue {
 
 const DataContext = createContext<DataContextValue | null>(null);
 
-function dataSnapshotEqual(a: AppData, b: AppData): boolean {
-  return JSON.stringify(a) === JSON.stringify(b);
-}
-
 export function DataProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<AppData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [canUndo, setCanUndo] = useState(false);
+
   const dataRef = useRef<AppData | null>(null);
-  const historyRef = useRef<AppData[]>([]);
+  const historyRef = useRef<UndoEntry[]>([]);
   const pendingSaveRef = useRef<AppData | null>(null);
   const saveInFlightRef = useRef(false);
   const undoBaselineRef = useRef<AppData | null>(null);
+  /** Last known server revision this client synced from / wrote. */
+  const serverUpdatedAtRef = useRef<string>("1970-01-01T00:00:00.000Z");
+  /** AppData matching serverUpdatedAtRef (common ancestor for merges). */
+  const syncedDataRef = useRef<AppData | null>(null);
 
   useEffect(() => {
     dataRef.current = data;
@@ -51,52 +71,136 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setCanUndo(false);
   }, []);
 
-  const refresh = useCallback(async (options?: { silent?: boolean }) => {
-    if (!options?.silent) {
-      setLoading(true);
-    }
-    setError(null);
-    try {
-      const res = await fetch("/api/data");
-      if (!res.ok) throw new Error("Błąd wczytywania");
-      const json = (await res.json()) as AppData;
-      // Do not clobber in-flight local edits with a silent poll.
-      if (options?.silent && (saveInFlightRef.current || pendingSaveRef.current)) {
-        return;
-      }
-      setData(json);
+  const adoptServerState = useCallback((next: AppData, updatedAt: string) => {
+    syncedDataRef.current = next;
+    serverUpdatedAtRef.current = updatedAt;
+    setData(next);
+    dataRef.current = next;
+  }, []);
+
+  const refresh = useCallback(
+    async (options?: { silent?: boolean }) => {
       if (!options?.silent) {
-        clearHistory();
+        setLoading(true);
       }
-    } catch {
-      if (!options?.silent) {
-        setError("Nie udało się wczytać danych");
+      setError(null);
+      try {
+        const res = await fetch("/api/data");
+        if (!res.ok) throw new Error("Błąd wczytywania");
+        const json = (await res.json()) as ApiDataResponse | AppData;
+
+        // Support legacy raw AppData responses during rollout.
+        const payload: ApiDataResponse =
+          json && typeof json === "object" && "data" in json && "updatedAt" in json
+            ? (json as ApiDataResponse)
+            : { data: json as AppData, updatedAt: new Date().toISOString() };
+
+        if (options?.silent && (saveInFlightRef.current || pendingSaveRef.current)) {
+          return;
+        }
+
+        const remoteChanged = payload.updatedAt !== serverUpdatedAtRef.current;
+        if (options?.silent && !remoteChanged) {
+          return;
+        }
+
+        adoptServerState(payload.data, payload.updatedAt);
+        if (!options?.silent) {
+          clearHistory();
+        }
+      } catch {
+        if (!options?.silent) {
+          setError("Nie udało się wczytać danych");
+        }
+      } finally {
+        if (!options?.silent) {
+          setLoading(false);
+        }
       }
-    } finally {
-      if (!options?.silent) {
-        setLoading(false);
-      }
-    }
-  }, [clearHistory]);
+    },
+    [adoptServerState, clearHistory]
+  );
 
   useEffect(() => {
-    refresh();
+    void refresh();
   }, [refresh]);
 
-  const persist = useCallback(async (newData: AppData): Promise<boolean> => {
+  // Keep multiple open clients in sync without relying only on announcements polling.
+  useEffect(() => {
+    const tick = () => {
+      if (document.visibilityState === "hidden") return;
+      if (saveInFlightRef.current || pendingSaveRef.current) return;
+      void refresh({ silent: true });
+    };
+    const interval = setInterval(tick, REMOTE_POLL_MS);
+    document.addEventListener("visibilitychange", tick);
+    window.addEventListener("focus", tick);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", tick);
+      window.removeEventListener("focus", tick);
+    };
+  }, [refresh]);
+
+  const persist = useCallback(async (newData: AppData): Promise<PersistResult> => {
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch("/api/data", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newData),
-      });
-      if (!res.ok) throw new Error("Błąd zapisu");
-      return true;
+      let attemptData = newData;
+      let baseUpdatedAt = serverUpdatedAtRef.current;
+      let baseData = syncedDataRef.current;
+
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const res = await fetch("/api/data", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            data: attemptData,
+            baseUpdatedAt,
+          }),
+        });
+
+        if (res.status === 409) {
+          const conflict = (await res.json()) as {
+            data: AppData;
+            updatedAt: string;
+          };
+          if (!baseData) {
+            // No ancestor — adopt remote and ask caller to retry later.
+            syncedDataRef.current = conflict.data;
+            serverUpdatedAtRef.current = conflict.updatedAt;
+            return {
+              ok: false,
+              conflict: true,
+              data: conflict.data,
+              updatedAt: conflict.updatedAt,
+            };
+          }
+
+          const merged = mergeAppData(baseData, attemptData, conflict.data);
+          attemptData = merged;
+          baseUpdatedAt = conflict.updatedAt;
+          baseData = conflict.data;
+          syncedDataRef.current = conflict.data;
+          serverUpdatedAtRef.current = conflict.updatedAt;
+          continue;
+        }
+
+        if (!res.ok) throw new Error("Błąd zapisu");
+
+        const body = (await res.json()) as { ok: true; updatedAt: string };
+        syncedDataRef.current = attemptData;
+        serverUpdatedAtRef.current = body.updatedAt;
+        setData(attemptData);
+        dataRef.current = attemptData;
+        return { ok: true, updatedAt: body.updatedAt, data: attemptData };
+      }
+
+      setError("Konflikt zapisu — odśwież stronę i spróbuj ponownie");
+      return { ok: false };
     } catch {
       setError("Nie udało się zapisać danych");
-      return false;
+      return { ok: false };
     } finally {
       setSaving(false);
     }
@@ -113,9 +217,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const baseline = undoBaselineRef.current;
         undoBaselineRef.current = null;
 
-        const ok = await persist(next);
-        if (!ok) {
-          // Keep latest failed payload so a later save can retry with fresher data.
+        const result = await persist(next);
+        if (!result.ok) {
+          if (result.conflict) {
+            // Remote won a hard conflict without merge base — show server data.
+            setData(result.data);
+            dataRef.current = result.data;
+            clearHistory();
+            break;
+          }
           if (!pendingSaveRef.current) {
             pendingSaveRef.current = next;
             undoBaselineRef.current = baseline;
@@ -123,8 +233,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
           break;
         }
 
-        if (baseline && !dataSnapshotEqual(baseline, next)) {
-          historyRef.current = [...historyRef.current, baseline].slice(-MAX_UNDO_HISTORY);
+        if (baseline && !deepEqual(baseline, result.data)) {
+          historyRef.current = [
+            ...historyRef.current,
+            { before: baseline, after: result.data },
+          ].slice(-MAX_UNDO_HISTORY);
           setCanUndo(historyRef.current.length > 0);
         }
       }
@@ -134,12 +247,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         void flushSaveQueue();
       }
     }
-  }, [persist]);
+  }, [clearHistory, persist]);
 
   const save = useCallback(
     async (newData: AppData) => {
       const current = dataRef.current;
-      // Optimistic UI update; queue serializes the actual disk write.
       setData(newData);
       dataRef.current = newData;
 
@@ -153,19 +265,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
   );
 
   const undo = useCallback(async () => {
-    const previous = historyRef.current.pop();
-    if (!previous) return;
+    const entry = historyRef.current.pop();
+    if (!entry) return;
 
     setCanUndo(historyRef.current.length > 0);
     pendingSaveRef.current = null;
     undoBaselineRef.current = null;
-    setData(previous);
-    dataRef.current = previous;
 
-    const ok = await persist(previous);
-    if (!ok) {
-      historyRef.current.push(previous);
+    // Merge undo target with latest server so other users' edits are kept.
+    const base = entry.after;
+    const local = entry.before;
+    const remote = syncedDataRef.current ?? dataRef.current ?? entry.before;
+    const restored = mergeAppData(base, local, remote);
+
+    setData(restored);
+    dataRef.current = restored;
+
+    const result = await persist(restored);
+    if (!result.ok) {
+      historyRef.current.push(entry);
       setCanUndo(true);
+      if (result.conflict) {
+        setData(result.data);
+        dataRef.current = result.data;
+      }
     }
   }, [persist]);
 
