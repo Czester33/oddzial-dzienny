@@ -45,7 +45,8 @@ function mergeByKey<T>(
   base: T[] | undefined,
   local: T[] | undefined,
   remote: T[] | undefined,
-  keyOf: (item: T) => string
+  keyOf: (item: T) => string,
+  options?: { sortByKey?: boolean }
 ): T[] {
   const baseList = base ?? [];
   const localList = local ?? [];
@@ -90,9 +91,33 @@ function mergeByKey<T>(
     }
   }
 
-  return [...merged.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([, item]) => item);
+  if (options?.sortByKey) {
+    return [...merged.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([, item]) => item);
+  }
+
+  // Prefer this client's order so UI panels don't jump after a sync merge.
+  const orderSource = localList.length
+    ? localList
+    : remoteList.length
+      ? remoteList
+      : baseList;
+
+  const ordered: T[] = [];
+  const seen = new Set<string>();
+  for (const item of orderSource) {
+    const key = keyOf(item);
+    const m = merged.get(key);
+    if (m && !seen.has(key)) {
+      ordered.push(m);
+      seen.add(key);
+    }
+  }
+  for (const [key, item] of merged) {
+    if (!seen.has(key)) ordered.push(item);
+  }
+  return ordered;
 }
 
 function mergeById<T extends { id: string }>(
@@ -279,19 +304,22 @@ export function mergeAppData(base: AppData, local: AppData, remote: AppData): Ap
       base.admissionArchive,
       local.admissionArchive,
       remote.admissionArchive,
-      (item) => item.monthKey
+      (item) => item.monthKey,
+      { sortByKey: true }
     ),
     vacationArchive: mergeByKey(
       base.vacationArchive,
       local.vacationArchive,
       remote.vacationArchive,
-      (item) => item.yearKey
+      (item) => item.yearKey,
+      { sortByKey: true }
     ),
     dutyArchive: mergeByKey(
       base.dutyArchive,
       local.dutyArchive,
       remote.dutyArchive,
-      (item) => item.monthKey
+      (item) => item.monthKey,
+      { sortByKey: true }
     ),
     announcements: mergeById(base.announcements, local.announcements, remote.announcements),
     announcementsSeenAt: mergeMaxIso(
