@@ -13,7 +13,9 @@ import type { AppData } from "@/lib/types";
 import { deepEqual, mergeAppData } from "@/lib/app-data-merge";
 
 const MAX_UNDO_HISTORY = 50;
-const REMOTE_POLL_MS = 5_000;
+const REMOTE_POLL_MS = 8_000;
+/** Ignore silent remote refresh briefly after local edits so the UI does not jump. */
+const LOCAL_EDIT_QUIET_MS = 12_000;
 
 type UndoEntry = {
   /** Snapshot before this client's edit. */
@@ -61,10 +63,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const serverUpdatedAtRef = useRef<string>("1970-01-01T00:00:00.000Z");
   /** AppData matching serverUpdatedAtRef (common ancestor for merges). */
   const syncedDataRef = useRef<AppData | null>(null);
-
-  useEffect(() => {
-    dataRef.current = data;
-  }, [data]);
+  const lastLocalEditAtRef = useRef(0);
 
   const clearHistory = useCallback(() => {
     historyRef.current = [];
@@ -74,8 +73,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const adoptServerState = useCallback((next: AppData, updatedAt: string) => {
     syncedDataRef.current = next;
     serverUpdatedAtRef.current = updatedAt;
-    setData(next);
     dataRef.current = next;
+    setData(next);
   }, []);
 
   const refresh = useCallback(
@@ -89,19 +88,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (!res.ok) throw new Error("Błąd wczytywania");
         const json = (await res.json()) as ApiDataResponse | AppData;
 
-        // Support legacy raw AppData responses during rollout.
         const payload: ApiDataResponse =
           json && typeof json === "object" && "data" in json && "updatedAt" in json
             ? (json as ApiDataResponse)
             : { data: json as AppData, updatedAt: new Date().toISOString() };
 
-        if (options?.silent && (saveInFlightRef.current || pendingSaveRef.current)) {
-          return;
-        }
-
-        const remoteChanged = payload.updatedAt !== serverUpdatedAtRef.current;
-        if (options?.silent && !remoteChanged) {
-          return;
+        if (options?.silent) {
+          if (saveInFlightRef.current || pendingSaveRef.current) return;
+          if (Date.now() - lastLocalEditAtRef.current < LOCAL_EDIT_QUIET_MS) return;
+          if (payload.updatedAt === serverUpdatedAtRef.current) return;
+          // Another client changed data — only adopt if our UI matches last sync
+          // (no unsaved local drift beyond quiet window).
+          if (
+            syncedDataRef.current &&
+            dataRef.current &&
+            !deepEqual(dataRef.current, syncedDataRef.current)
+          ) {
+            return;
+          }
         }
 
         adoptServerState(payload.data, payload.updatedAt);
@@ -125,11 +129,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
     void refresh();
   }, [refresh]);
 
-  // Keep multiple open clients in sync without relying only on announcements polling.
   useEffect(() => {
     const tick = () => {
       if (document.visibilityState === "hidden") return;
       if (saveInFlightRef.current || pendingSaveRef.current) return;
+      if (Date.now() - lastLocalEditAtRef.current < LOCAL_EDIT_QUIET_MS) return;
       void refresh({ silent: true });
     };
     const interval = setInterval(tick, REMOTE_POLL_MS);
@@ -142,8 +146,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     };
   }, [refresh]);
 
+  /** Network write only — never overwrite newer optimistic UI. */
   const persist = useCallback(async (newData: AppData): Promise<PersistResult> => {
-    setSaving(true);
     setError(null);
     try {
       let attemptData = newData;
@@ -151,6 +155,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
       let baseData = syncedDataRef.current;
 
       for (let attempt = 0; attempt < 5; attempt++) {
+        // Fold any newer clicks that arrived while we waited into this write.
+        if (pendingSaveRef.current && baseData) {
+          attemptData = mergeAppData(baseData, pendingSaveRef.current, attemptData);
+          pendingSaveRef.current = null;
+        } else if (pendingSaveRef.current) {
+          attemptData = pendingSaveRef.current;
+          pendingSaveRef.current = null;
+        }
+
         const res = await fetch("/api/data", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -166,7 +179,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
             updatedAt: string;
           };
           if (!baseData) {
-            // No ancestor — adopt remote and ask caller to retry later.
             syncedDataRef.current = conflict.data;
             serverUpdatedAtRef.current = conflict.updatedAt;
             return {
@@ -177,8 +189,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
             };
           }
 
-          const merged = mergeAppData(baseData, attemptData, conflict.data);
-          attemptData = merged;
+          const localIntent = pendingSaveRef.current ?? dataRef.current ?? attemptData;
+          attemptData = mergeAppData(baseData, localIntent, conflict.data);
           baseUpdatedAt = conflict.updatedAt;
           baseData = conflict.data;
           syncedDataRef.current = conflict.data;
@@ -191,8 +203,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const body = (await res.json()) as { ok: true; updatedAt: string };
         syncedDataRef.current = attemptData;
         serverUpdatedAtRef.current = body.updatedAt;
-        setData(attemptData);
-        dataRef.current = attemptData;
+
+        // Keep showing the newest optimistic state; only sync UI if it still
+        // matches what we just wrote (no newer clicks waiting).
+        if (!pendingSaveRef.current) {
+          const ui = dataRef.current;
+          if (!ui || deepEqual(ui, newData) || deepEqual(ui, attemptData)) {
+            dataRef.current = attemptData;
+            setData(attemptData);
+          }
+        }
+
         return { ok: true, updatedAt: body.updatedAt, data: attemptData };
       }
 
@@ -201,14 +222,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
     } catch {
       setError("Nie udało się zapisać danych");
       return { ok: false };
-    } finally {
-      setSaving(false);
     }
   }, []);
 
   const flushSaveQueue = useCallback(async () => {
     if (saveInFlightRef.current) return;
     saveInFlightRef.current = true;
+    setSaving(true);
 
     try {
       while (pendingSaveRef.current) {
@@ -220,10 +240,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const result = await persist(next);
         if (!result.ok) {
           if (result.conflict) {
-            // Remote won a hard conflict without merge base — show server data.
-            setData(result.data);
-            dataRef.current = result.data;
-            clearHistory();
+            // Only hard-replace UI when we have nothing newer queued.
+            if (!pendingSaveRef.current) {
+              dataRef.current = result.data;
+              setData(result.data);
+              clearHistory();
+            }
             break;
           }
           if (!pendingSaveRef.current) {
@@ -243,6 +265,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
     } finally {
       saveInFlightRef.current = false;
+      setSaving(false);
       if (pendingSaveRef.current) {
         void flushSaveQueue();
       }
@@ -252,14 +275,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const save = useCallback(
     async (newData: AppData) => {
       const current = dataRef.current;
-      setData(newData);
+      lastLocalEditAtRef.current = Date.now();
+
+      // Optimistic UI — always immediate, never waits for network.
       dataRef.current = newData;
+      setData(newData);
 
       if (!pendingSaveRef.current && !saveInFlightRef.current && current) {
         undoBaselineRef.current = current;
       }
       pendingSaveRef.current = newData;
-      await flushSaveQueue();
+
+      // Do not await the full network round-trip on every click.
+      void flushSaveQueue();
     },
     [flushSaveQueue]
   );
@@ -271,26 +299,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setCanUndo(historyRef.current.length > 0);
     pendingSaveRef.current = null;
     undoBaselineRef.current = null;
+    lastLocalEditAtRef.current = Date.now();
 
-    // Merge undo target with latest server so other users' edits are kept.
     const base = entry.after;
     const local = entry.before;
     const remote = syncedDataRef.current ?? dataRef.current ?? entry.before;
     const restored = mergeAppData(base, local, remote);
 
-    setData(restored);
     dataRef.current = restored;
-
-    const result = await persist(restored);
-    if (!result.ok) {
-      historyRef.current.push(entry);
-      setCanUndo(true);
-      if (result.conflict) {
-        setData(result.data);
-        dataRef.current = result.data;
-      }
-    }
-  }, [persist]);
+    setData(restored);
+    pendingSaveRef.current = restored;
+    void flushSaveQueue();
+  }, [flushSaveQueue]);
 
   return (
     <DataContext.Provider value={{ data, loading, saving, error, canUndo, save, undo, refresh }}>
