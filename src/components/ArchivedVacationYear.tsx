@@ -17,7 +17,7 @@ import {
 } from "@/lib/physio-utils";
 import { vacationStaff } from "@/lib/vacation-utils";
 import { useTheme } from "@/context/ThemeContext";
-import { FitWidthScale } from "@/components/FitWidthScale";
+import { FitWidthScale, tableRemPx } from "@/components/FitWidthScale";
 
 const MONTH_COLORS = [
   { header: "#9ec5e8", zebra: "#e8f3fb" },
@@ -118,7 +118,7 @@ function ArchivedVacationMonthTable({
   });
 
   return (
-    <FitWidthScale contentWidthPx={1024}>
+    <FitWidthScale contentWidthPx={tableRemPx(64)}>
       <div className="w-[64rem] max-w-none overflow-hidden rounded-sm shadow-md ring-1 ring-black/15 dark:ring-slate-600/50">
       <div
         className={`physio-name-header border-b px-3 py-2 text-center text-[21px] font-bold ${

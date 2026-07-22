@@ -16,7 +16,7 @@ import { DatePickerCell } from "@/components/DatePickerCell";
 import { TimePickerCell } from "@/components/TimePickerCell";
 import { FormattedEditor } from "@/components/FormattedEditor";
 import { PhysioSelect } from "@/components/PhysioSelect";
-import { FitWidthScale } from "@/components/FitWidthScale";
+import { FitWidthScale, tableRemPx } from "@/components/FitWidthScale";
 import {
   currentMonthKey,
   getPlannedDischargeDate,
@@ -897,7 +897,7 @@ function AdmissionSessionTable({
   };
 
   return (
-    <FitWidthScale contentWidthPx={928}>
+    <FitWidthScale contentWidthPx={tableRemPx(58)}>
       <div
         id={`admission-session-${session.id}`}
         className="admission-table-wrap mx-auto w-[58rem] max-w-none overflow-hidden rounded-sm shadow-md ring-1 ring-black/20 dark:ring-slate-600/50"

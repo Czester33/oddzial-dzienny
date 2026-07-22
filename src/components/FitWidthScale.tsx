@@ -69,12 +69,10 @@ export function FitWidthScale({
     const measureHeight = () => {
       const contentHeight = inner.offsetHeight;
       if (!contentHeight) return;
-      setScaledHeight((prev) => {
-        const available = outer.clientWidth || window.innerWidth;
-        const nextScale = Math.min(1, available / contentWidthPx);
-        const nextHeight = Math.ceil(contentHeight * nextScale);
-        return prev === nextHeight ? prev : nextHeight;
-      });
+      const available = outer.clientWidth || window.innerWidth;
+      const nextScale = Math.min(1, available / contentWidthPx);
+      const nextHeight = Math.ceil(contentHeight * nextScale);
+      setScaledHeight((prev) => (prev === nextHeight ? prev : nextHeight));
     };
 
     const measureAll = () => {
@@ -116,10 +114,12 @@ export function FitWidthScale({
     );
   }
 
+  const visualWidth = contentWidthPx * scale;
+
   const innerStyle: CSSProperties = {
     width: contentWidthPx,
     transform: scale < 1 ? `scale(${scale})` : undefined,
-    transformOrigin: "top center",
+    transformOrigin: "top left",
   };
 
   return (
@@ -128,9 +128,19 @@ export function FitWidthScale({
       className={`w-full max-w-full overflow-x-clip ${className}`}
       style={{ height: scaledHeight }}
     >
-      <div ref={innerRef} className="mx-auto max-w-none" style={innerStyle}>
-        {children}
+      <div
+        className="mx-auto overflow-hidden"
+        style={{ width: visualWidth, height: scaledHeight }}
+      >
+        <div ref={innerRef} className="max-w-none" style={innerStyle}>
+          {children}
+        </div>
       </div>
     </div>
   );
+}
+
+/** Match Tailwind rem widths when html font-size is 19px. */
+export function tableRemPx(rems: number): number {
+  return rems * 19;
 }

@@ -29,7 +29,7 @@ import {
   applyDutyNotes,
   hasAutoArchiveDutyChanges,
 } from "@/lib/duty-utils";
-import { FitWidthScale } from "@/components/FitWidthScale";
+import { FitWidthScale, tableRemPx } from "@/components/FitWidthScale";
 
 const MONTH_EMOJIS = [
   "❄️⛄🎿",
@@ -232,7 +232,7 @@ function DutyMonthTable({
   };
 
   return (
-    <FitWidthScale contentWidthPx={896}>
+    <FitWidthScale contentWidthPx={tableRemPx(56)}>
       <table className="w-[56rem] max-w-none border-collapse">
         <thead>
           <tr>

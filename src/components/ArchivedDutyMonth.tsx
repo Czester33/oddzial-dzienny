@@ -9,7 +9,7 @@ import {
 } from "@/lib/date-utils";
 import { getPhysioName, resolvePhysioColumnHeaderColor, resolvePhysioRowColor } from "@/lib/physio-utils";
 import { useTheme } from "@/context/ThemeContext";
-import { FitWidthScale } from "@/components/FitWidthScale";
+import { FitWidthScale, tableRemPx } from "@/components/FitWidthScale";
 
 const MONTH_EMOJIS = [
   "❄️⛄🎿",
@@ -116,7 +116,7 @@ export function ArchivedDutyMonthPanel({
   };
 
   return (
-    <FitWidthScale contentWidthPx={896}>
+    <FitWidthScale contentWidthPx={tableRemPx(56)}>
       <table className="w-[56rem] max-w-none border-collapse">
         <thead>
           <tr>
