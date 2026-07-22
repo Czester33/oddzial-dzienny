@@ -3,12 +3,11 @@
 import { useMemo } from "react";
 import type { AdmissionSession, AppData, ArchivedAdmissionMonth } from "@/lib/types";
 import {
-  getPlannedDischargeDate,
   formatDatePL,
   formatMonthLabel,
   parseMonthKey,
 } from "@/lib/date-utils";
-import { getDoctorName } from "@/lib/admission-utils";
+import { getDoctorName, resolveSessionPlannedDischarge } from "@/lib/admission-utils";
 import { getPhysioName } from "@/lib/physio-utils";
 import {
   resolveAdmissionTheme,
@@ -40,7 +39,7 @@ function ArchivedSessionTable({
   const doctor = data.doctors.find((d) => d.id === session.doctorId);
   const resolvedTheme = resolveAdmissionTheme(doctor?.themeId ?? themeId, month);
   const colors = resolveAdmissionThemeColors(resolvedTheme, colorMode);
-  const dischargeDate = getPlannedDischargeDate(session.admissionDate);
+  const dischargeDate = resolveSessionPlannedDischarge(session);
   const patients = useMemo(
     () => sortAdmissionSlotsByHour(session.patients),
     [session.patients]

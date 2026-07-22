@@ -106,8 +106,17 @@ export function createAdmissionSession(): AdmissionSession {
     id: uuidv4(),
     doctorId: "",
     admissionDate: "",
+    plannedDischargeDate: "",
+    plannedDischargeDateManual: false,
     patients: [createAdmissionSlot()],
   };
+}
+
+/** Planned discharge stored on session, or 15 working days from admission. */
+export function resolveSessionPlannedDischarge(session: AdmissionSession): string {
+  const stored = toDateInputValue(session.plannedDischargeDate ?? "");
+  if (stored) return stored;
+  return getPlannedDischargeDate(session.admissionDate);
 }
 
 export function sessionMonthKey(session: AdmissionSession): string {
@@ -168,7 +177,7 @@ export function flattenSessionToArchive(
   session: AdmissionSession,
   archivedAt: string
 ): Admission[] {
-  const dischargeDate = getPlannedDischargeDate(session.admissionDate);
+  const dischargeDate = resolveSessionPlannedDischarge(session);
   const doctor = getDoctorName(data, session.doctorId);
 
   return session.patients.map((slot) => ({
@@ -330,6 +339,8 @@ export function migrateFlatArchiveToMonths(
           id: uuidv4(),
           doctorId: row.doctorId ?? "",
           admissionDate: row.admissionDate,
+          plannedDischargeDate:
+            row.dischargeDate || getPlannedDischargeDate(row.admissionDate),
           patients: [],
         };
         groups.set(groupKey, session);
@@ -403,6 +414,12 @@ export function normalizeAdmissions(
         id: session.id ?? uuidv4(),
         doctorId: session.doctorId ?? "",
         admissionDate: session.admissionDate ?? "",
+        plannedDischargeDate:
+          session.plannedDischargeDate ??
+          getPlannedDischargeDate(session.admissionDate ?? ""),
+        ...(session.plannedDischargeDateManual
+          ? { plannedDischargeDateManual: true }
+          : {}),
         patients: sortAdmissionSlotsByHour(
           (session.patients ?? []).map((slot) => ({
             id: slot.id ?? uuidv4(),

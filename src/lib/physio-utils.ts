@@ -9,7 +9,7 @@ import type {
   Patient,
   Physiotherapist,
 } from "./types";
-import { toDateInputValue } from "./date-utils";
+import { getPlannedDischargeDate, toDateInputValue } from "./date-utils";
 import { normalizeAdmissions, migrateFlatArchiveToMonths } from "./admission-utils";
 import { normalizeNavLabels, normalizeNavOrder } from "./nav-utils";
 import { stripHtml, replaceNbspInHtml } from "./text-format";
@@ -575,6 +575,12 @@ export function migrateData(raw: any): AppData {
             id: s.id ?? uuidv4(),
             doctorId: s.doctorId ?? "",
             admissionDate: s.admissionDate ?? "",
+            plannedDischargeDate:
+              s.plannedDischargeDate ??
+              getPlannedDischargeDate(s.admissionDate ?? ""),
+            ...(s.plannedDischargeDateManual
+              ? { plannedDischargeDateManual: true }
+              : {}),
             patients: (s.patients ?? []).map((p) => ({
               id: p.id ?? uuidv4(),
               patientName: p.patientName ?? "",

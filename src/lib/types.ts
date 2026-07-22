@@ -74,6 +74,10 @@ export interface AdmissionSession {
   id: string;
   doctorId: string;
   admissionDate: string;
+  /** Suggested/planned discharge (defaults to 15 working days from admission). */
+  plannedDischargeDate?: string;
+  /** True when planned discharge was set by hand (kept until admission date changes). */
+  plannedDischargeDateManual?: boolean;
   patients: AdmissionSlot[];
 }
 

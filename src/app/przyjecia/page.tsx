@@ -22,6 +22,7 @@ import {
   getPlannedDischargeDate,
   todayIsoDate,
   parseMonthKey,
+  toDateInputValue,
 } from "@/lib/date-utils";
 import {
   createAdmissionSession,
@@ -34,6 +35,7 @@ import {
   sortAdmissionSlotsByHour,
   admissionMonthOptions,
   preferredAdmissionMonthKey,
+  resolveSessionPlannedDischarge,
 } from "@/lib/admission-utils";
 import { placePatientInFreeSlot, clearPatientSlot } from "@/lib/physio-utils";
 import { stripHtml } from "@/lib/text-format";
@@ -337,7 +339,7 @@ function PrzyjeciaPageContent() {
     if (slot.admissionStatus) return;
 
     const name = stripHtml(slot.patientName).trim();
-    const dischargeDate = getPlannedDischargeDate(session.admissionDate);
+    const dischargeDate = resolveSessionPlannedDischarge(session);
     if (!name || !slot.physiotherapistId || !dischargeDate) return;
 
     const physioId = slot.physiotherapistId;
@@ -857,12 +859,30 @@ function AdmissionSessionTable({
 }) {
   const { theme: colorMode } = useTheme();
   const colors = resolveAdmissionThemeColors(theme, colorMode);
-  const dischargeDate = getPlannedDischargeDate(session.admissionDate);
+  const dischargeDate = resolveSessionPlannedDischarge(session);
   const doctor = data.doctors.find((d) => d.id === session.doctorId);
   const doctorThemeId = doctor?.themeId ?? "";
 
   const updateSession = (patch: Partial<AdmissionSession>) => {
     onChange({ ...session, ...patch });
+  };
+
+  const setAdmissionDate = (admissionDate: string) => {
+    const suggested = getPlannedDischargeDate(admissionDate);
+    updateSession({
+      admissionDate,
+      plannedDischargeDate: suggested,
+      plannedDischargeDateManual: false,
+    });
+  };
+
+  const setPlannedDischargeDate = (plannedDischargeDate: string) => {
+    const suggested = getPlannedDischargeDate(session.admissionDate);
+    const iso = toDateInputValue(plannedDischargeDate);
+    updateSession({
+      plannedDischargeDate: iso,
+      plannedDischargeDateManual: Boolean(iso) && iso !== suggested,
+    });
   };
 
   const updateSlot = (slotId: string, patch: Partial<AdmissionSlot>) => {
@@ -1019,7 +1039,7 @@ function AdmissionSessionTable({
                           >
                             <DatePickerCell
                               value={session.admissionDate}
-                              onChange={(admissionDate) => updateSession({ admissionDate })}
+                              onChange={setAdmissionDate}
                               title="Data przyjęcia"
                               textClassName={ADMISSION_TEXT}
                               defaultMonthKey={monthKeyValue}
@@ -1036,10 +1056,13 @@ function AdmissionSessionTable({
                           >
                             <DatePickerCell
                               value={dischargeDate}
-                              onChange={() => {}}
-                              title="Planowany wypis"
-                              readOnly
+                              onChange={setPlannedDischargeDate}
+                              title="Planowany wypis (sugerowane: 15 dni roboczych)"
                               textClassName={ADMISSION_TEXT}
+                              defaultMonthKey={
+                                toDateInputValue(dischargeDate)?.slice(0, 7) ||
+                                monthKeyValue
+                              }
                             />
                           </div>
                         </div>
