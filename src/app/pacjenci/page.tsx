@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { v4 as uuidv4 } from "uuid";
 import Link from "next/link";
 import { useData } from "@/context/DataContext";
 import type { AppData, ColumnWidths, Patient } from "@/lib/types";
@@ -11,7 +10,6 @@ import { PhysioAdmissionNotificationsRail } from "@/components/PhysioAdmissionNo
 import {
   countSubstitutesAway,
   createEmptyPatient,
-  isPatientSlotEmpty,
   movePatientBetweenPhysios,
   returnSubstitutePatient,
   returnSubstitutesToPhysio,
@@ -50,14 +48,12 @@ function PacjenciContent({ data }: { data: AppData }) {
   }, [save]);
 
   const getPatients = (physioId: string) =>
-    sortPatientsByDischargeDate(
-      (data.currentPatients[physioId] ?? []).filter((p) => !isPatientSlotEmpty(p))
-    );
+    sortPatientsByDischargeDate(data.currentPatients[physioId] ?? []);
 
   const updatePatient = (physioId: string, index: number, patient: Patient) => {
     const current = getPatients(physioId);
     const updated = [...current];
-    updated[index] = { ...patient, id: patient.id.startsWith("empty-") ? uuidv4() : patient.id };
+    updated[index] = { ...patient, id: patient.id };
     save({
       ...data,
       currentPatients: {
@@ -68,7 +64,7 @@ function PacjenciContent({ data }: { data: AppData }) {
   };
 
   const addRow = (physioId: string) => {
-    const current = getPatients(physioId);
+    const current = data.currentPatients[physioId] ?? [];
     save({
       ...data,
       currentPatients: {
