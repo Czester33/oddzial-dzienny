@@ -152,10 +152,10 @@ function MovePatientButton({
     const menuEl = menuRef.current;
     const menuWidth = menuEl?.offsetWidth
       ? menuEl.offsetWidth * zoom
-      : Math.min(160, window.innerWidth - margin * 2);
+      : Math.min(180, window.innerWidth - margin * 2);
     const menuHeight = menuEl?.offsetHeight
       ? menuEl.offsetHeight * zoom
-      : Math.min(targets.length * 28 + 8, 200);
+      : Math.min(targets.length * 36 + 8, 280);
 
     let left = rect.left;
     if (left + menuWidth > window.innerWidth - margin) {
@@ -242,7 +242,7 @@ function MovePatientButton({
           <div
             ref={menuRef}
             style={menuStyle}
-            className="min-w-[7.5rem] overflow-y-auto rounded border border-slate-200 bg-white py-0.5 shadow-lg dark:border-slate-600 dark:bg-slate-900"
+            className="min-w-[11rem] overflow-y-auto rounded border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-600 dark:bg-slate-900"
           >
             {targets.map((p) => (
               <button
@@ -252,10 +252,10 @@ function MovePatientButton({
                   onMove(p.id);
                   setOpen(false);
                 }}
-                className="flex w-full items-center gap-1.5 px-2 py-1 text-left text-[13px] leading-tight text-slate-800 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
+                className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[17px] leading-snug text-slate-800 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
               >
                 <span
-                  className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                  className="inline-block h-3 w-3 shrink-0 rounded-full"
                   style={{ backgroundColor: p.color }}
                   aria-hidden="true"
                 />
