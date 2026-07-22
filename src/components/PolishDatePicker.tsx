@@ -12,8 +12,8 @@ import {
   toDateInputValue,
 } from "@/lib/date-utils";
 
-const PANEL_WIDTH = 260;
-const PANEL_ESTIMATED_HEIGHT = 320;
+const PANEL_WIDTH = 220;
+const PANEL_ESTIMATED_HEIGHT = 268;
 const VIEWPORT_MARGIN = 8;
 const ANCHOR_GAP = 4;
 
@@ -140,46 +140,46 @@ export function PolishDatePicker({
   return createPortal(
     <div
       ref={panelRef}
-      className="fixed z-[100] w-[260px] rounded-lg border border-slate-200 bg-white p-3 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+      className="fixed z-[100] w-[220px] rounded-md border border-slate-200/90 bg-white p-2 shadow-md dark:border-slate-700 dark:bg-slate-900"
       style={{ top: position.top, left: position.left }}
       lang="pl"
     >
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-1.5 flex items-center justify-between">
         <button
           type="button"
           onClick={prevMonth}
-          className="rounded px-2 py-1 text-[19px] text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+          className="rounded px-1.5 py-0.5 text-[14px] text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
           aria-label="Poprzedni miesiąc"
         >
           ‹
         </button>
-        <span className="text-[19px] font-semibold text-slate-800 dark:text-slate-100">
+        <span className="text-[13px] font-medium text-slate-700 dark:text-slate-200">
           {MONTH_NAMES[viewMonth]} {viewYear}
         </span>
         <button
           type="button"
           onClick={nextMonth}
-          className="rounded px-2 py-1 text-[19px] text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+          className="rounded px-1.5 py-0.5 text-[14px] text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
           aria-label="Następny miesiąc"
         >
           ›
         </button>
       </div>
 
-      <div className="mb-1 grid grid-cols-7 gap-0.5 text-center text-[19px] font-medium text-slate-400">
+      <div className="mb-0.5 grid grid-cols-7 gap-px text-center text-[11px] font-medium uppercase tracking-wide text-slate-400">
         {WEEKDAY_SHORT_PL.map((day, index) => (
           <div
             key={day}
-            className={`py-1 ${index >= 5 ? "text-red-500 dark:text-red-400" : ""}`}
+            className={`py-0.5 ${index >= 5 ? "text-red-400 dark:text-red-400" : ""}`}
           >
             {day}
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-0.5">
+      <div className="grid grid-cols-7 gap-px">
         {cells.map((day, i) => {
-          if (day === null) return <div key={`empty-${i}`} className="h-8" />;
+          if (day === null) return <div key={`empty-${i}`} className="h-7" />;
 
           const dayIso = isoFromParts(viewYear, viewMonth, day);
           const isSelected = selectedDay === day;
@@ -194,14 +194,14 @@ export function PolishDatePicker({
                 onChange(dayIso);
                 onClose();
               }}
-              className={`h-8 rounded text-[19px] tabular-nums ${
+              className={`h-7 rounded text-[13px] tabular-nums ${
                 isSelected
-                  ? "bg-blue-600 font-semibold text-white"
+                  ? "bg-blue-600 font-medium text-white"
                   : isToday
                     ? "bg-blue-50 font-medium text-blue-700 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-300 dark:hover:bg-blue-900"
                     : isRedDay
                       ? "font-medium text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
-                      : "text-slate-800 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                      : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
               }`}
             >
               {day}
@@ -210,21 +210,21 @@ export function PolishDatePicker({
         })}
       </div>
 
-      <div className="mt-2 flex justify-between border-t border-slate-200 pt-2 dark:border-slate-700">
+      <div className="mt-1.5 flex justify-between border-t border-slate-100 pt-1.5 dark:border-slate-800">
         <button
           type="button"
           onClick={() => {
             onChange(todayIso);
             onClose();
           }}
-          className="text-[19px] text-blue-600 hover:underline dark:text-blue-400"
+          className="text-[12px] text-blue-600 hover:underline dark:text-blue-400"
         >
           Dzisiaj
         </button>
         <button
           type="button"
           onClick={onClose}
-          className="text-[19px] text-slate-500 hover:underline dark:text-slate-400"
+          className="text-[12px] text-slate-400 hover:underline dark:text-slate-500"
         >
           Zamknij
         </button>
