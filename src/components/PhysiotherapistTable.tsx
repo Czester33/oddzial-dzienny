@@ -128,24 +128,75 @@ function MovePatientButton({
 }) {
   const [open, setOpen] = useState(false);
   const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setPortalRoot(
+      (document.querySelector(".app-root") as HTMLElement | null) ?? document.body
+    );
+  }, []);
 
   const updateMenuPosition = useCallback(() => {
     const button = buttonRef.current;
     if (!button) return;
+
+    const root =
+      (document.querySelector(".app-root") as HTMLElement | null) ?? document.body;
+    const zoomRaw = Number.parseFloat(getComputedStyle(root).zoom || "1");
+    const zoom = Number.isFinite(zoomRaw) && zoomRaw > 0 ? zoomRaw : 1;
+
     const rect = button.getBoundingClientRect();
+    const margin = 8;
+    const menuEl = menuRef.current;
+    const menuWidth = menuEl?.offsetWidth
+      ? menuEl.offsetWidth * zoom
+      : Math.min(160, window.innerWidth - margin * 2);
+    const menuHeight = menuEl?.offsetHeight
+      ? menuEl.offsetHeight * zoom
+      : Math.min(targets.length * 28 + 8, 200);
+
+    let left = rect.left;
+    if (left + menuWidth > window.innerWidth - margin) {
+      left = Math.max(margin, window.innerWidth - menuWidth - margin);
+    }
+    left = Math.max(margin, left);
+
+    const spaceBelow = window.innerHeight - rect.bottom - margin;
+    const spaceAbove = rect.top - margin;
+    const openUp = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+
+    let top: number;
+    if (openUp) {
+      top = rect.top - menuHeight - 4;
+      if (top < margin) top = margin;
+    } else {
+      top = rect.bottom + 4;
+      if (top + menuHeight > window.innerHeight - margin) {
+        top = Math.max(margin, window.innerHeight - menuHeight - margin);
+      }
+    }
+
+    const maxHeightPx = Math.max(
+      80,
+      (openUp ? spaceAbove : spaceBelow) / zoom
+    );
+
     setMenuStyle({
       position: "fixed",
-      top: rect.bottom + 2,
-      left: rect.left,
+      top: top / zoom,
+      left: left / zoom,
       zIndex: 10000,
+      maxHeight: maxHeightPx,
     });
-  }, []);
+  }, [targets.length]);
 
   useLayoutEffect(() => {
     if (!open) return;
     updateMenuPosition();
+    const frame = requestAnimationFrame(updateMenuPosition);
+    return () => cancelAnimationFrame(frame);
   }, [open, updateMenuPosition]);
 
   useEffect(() => {
@@ -186,11 +237,12 @@ function MovePatientButton({
         →
       </button>
       {open &&
+        portalRoot &&
         createPortal(
           <div
             ref={menuRef}
             style={menuStyle}
-            className="min-w-[12rem] rounded border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-600 dark:bg-slate-900"
+            className="min-w-[7.5rem] overflow-y-auto rounded border border-slate-200 bg-white py-0.5 shadow-lg dark:border-slate-600 dark:bg-slate-900"
           >
             {targets.map((p) => (
               <button
@@ -200,10 +252,10 @@ function MovePatientButton({
                   onMove(p.id);
                   setOpen(false);
                 }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-[27px] leading-tight text-slate-800 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
+                className="flex w-full items-center gap-1.5 px-2 py-1 text-left text-[13px] leading-tight text-slate-800 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
               >
                 <span
-                  className="inline-block h-3 w-3 shrink-0 rounded-full"
+                  className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
                   style={{ backgroundColor: p.color }}
                   aria-hidden="true"
                 />
@@ -211,7 +263,7 @@ function MovePatientButton({
               </button>
             ))}
           </div>,
-          document.body
+          portalRoot
         )}
     </>
   );
