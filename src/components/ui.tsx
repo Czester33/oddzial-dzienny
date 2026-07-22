@@ -186,12 +186,20 @@ export function MonthSelector({
 export function YearSelector({
   value,
   onChange,
+  extraYears = [],
 }: {
   value: string;
   onChange: (v: string) => void;
+  /** Extra years (e.g. restored from archive) merged into the list. */
+  extraYears?: string[];
 }) {
   const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 5 }, (_, i) => String(currentYear - 1 + i));
+  const years = [
+    ...new Set([
+      ...extraYears.filter(Boolean),
+      ...Array.from({ length: 5 }, (_, i) => String(currentYear - 1 + i)),
+    ]),
+  ].sort();
 
   return (
     <select

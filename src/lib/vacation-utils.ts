@@ -74,6 +74,41 @@ export function archiveVacationYear(
     vacationArchive: [...withoutDup, entry].sort((a, b) =>
       b.yearKey.localeCompare(a.yearKey)
     ),
+    autoArchiveSkip: withVacationAutoArchiveSkip(data, yearKey, false),
+  };
+}
+
+function withVacationAutoArchiveSkip(
+  data: AppData,
+  yearKey: string,
+  skip: boolean
+): AppData["autoArchiveSkip"] {
+  const current = data.autoArchiveSkip ?? {};
+  const set = new Set(current.vacations ?? []);
+  if (skip) set.add(yearKey);
+  else set.delete(yearKey);
+  return {
+    ...current,
+    vacations: [...set].sort(),
+  };
+}
+
+/** Move an archived vacation year back into active vacations. */
+export function restoreVacationYearFromArchive(
+  data: AppData,
+  yearKey: string
+): AppData {
+  const entry = (data.vacationArchive ?? []).find((y) => y.yearKey === yearKey);
+  if (!entry) return data;
+
+  return {
+    ...data,
+    vacations: {
+      ...data.vacations,
+      [yearKey]: entry.entries.map(normalizeVacationEntry),
+    },
+    vacationArchive: (data.vacationArchive ?? []).filter((y) => y.yearKey !== yearKey),
+    autoArchiveSkip: withVacationAutoArchiveSkip(data, yearKey, true),
   };
 }
 
@@ -82,11 +117,13 @@ export function applyAutoArchiveVacations(
   now = new Date()
 ): AppData {
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const skip = new Set(data.autoArchiveSkip?.vacations ?? []);
 
   let next = data;
   let changed = false;
 
   for (const [key, entries] of Object.entries(data.vacations ?? {})) {
+    if (skip.has(key)) continue;
     if (!shouldAutoArchiveVacationYear(key, entries, today)) continue;
     // Skip if already archived (defensive)
     if ((next.vacationArchive ?? []).some((y) => y.yearKey === key)) {

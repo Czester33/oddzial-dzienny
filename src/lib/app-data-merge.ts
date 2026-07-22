@@ -321,6 +321,23 @@ export function mergeAppData(base: AppData, local: AppData, remote: AppData): Ap
       (item) => item.monthKey,
       { sortByKey: true }
     ),
+    autoArchiveSkip: {
+      admissions: mergeStringSet(
+        base.autoArchiveSkip?.admissions,
+        local.autoArchiveSkip?.admissions,
+        remote.autoArchiveSkip?.admissions
+      ),
+      duties: mergeStringSet(
+        base.autoArchiveSkip?.duties,
+        local.autoArchiveSkip?.duties,
+        remote.autoArchiveSkip?.duties
+      ),
+      vacations: mergeStringSet(
+        base.autoArchiveSkip?.vacations,
+        local.autoArchiveSkip?.vacations,
+        remote.autoArchiveSkip?.vacations
+      ),
+    },
     announcements: mergeById(base.announcements, local.announcements, remote.announcements),
     announcementsSeenAt: mergeMaxIso(
       base.announcementsSeenAt,

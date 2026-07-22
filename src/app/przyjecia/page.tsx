@@ -29,6 +29,7 @@ import {
   createAdmissionSlot,
   createDoctor,
   applyAutoArchiveAdmissions,
+  archiveAdmissionMonth,
   hasAutoArchiveAdmissionChanges,
   orderAdmissionSessionsWithPastAtBottom,
   admissionSessionsSameOrder,
@@ -174,10 +175,11 @@ function PrzyjeciaPageContent() {
   const [todayTick, setTodayTick] = useState(() => todayIsoDate());
   const userPickedMonthRef = useRef(false);
 
-  const monthOptions = useMemo(
-    () => admissionMonthOptions(todayTick, 14),
-    [todayTick]
-  );
+  const monthOptions = useMemo(() => {
+    const base = admissionMonthOptions(todayTick, 14);
+    const restored = data?.autoArchiveSkip?.admissions ?? [];
+    return [...new Set([...restored, ...base])].sort();
+  }, [todayTick, data?.autoArchiveSkip?.admissions]);
 
   const selectMonth = (key: string) => {
     userPickedMonthRef.current = true;
@@ -463,6 +465,18 @@ function PrzyjeciaPageContent() {
     if (next) selectMonth(next);
   };
 
+  const monthRestoredFromArchive = (data.autoArchiveSkip?.admissions ?? []).includes(
+    monthKeyValue
+  );
+
+  const archiveCurrentMonth = () => {
+    if (!monthRestoredFromArchive) return;
+    if (!confirm("Zarchiwizować ponownie ten miesiąc przyjęć?")) return;
+    commitSave(archiveAdmissionMonth(data, monthKeyValue));
+    const nextMonth = monthOptions.find((key) => key !== monthKeyValue) ?? currentMonthKey();
+    selectMonth(nextMonth);
+  };
+
   return (
     <>
       <div className="space-y-6">
@@ -471,6 +485,15 @@ function PrzyjeciaPageContent() {
             Przyjęcia nowych pacjentów
           </h2>
           <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:absolute sm:right-0 sm:top-0 sm:mt-0">
+            {monthRestoredFromArchive ? (
+              <Btn
+                variant="secondary"
+                onClick={archiveCurrentMonth}
+                className={ADMISSION_TEXT}
+              >
+                Archiwizuj
+              </Btn>
+            ) : null}
             <Btn
               variant="secondary"
               onClick={() => shiftMonth(-1)}

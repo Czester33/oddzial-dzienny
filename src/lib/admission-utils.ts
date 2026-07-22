@@ -251,6 +251,22 @@ export function archiveAdmissionMonth(
     ),
     archive: [...data.archive, ...flat],
     admissionTableThemes: themes,
+    autoArchiveSkip: withAdmissionAutoArchiveSkip(data, monthKeyValue, false),
+  };
+}
+
+function withAdmissionAutoArchiveSkip(
+  data: AppData,
+  monthKeyValue: string,
+  skip: boolean
+): AppData["autoArchiveSkip"] {
+  const current = data.autoArchiveSkip ?? {};
+  const set = new Set(current.admissions ?? []);
+  if (skip) set.add(monthKeyValue);
+  else set.delete(monthKeyValue);
+  return {
+    ...current,
+    admissions: [...set].sort(),
   };
 }
 
@@ -284,6 +300,7 @@ export function restoreAdmissionMonthFromArchive(
       (a) => !slotIds.has(a.id) && !toDateInputValue(a.admissionDate).startsWith(monthKeyValue)
     ),
     admissionTableThemes: themes,
+    autoArchiveSkip: withAdmissionAutoArchiveSkip(data, monthKeyValue, true),
   };
 }
 
@@ -292,11 +309,13 @@ export function applyAutoArchiveAdmissions(
   now = new Date()
 ): AppData {
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const skip = new Set(data.autoArchiveSkip?.admissions ?? []);
 
   let next = data;
   let changed = false;
 
   for (const [key, sessions] of Object.entries(data.admissions ?? {})) {
+    if (skip.has(key)) continue;
     if (!shouldAutoArchiveAdmissionMonth(key, sessions, today)) continue;
     next = archiveAdmissionMonth(next, key, now.toISOString());
     changed = true;

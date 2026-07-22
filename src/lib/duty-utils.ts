@@ -64,6 +64,41 @@ export function archiveDutyMonth(
     dutyArchive: [...withoutDup, entry].sort((a, b) =>
       b.monthKey.localeCompare(a.monthKey)
     ),
+    autoArchiveSkip: withDutyAutoArchiveSkip(data, monthKeyValue, false),
+  };
+}
+
+function withDutyAutoArchiveSkip(
+  data: AppData,
+  monthKeyValue: string,
+  skip: boolean
+): AppData["autoArchiveSkip"] {
+  const current = data.autoArchiveSkip ?? {};
+  const set = new Set(current.duties ?? []);
+  if (skip) set.add(monthKeyValue);
+  else set.delete(monthKeyValue);
+  return {
+    ...current,
+    duties: [...set].sort(),
+  };
+}
+
+/** Move an archived duty month back into active duties. */
+export function restoreDutyMonthFromArchive(
+  data: AppData,
+  monthKeyValue: string
+): AppData {
+  const entry = (data.dutyArchive ?? []).find((m) => m.monthKey === monthKeyValue);
+  if (!entry) return data;
+
+  return {
+    ...data,
+    duties: {
+      ...data.duties,
+      [monthKeyValue]: entry.entries.map(normalizeDutyEntry),
+    },
+    dutyArchive: (data.dutyArchive ?? []).filter((m) => m.monthKey !== monthKeyValue),
+    autoArchiveSkip: withDutyAutoArchiveSkip(data, monthKeyValue, true),
   };
 }
 
@@ -72,11 +107,13 @@ export function applyAutoArchiveDuties(
   now = new Date()
 ): AppData {
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const skip = new Set(data.autoArchiveSkip?.duties ?? []);
 
   let next = data;
   let changed = false;
 
   for (const [key, entries] of Object.entries(data.duties ?? {})) {
+    if (skip.has(key)) continue;
     if (!shouldAutoArchiveDutyMonth(key, entries, today)) continue;
     if ((next.dutyArchive ?? []).some((m) => m.monthKey === key)) {
       const cleared = { ...next.duties };

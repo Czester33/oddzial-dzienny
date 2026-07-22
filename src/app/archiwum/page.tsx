@@ -2,8 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { useData } from "@/context/DataContext";
-import { PageHeader, LoadingState, ErrorBanner } from "@/components/ui";
+import { PageHeader, LoadingState, ErrorBanner, Btn } from "@/components/ui";
 import { parseMonthKey } from "@/lib/date-utils";
+import { restoreAdmissionMonthFromArchive } from "@/lib/admission-utils";
+import { restoreDutyMonthFromArchive } from "@/lib/duty-utils";
+import { restoreVacationYearFromArchive } from "@/lib/vacation-utils";
 import { ArchivedAdmissionMonthPanel } from "@/components/ArchivedAdmissionSessions";
 import { ArchivedVacationYearPanel } from "@/components/ArchivedVacationYear";
 import { ArchivedDutyMonthPanel } from "@/components/ArchivedDutyMonth";
@@ -29,7 +32,7 @@ const MONTHS_PL = [
 ];
 
 export default function ArchiwumPage() {
-  const { data, loading, error } = useData();
+  const { data, loading, error, save, saving } = useData();
   const [openAdmissionKey, setOpenAdmissionKey] = useState<string | null>(null);
   const [openVacationYear, setOpenVacationYear] = useState<string | null>(null);
   const [openDutyKey, setOpenDutyKey] = useState<string | null>(null);
@@ -84,6 +87,27 @@ export default function ArchiwumPage() {
     vacationYears.length === 0 &&
     dutiesByYear.length === 0;
 
+  async function restoreAdmission(monthKey: string) {
+    if (!data) return;
+    if (!confirm("Przywrócić ten miesiąc przyjęć z archiwum?")) return;
+    await save(restoreAdmissionMonthFromArchive(data, monthKey));
+    setOpenAdmissionKey(null);
+  }
+
+  async function restoreDuty(monthKey: string) {
+    if (!data) return;
+    if (!confirm("Przywrócić ten miesiąc dyżurów z archiwum?")) return;
+    await save(restoreDutyMonthFromArchive(data, monthKey));
+    setOpenDutyKey(null);
+  }
+
+  async function restoreVacation(yearKey: string) {
+    if (!data) return;
+    if (!confirm("Przywrócić ten rok urlopów z archiwum?")) return;
+    await save(restoreVacationYearFromArchive(data, yearKey));
+    setOpenVacationYear(null);
+  }
+
   return (
     <div>
       <PageHeader title="Archiwum" />
@@ -137,7 +161,16 @@ export default function ArchiwumPage() {
 
                     {entries.map((entry) =>
                       openAdmissionKey === entry.monthKey ? (
-                        <div key={`panel-${entry.monthKey}`} className="mt-4">
+                        <div key={`panel-${entry.monthKey}`} className="mt-4 space-y-3">
+                          <div className="flex justify-end">
+                            <Btn
+                              variant="secondary"
+                              disabled={saving}
+                              onClick={() => void restoreAdmission(entry.monthKey)}
+                            >
+                              Cofnij z archiwum
+                            </Btn>
+                          </div>
                           <ArchivedAdmissionMonthPanel
                             entry={entry}
                             data={data}
@@ -191,7 +224,16 @@ export default function ArchiwumPage() {
 
                     {entries.map((entry) =>
                       openDutyKey === entry.monthKey ? (
-                        <div key={`duty-${entry.monthKey}`} className="mt-4">
+                        <div key={`duty-${entry.monthKey}`} className="mt-4 space-y-3">
+                          <div className="flex justify-end">
+                            <Btn
+                              variant="secondary"
+                              disabled={saving}
+                              onClick={() => void restoreDuty(entry.monthKey)}
+                            >
+                              Cofnij z archiwum
+                            </Btn>
+                          </div>
                           <ArchivedDutyMonthPanel entry={entry} data={data} />
                         </div>
                       ) : null
@@ -233,7 +275,16 @@ export default function ArchiwumPage() {
 
               {vacationYears.map((entry) =>
                 openVacationYear === entry.yearKey ? (
-                  <div key={`vac-${entry.yearKey}`} className="mt-4">
+                  <div key={`vac-${entry.yearKey}`} className="mt-4 space-y-3">
+                    <div className="flex justify-end">
+                      <Btn
+                        variant="secondary"
+                        disabled={saving}
+                        onClick={() => void restoreVacation(entry.yearKey)}
+                      >
+                        Cofnij z archiwum
+                      </Btn>
+                    </div>
                     <ArchivedVacationYearPanel entry={entry} data={data} />
                   </div>
                 ) : null

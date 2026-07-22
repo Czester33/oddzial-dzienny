@@ -438,6 +438,17 @@ export function sanitizeAppData(data: AppData): AppData {
           })),
         }))
       : [],
+    autoArchiveSkip: {
+      admissions: Array.isArray(data.autoArchiveSkip?.admissions)
+        ? [...data.autoArchiveSkip.admissions].filter(Boolean).sort()
+        : [],
+      duties: Array.isArray(data.autoArchiveSkip?.duties)
+        ? [...data.autoArchiveSkip.duties].filter(Boolean).sort()
+        : [],
+      vacations: Array.isArray(data.autoArchiveSkip?.vacations)
+        ? [...data.autoArchiveSkip.vacations].filter(Boolean).sort()
+        : [],
+    },
     navOrder: normalizeNavOrder(data.navOrder),
     navLabels: normalizeNavLabels(data.navLabels),
   };

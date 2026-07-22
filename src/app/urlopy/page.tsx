@@ -34,6 +34,7 @@ import {
 import {
   applyAutoArchiveVacations,
   applyVacationNotes,
+  archiveVacationYear,
   hasAutoArchiveVacationChanges,
   hasVacationNoteChanges,
   vacationStaff,
@@ -506,8 +507,16 @@ export default function UrlopyPage() {
   const yearNum = Number(year);
   const vacations = data.vacations[year] ?? [];
   const yearArchived = (data.vacationArchive ?? []).some((y) => y.yearKey === year);
+  const yearRestoredFromArchive = (data.autoArchiveSkip?.vacations ?? []).includes(year);
   const clinicClosedDays = data.clinicClosedDays ?? [];
   const { upcoming: upcomingMonths, past: pastMonths } = splitMonthIndexes(yearNum);
+
+  const archiveCurrentYear = () => {
+    if (!yearRestoredFromArchive) return;
+    if (!confirm("Zarchiwizować ponownie ten rok urlopów?")) return;
+    save(archiveVacationYear(data, year));
+    setYear(currentYearKey());
+  };
 
   const saveVacations = (updated: VacationEntry[]) => {
     save({
@@ -637,7 +646,16 @@ export default function UrlopyPage() {
   return (
     <div>
       <PageHeader title="Urlopy pracowników">
-        <YearSelector value={year} onChange={setYear} />
+        {yearRestoredFromArchive ? (
+          <Btn variant="secondary" onClick={archiveCurrentYear}>
+            Archiwizuj
+          </Btn>
+        ) : null}
+        <YearSelector
+          value={year}
+          onChange={setYear}
+          extraYears={data.autoArchiveSkip?.vacations ?? []}
+        />
       </PageHeader>
       {error && <ErrorBanner message={error} />}
 

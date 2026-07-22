@@ -27,6 +27,7 @@ import {
 import {
   applyAutoArchiveDuties,
   applyDutyNotes,
+  archiveDutyMonth,
   hasAutoArchiveDutyChanges,
 } from "@/lib/duty-utils";
 import { FitWidthScale, tableRemPx } from "@/components/FitWidthScale";
@@ -72,11 +73,12 @@ function nextDutyMonthKey(key: string): string {
   return toMonthKey(next.getFullYear(), next.getMonth());
 }
 
-/** Current or next month that is not in the past. */
-function clampDutyMonthKey(key: string): string {
+/** Current or next month that is not in the past (unless restored from archive). */
+function clampDutyMonthKey(key: string, restoredKeys: Set<string> = new Set()): string {
+  if (restoredKeys.has(key)) return key;
   const today = currentMonthKey();
   let candidate = key < today ? today : key;
-  while (isDutyMonthPast(candidate)) {
+  while (isDutyMonthPast(candidate) && !restoredKeys.has(candidate)) {
     candidate = nextDutyMonthKey(candidate);
   }
   return candidate;
@@ -294,6 +296,7 @@ export default function DyzuryPage() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const todayKey = currentMonthKey();
+  const restoredDutyKeys = new Set(data?.autoArchiveSkip?.duties ?? []);
   const [monthKey, setMonthKey] = useState(() => clampDutyMonthKey(currentMonthKey()));
 
   useEffect(() => {
@@ -304,14 +307,17 @@ export default function DyzuryPage() {
     }
   }, [loading, data, save]);
 
-  const visibleMonthKey = clampDutyMonthKey(monthKey);
+  const visibleMonthKey = clampDutyMonthKey(monthKey, restoredDutyKeys);
   const upcomingMonthKey = nextDutyMonthKey(visibleMonthKey);
+  const viewingRestoredPast =
+    restoredDutyKeys.has(visibleMonthKey) && isDutyMonthPast(visibleMonthKey, todayKey);
 
   const monthOptions = (() => {
     const opts = new Set(
       getMonthOptions(24, 0).filter((key) => !isDutyMonthPast(key, todayKey))
     );
-    if (!isDutyMonthPast(visibleMonthKey, todayKey)) {
+    for (const key of restoredDutyKeys) opts.add(key);
+    if (!isDutyMonthPast(visibleMonthKey, todayKey) || restoredDutyKeys.has(visibleMonthKey)) {
       opts.add(visibleMonthKey);
     }
     return Array.from(opts).sort();
@@ -326,7 +332,9 @@ export default function DyzuryPage() {
   if (loading || !data) return <LoadingState />;
 
   const updateDuty = (targetMonthKey: string, date: string, physiotherapistId: string) => {
-    if (isDutyMonthPast(targetMonthKey, todayKey)) return;
+    const canEdit =
+      !isDutyMonthPast(targetMonthKey, todayKey) || restoredDutyKeys.has(targetMonthKey);
+    if (!canEdit) return;
     const { year, month } = parseMonthKey(targetMonthKey);
     const tueThuDates = getTuesdaysAndThursdays(year, month);
     const existing = data.duties[targetMonthKey];
@@ -345,20 +353,34 @@ export default function DyzuryPage() {
     );
   };
 
+  const archiveCurrentMonth = () => {
+    if (!restoredDutyKeys.has(visibleMonthKey)) return;
+    if (!confirm("Zarchiwizować ponownie ten miesiąc dyżurów?")) return;
+    save(archiveDutyMonth(data, visibleMonthKey));
+    setMonthKey(clampDutyMonthKey(currentMonthKey()));
+  };
+
   const canGoPrev = monthOptions.some((key) => key < visibleMonthKey);
-  const tablesToShow = [visibleMonthKey, upcomingMonthKey].filter(
-    (key) => !isDutyMonthPast(key, todayKey)
-  );
+  const tablesToShow = viewingRestoredPast
+    ? [visibleMonthKey]
+    : [visibleMonthKey, upcomingMonthKey].filter(
+        (key) => !isDutyMonthPast(key, todayKey) || restoredDutyKeys.has(key)
+      );
 
   return (
     <div>
       <PageHeader title="Dyżury wt/czw">
+        {restoredDutyKeys.has(visibleMonthKey) ? (
+          <Btn variant="secondary" onClick={archiveCurrentMonth}>
+            Archiwizuj
+          </Btn>
+        ) : null}
         <Btn variant="secondary" onClick={() => shiftMonth(-1)} disabled={!canGoPrev}>
           ‹
         </Btn>
         <MonthSelector
           value={visibleMonthKey}
-          onChange={(key) => setMonthKey(clampDutyMonthKey(key))}
+          onChange={(key) => setMonthKey(clampDutyMonthKey(key, restoredDutyKeys))}
           options={monthOptions}
         />
         <Btn variant="secondary" onClick={() => shiftMonth(1)}>

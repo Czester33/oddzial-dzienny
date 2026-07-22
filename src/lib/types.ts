@@ -157,6 +157,15 @@ export interface AppData {
   vacationArchive?: ArchivedVacationYear[];
   /** Archived duty months. */
   dutyArchive?: ArchivedDutyMonth[];
+  /**
+   * Keys restored from archive. Auto-archive skips them so they are not
+   * immediately re-archived while the calendar threshold still applies.
+   */
+  autoArchiveSkip?: {
+    admissions?: string[];
+    duties?: string[];
+    vacations?: string[];
+  };
   announcements: Announcement[];
   announcementsSeenAt: string;
   /** Last time each physiotherapist marked admission notifications as read. */
