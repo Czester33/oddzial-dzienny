@@ -149,7 +149,7 @@ export function AppGuideButton() {
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-[15px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+        className="rounded-md border border-emerald-500 bg-emerald-500 px-3 py-1.5 text-[15px] font-medium text-white shadow-[0_0_12px_rgba(16,185,129,0.65)] hover:bg-emerald-400 hover:shadow-[0_0_16px_rgba(16,185,129,0.85)] dark:border-emerald-400 dark:bg-emerald-500 dark:text-white dark:hover:bg-emerald-400"
         aria-expanded={open}
         aria-haspopup="dialog"
       >
