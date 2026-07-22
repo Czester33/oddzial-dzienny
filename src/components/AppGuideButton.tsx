@@ -32,7 +32,8 @@ const GUIDE_SECTIONS: GuideSection[] = [
       "W dniu dyżuru (wtorek/czwartek) w nagłówku fizjoterapeuty widać godziny dyżuru.",
       "Zmiana w Przyjęciach tworzy powiadomienie na stronie pacjentów (kafelki po prawej; na telefonie — pasek na dole).",
       "W masażach: skończone wpisy znikają same, a osoby z kolejki mogą wejść na wolne miejsca.",
-      "Zakończone przyjęcia lądują na dole listy. Stare miesiące/lata trafiają do Archiwum.",
+      "Zakończone przyjęcia lądują na dole listy.",
+      "Przyjęcia i dyżury archiwizują się same w ostatni dzień roboczy miesiąca; urlopy — w ostatni dzień roboczy grudnia (cały rok).",
     ],
   },
   {
@@ -71,7 +72,8 @@ const GUIDE_SECTIONS: GuideSection[] = [
     intro: "Kto zostaje na dyżurze we wtorki i czwartki.",
     items: [
       "Wybierz miesiąc i przypisz fizjoterapeutę do dnia.",
-      "Widać bieżący i przyszłe miesiące; przeszłe są ukryte.",
+      "Widać bieżący i przyszłe miesiące; przeszłe są ukryte (chyba że miesiąc został cofnięty z archiwum).",
+      "Po cofnięciu z archiwum przy miesiącu pojawia się „Archiwizuj” — wraca do archiwum ręcznie.",
     ],
   },
   {
@@ -82,6 +84,7 @@ const GUIDE_SECTIONS: GuideSection[] = [
       "Tu układaj sesje: lekarz, godziny, pacjenci, przypisany fizjoterapeuta.",
       "Przy każdym pacjencie (z prawej strony nazwiska): „+” / „✓” — przyjęty (dodaje do obecnych pacjentów; ponowne kliknięcie cofa). „×” — dyskwalifikacja / nie stawił się (ponowne kliknięcie cofa). „Usuń” — usuwa wiersz z listy.",
       "Po zapisie fizjoterapeuta dostaje powiadomienie na stronie pacjentów.",
+      "Po cofnięciu miesiąca z archiwum przy wyborze miesiąca widać „Archiwizuj” — wraca do archiwum ręcznie.",
     ],
   },
   {
@@ -93,15 +96,18 @@ const GUIDE_SECTIONS: GuideSection[] = [
       "Notatka o urlopie pojawia się w nagłówku fizjoterapeuty 2 dni robocze wcześniej (na stronie pacjentów).",
       "Okres: w panelu u góry ustaw daty Od–Do, status, zaznacz osoby i kliknij „Dodaj do kalendarza”.",
       "Jeden dzień: w kalendarzu kliknij „+” i wybierz osobę.",
+      "Po cofnięciu roku z archiwum przy wyborze roku widać „Archiwizuj” — wraca do archiwum ręcznie.",
     ],
   },
   {
     title: "Archiwum",
     href: "/archiwum",
-    intro: "Stare dane do podglądu.",
+    intro: "Historia przyjęć, dyżurów i urlopów.",
     items: [
-      "Tu są zarchiwizowane przyjęcia, urlopy i dyżury.",
-      "Można przeglądać historię — bieżącego grafiku się tu nie zmienia.",
+      "Przyjęcia i dyżury: zarchiwizowany miesiąc. Urlopy: zarchiwizowany cały rok.",
+      "Kliknij miesiąc lub rok, żeby zobaczyć tabele.",
+      "„Cofnij z archiwum” przywraca dane do aktywnej zakładki (Przyjęcia / Dyżury / Urlopy), żeby je poprawić.",
+      "Przywrócony okres nie archiwizuje się od razu sam — wraca przyciskiem „Archiwizuj” w tej zakładce.",
     ],
   },
 ];
