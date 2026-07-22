@@ -352,7 +352,7 @@ function MasazeContent({ data }: { data: AppData }) {
 
       <div className="relative flex justify-center">
         <div className="relative w-full max-w-full">
-          <FitWidthScale>
+          <FitWidthScale contentWidthPx={TABLE_WIDTH}>
             <div className="border border-black bg-white shadow-sm dark:border-slate-600 dark:bg-slate-900">
               <table
                 className={`table-fixed border-collapse ${MASSAGE_TABLE_TEXT} ${
@@ -445,7 +445,7 @@ function MasazeContent({ data }: { data: AppData }) {
         Lista oczekujących
       </p>
 
-      <FitWidthScale className="mx-auto">
+      <FitWidthScale className="mx-auto" contentWidthPx={TABLE_WIDTH}>
         <div className="border border-black bg-white shadow-sm dark:border-slate-600 dark:bg-slate-900">
           <table
             className={`table-fixed border-collapse ${MASSAGE_TABLE_TEXT} ${

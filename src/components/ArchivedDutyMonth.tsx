@@ -116,7 +116,7 @@ export function ArchivedDutyMonthPanel({
   };
 
   return (
-    <FitWidthScale>
+    <FitWidthScale contentWidthPx={896}>
       <table className="w-[56rem] max-w-none border-collapse">
         <thead>
           <tr>

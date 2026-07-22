@@ -4,70 +4,131 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type CSSProperties,
   type ReactNode,
 } from "react";
 
+const MOBILE_MQ = "(max-width: 768px)";
+
+function useIsMobile(): { isMobile: boolean; ready: boolean } {
+  const [isMobile, setIsMobile] = useState(false);
+  const [ready, setReady] = useState(false);
+
+  useLayoutEffect(() => {
+    const mq = window.matchMedia(MOBILE_MQ);
+    const sync = () => setIsMobile(mq.matches);
+    sync();
+    setReady(true);
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  return { isMobile, ready };
+}
+
 /**
- * Scales children down so their intrinsic width fits the container.
- * On desktop (scale 1) content stays centered; on phones it shrinks to fit.
+ * Scales wide tables to fit the viewport on phones.
+ * Uses a fixed design width on mobile so scale does not jitter from ResizeObserver loops.
  */
 export function FitWidthScale({
   children,
   className = "",
+  contentWidthPx,
 }: {
   children: ReactNode;
   className?: string;
+  /** Intrinsic table width in px — required for stable mobile scaling. */
+  contentWidthPx: number;
 }) {
+  const { isMobile, ready } = useIsMobile();
   const outerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
-  const [innerHeight, setInnerHeight] = useState(0);
+  const [scaledHeight, setScaledHeight] = useState<number | undefined>(undefined);
 
   useLayoutEffect(() => {
+    if (!ready || !isMobile) {
+      setScale(1);
+      setScaledHeight(undefined);
+      return;
+    }
+
     const outer = outerRef.current;
     const inner = innerRef.current;
     if (!outer || !inner) return;
 
-    const update = () => {
-      const available = outer.clientWidth;
-      const contentWidth = Math.max(inner.scrollWidth, inner.offsetWidth);
-      const contentHeight = inner.offsetHeight;
-      const next =
-        contentWidth > 0 && available > 0
-          ? Math.min(1, available / contentWidth)
-          : 1;
-      setScale(next);
-      setInnerHeight(contentHeight);
+    let raf = 0;
+
+    const measureScale = () => {
+      const available = outer.clientWidth || window.innerWidth;
+      if (!available || !contentWidthPx) return;
+      const next = Math.min(1, available / contentWidthPx);
+      setScale((prev) => (Math.abs(prev - next) < 0.002 ? prev : next));
     };
 
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(outer);
-    observer.observe(inner);
-    window.addEventListener("resize", update);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", update);
+    const measureHeight = () => {
+      const contentHeight = inner.offsetHeight;
+      if (!contentHeight) return;
+      setScaledHeight((prev) => {
+        const available = outer.clientWidth || window.innerWidth;
+        const nextScale = Math.min(1, available / contentWidthPx);
+        const nextHeight = Math.ceil(contentHeight * nextScale);
+        return prev === nextHeight ? prev : nextHeight;
+      });
     };
-  }, []);
+
+    const measureAll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        measureScale();
+        measureHeight();
+      });
+    };
+
+    measureAll();
+
+    const outerObserver = new ResizeObserver(measureScale);
+    outerObserver.observe(outer);
+
+    const innerObserver = new ResizeObserver(measureHeight);
+    innerObserver.observe(inner);
+
+    window.addEventListener("resize", measureAll);
+    window.addEventListener("orientationchange", measureAll);
+
+    const delayed = window.setTimeout(measureAll, 150);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(delayed);
+      outerObserver.disconnect();
+      innerObserver.disconnect();
+      window.removeEventListener("resize", measureAll);
+      window.removeEventListener("orientationchange", measureAll);
+    };
+  }, [ready, isMobile, contentWidthPx]);
+
+  if (!ready || !isMobile) {
+    return (
+      <div className={`flex w-full max-w-full justify-center ${className}`}>
+        {children}
+      </div>
+    );
+  }
+
+  const innerStyle: CSSProperties = {
+    width: contentWidthPx,
+    transform: scale < 1 ? `scale(${scale})` : undefined,
+    transformOrigin: "top center",
+  };
 
   return (
     <div
       ref={outerRef}
-      className={`flex w-full max-w-full justify-center ${className}`}
-      style={{
-        height: innerHeight ? innerHeight * scale : undefined,
-        overflow: "hidden",
-      }}
+      className={`w-full max-w-full overflow-x-clip ${className}`}
+      style={{ height: scaledHeight }}
     >
-      <div
-        ref={innerRef}
-        className="w-max max-w-none"
-        style={{
-          transform: `scale(${scale})`,
-          transformOrigin: "top center",
-        }}
-      >
+      <div ref={innerRef} className="mx-auto max-w-none" style={innerStyle}>
         {children}
       </div>
     </div>

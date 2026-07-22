@@ -47,7 +47,7 @@ function ArchivedSessionTable({
   );
 
   return (
-    <FitWidthScale>
+    <FitWidthScale contentWidthPx={928}>
       <div className="admission-table-wrap w-[58rem] max-w-none overflow-hidden rounded-sm shadow-md ring-1 ring-black/20 dark:ring-slate-600/50">
       <div
         className={`${CELL_BORDER} border-b px-4 py-3`}

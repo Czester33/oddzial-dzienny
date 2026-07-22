@@ -897,7 +897,7 @@ function AdmissionSessionTable({
   };
 
   return (
-    <FitWidthScale>
+    <FitWidthScale contentWidthPx={928}>
       <div
         id={`admission-session-${session.id}`}
         className="admission-table-wrap mx-auto w-[58rem] max-w-none overflow-hidden rounded-sm shadow-md ring-1 ring-black/20 dark:ring-slate-600/50"
