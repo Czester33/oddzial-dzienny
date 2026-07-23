@@ -207,8 +207,8 @@ export default function FizjoterapeuciPage() {
       ) : (
         <>
           <p className="mb-3 text-[16px] text-slate-500 dark:text-slate-400">
-            Przeciągnij kafelki, aby zmienić kolejność — ta sama kolejność obowiązuje w tabelach
-            „Obecni pacjenci”.
+            Przeciągnij za przycisk ⠿ w nagłówku kafelka, aby zmienić kolejność — ta sama kolejność
+            obowiązuje w tabelach „Obecni pacjenci”.
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {data.physiotherapists.map((physio, index) => {
@@ -219,20 +219,7 @@ export default function FizjoterapeuciPage() {
               return (
                 <div
                   key={physio.id}
-                  draggable
-                  onDragStart={(e) => {
-                    const target = e.target as HTMLElement;
-                    if (
-                      target.closest("input, textarea, select, button, a, [contenteditable='true']")
-                    ) {
-                      e.preventDefault();
-                      return;
-                    }
-                    dragIndexRef.current = index;
-                    setDraggingIndex(index);
-                    e.dataTransfer.effectAllowed = "move";
-                    e.dataTransfer.setData("text/plain", String(index));
-                  }}
+                  data-physio-card
                   onDragOver={(e) => {
                     e.preventDefault();
                     e.dataTransfer.dropEffect = "move";
@@ -250,13 +237,7 @@ export default function FizjoterapeuciPage() {
                     setDraggingIndex(null);
                     setDragOverIndex(null);
                   }}
-                  onDragEnd={() => {
-                    dragIndexRef.current = null;
-                    setDraggingIndex(null);
-                    setDragOverIndex(null);
-                  }}
-                  title="Przeciągnij, aby zmienić kolejność tabel"
-                  className={`flex aspect-square cursor-grab flex-col overflow-hidden rounded-lg border shadow-sm active:cursor-grabbing ${
+                  className={`flex aspect-square flex-col overflow-hidden rounded-lg border shadow-sm ${
                     isDragging ? "opacity-50" : ""
                   } ${isDropTarget ? "ring-2 ring-blue-400 ring-offset-2" : ""}`}
                   style={{
@@ -269,8 +250,31 @@ export default function FizjoterapeuciPage() {
                     style={{ backgroundColor: physio.color }}
                   >
                     <span
-                      className="absolute left-2 top-1/2 -translate-y-1/2 text-[14px] font-bold tracking-widest text-white/70"
-                      aria-hidden
+                      role="button"
+                      tabIndex={0}
+                      draggable
+                      onDragStart={(e) => {
+                        const card = (e.currentTarget as HTMLElement).closest("[data-physio-card]");
+                        if (card instanceof HTMLElement) {
+                          e.dataTransfer.setDragImage(card, 40, 24);
+                        }
+                        dragIndexRef.current = index;
+                        setDraggingIndex(index);
+                        e.dataTransfer.effectAllowed = "move";
+                        e.dataTransfer.setData("text/plain", String(index));
+                      }}
+                      onDragEnd={() => {
+                        dragIndexRef.current = null;
+                        setDraggingIndex(null);
+                        setDragOverIndex(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key !== "Enter" && e.key !== " ") return;
+                        e.preventDefault();
+                      }}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 cursor-grab select-none rounded px-1.5 py-1 text-[14px] font-bold tracking-widest text-white/80 hover:bg-black/20 hover:text-white active:cursor-grabbing"
+                      title="Przeciągnij, aby zmienić kolejność"
+                      aria-label="Zmień kolejność fizjoterapeuty"
                     >
                       ⠿
                     </span>
