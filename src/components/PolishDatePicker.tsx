@@ -51,6 +51,11 @@ export function PolishDatePicker({
 
     const rect = anchor.getBoundingClientRect();
     const panelHeight = panelRef.current?.offsetHeight || PANEL_ESTIMATED_HEIGHT;
+    const header = document.querySelector("header.app-header");
+    const navBottom = header
+      ? Math.ceil(header.getBoundingClientRect().bottom) + VIEWPORT_MARGIN
+      : VIEWPORT_MARGIN;
+    const minTop = Math.max(VIEWPORT_MARGIN, navBottom);
 
     let left = rect.left;
     if (left + PANEL_WIDTH > window.innerWidth - VIEWPORT_MARGIN) {
@@ -59,20 +64,22 @@ export function PolishDatePicker({
     left = Math.max(VIEWPORT_MARGIN, left);
 
     const spaceBelow = window.innerHeight - rect.bottom - ANCHOR_GAP - VIEWPORT_MARGIN;
-    const spaceAbove = rect.top - ANCHOR_GAP - VIEWPORT_MARGIN;
+    const spaceAbove = rect.top - ANCHOR_GAP - minTop;
 
     let top: number;
     if (spaceBelow >= panelHeight || spaceBelow >= spaceAbove) {
       top = rect.bottom + ANCHOR_GAP;
       if (top + panelHeight > window.innerHeight - VIEWPORT_MARGIN) {
-        top = Math.max(VIEWPORT_MARGIN, window.innerHeight - panelHeight - VIEWPORT_MARGIN);
+        top = Math.max(minTop, window.innerHeight - panelHeight - VIEWPORT_MARGIN);
       }
     } else {
       top = rect.top - panelHeight - ANCHOR_GAP;
-      if (top < VIEWPORT_MARGIN) {
-        top = VIEWPORT_MARGIN;
+      if (top < minTop) {
+        top = minTop;
       }
     }
+
+    if (top < minTop) top = minTop;
 
     setPosition({ top, left });
   };
@@ -140,7 +147,7 @@ export function PolishDatePicker({
   return createPortal(
     <div
       ref={panelRef}
-      className="fixed z-[100] w-[220px] rounded-md border border-slate-200/90 bg-white p-2 shadow-md dark:border-slate-700 dark:bg-slate-900"
+      className="fixed z-[60] w-[220px] rounded-md border border-slate-200/90 bg-white p-2 shadow-md dark:border-slate-700 dark:bg-slate-900"
       style={{ top: position.top, left: position.left }}
       lang="pl"
     >

@@ -4,13 +4,23 @@ import { useEffect, useLayoutEffect, useState } from "react";
 import { TodayCalendar } from "@/components/TodayCalendar";
 import { formatDatePL, isoFromParts } from "@/lib/date-utils";
 
+function getAppZoom(): number {
+  if (typeof document === "undefined") return 1;
+  const root = document.querySelector(".app-root");
+  if (!root) return 1;
+  const zoom = Number.parseFloat(getComputedStyle(root).zoom || "1");
+  return Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
+}
+
 function getTopBelowNav(): number {
   if (typeof document === "undefined") return 16;
   const header = document.querySelector("header.app-header");
   if (!header) return 16;
+  // Header lives under CSS zoom; fixed top inside .app-root uses pre-zoom coords.
   const bottom = Math.ceil(header.getBoundingClientRect().bottom) + 8;
-  return Math.max(16, bottom);
+  return Math.max(16, bottom / getAppZoom());
 }
+
 
 function loadMinimized(storageKey: string): boolean {
   try {
@@ -71,7 +81,7 @@ export function FloatingTodayCalendar({
 
   return (
     <div
-      className="fixed left-4 z-[60] hidden shadow-lg lg:block"
+      className="fixed left-4 z-40 hidden shadow-lg lg:block"
       style={{ top: topOffset }}
     >
       {minimized ? (
