@@ -745,33 +745,35 @@ export default function UrlopyPage() {
                 </button>
               </div>
             </div>
-            <div className="flex min-w-[min(100%,20rem)] flex-1 flex-wrap items-center gap-2">
-              <span className="shrink-0 text-[17px] font-medium text-slate-700 dark:text-slate-300">
+            <div className="flex min-w-[min(100%,20rem)] flex-1 items-start gap-2">
+              <span className="mt-1.5 shrink-0 text-[17px] font-medium text-slate-700 dark:text-slate-300">
                 Osoba
               </span>
-              {vacationStaff(data).map((p) => {
-                const selected = rangePhysioIds.includes(p.id);
-                const tileBg = physioTileBg(p.color, p.rowColor, isDark);
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => toggleRangePhysio(p.id)}
-                    className={`rounded-md border px-2.5 py-1 text-[17px] font-semibold transition-shadow ${
-                      selected
-                        ? "ring-2 ring-offset-1 ring-slate-800 dark:ring-white dark:ring-offset-slate-900"
-                        : "opacity-80 hover:opacity-100"
-                    }`}
-                    style={{
-                      backgroundColor: tileBg,
-                      color: physioTileText(isDark),
-                      borderColor: p.color,
-                    }}
-                  >
-                    {shortPhysioName(p.name)}
-                  </button>
-                );
-              })}
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                {vacationStaff(data).map((p) => {
+                  const selected = rangePhysioIds.includes(p.id);
+                  const tileBg = physioTileBg(p.color, p.rowColor, isDark);
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => toggleRangePhysio(p.id)}
+                      className={`rounded-md border px-2.5 py-1 text-[17px] font-semibold transition-shadow ${
+                        selected
+                          ? "ring-2 ring-offset-1 ring-slate-800 dark:ring-white dark:ring-offset-slate-900"
+                          : "opacity-80 hover:opacity-100"
+                      }`}
+                      style={{
+                        backgroundColor: tileBg,
+                        color: physioTileText(isDark),
+                        borderColor: p.color,
+                      }}
+                    >
+                      {shortPhysioName(p.name)}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
             <Btn onClick={applyRange} disabled={!canApplyRange} className="shrink-0">
               Dodaj do kalendarza
