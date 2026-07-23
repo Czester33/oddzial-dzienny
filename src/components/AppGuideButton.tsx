@@ -17,10 +17,12 @@ const GUIDE_SECTIONS: GuideSection[] = [
     intro: "Zacznij od tego. Reszta będzie prostsza.",
     items: [
       "Nic nie musisz zapisywać. Wpisujesz — i już jest zapisane.",
-      "Jak coś popsujesz: kliknij „Cofnij” u góry albo naciśnij Ctrl+Z.",
+      "Jak coś popsujesz: kliknij „Cofnij” u góry (strzałka w lewo) albo naciśnij Ctrl+Z.",
+      "Jak za bardzo cofnąłeś: kliknij „Ponów” (strzałka w prawo) albo naciśnij Ctrl+Y.",
       "Górne zakładki (Pacjenci, Masaże itd.) możesz przeciągać myszką — zmieniasz kolejność.",
       "Kliknij dwa razy w nazwę zakładki — możesz ją nazwać inaczej.",
       "Przycisk z księżycem/słońcem = jasny albo ciemny wygląd.",
+      "Zielony przycisk „Przewodnik” = ta instrukcja.",
       "Dzwonek = ogłoszenia dla wszystkich.",
     ],
   },
@@ -30,7 +32,7 @@ const GUIDE_SECTIONS: GuideSection[] = [
     items: [
       "Jak minie data wypisu pacjenta, znika z listy obecnych. W dniu wypisu — po 18:00.",
       "Jak ktoś ma urlop, nad jego tabelą pojawia się przypomnienie (2 dni robocze wcześniej). Przy masażach (Krzysztof) — już 14 dni wcześniej.",
-      "We wtorek albo czwartek, gdy ktoś ma dyżur, nad jego tabelą widać godziny dyżuru.",
+      "We wtorek albo czwartek, gdy ktoś ma dyżur, od rana (od 7:00) nad jego tabelą widać godziny dyżuru, np. 13:25-21:00.",
       "Jak coś zmienisz w Przyjęciach, na stronie pacjentów pojawia się powiadomienie (po prawej; na telefonie — na dole).",
       "W masażach skończone osoby znikają same. Ktoś z kolejki może wejść na wolne miejsce.",
       "Stare przyjęcia (już po terminie) spadają na dół listy.",
@@ -56,7 +58,8 @@ const GUIDE_SECTIONS: GuideSection[] = [
     items: [
       "Tu dodajesz nową osobę, zmieniasz imię albo kolor, albo usuwasz.",
       "Kolor tej osoby potem widać w tabelach.",
-      "Możesz przeciągać kafelki — tak ustawiasz kolejność tabel na stronie pacjentów.",
+      "Żeby zmienić kolejność kafelków: złap tylko przycisk ⠿ w nagłówku i przeciągnij. Reszta kafelka nie przesuwa.",
+      "Ta kolejność obowiązuje też w tabelach na stronie pacjentów.",
     ],
   },
   {
