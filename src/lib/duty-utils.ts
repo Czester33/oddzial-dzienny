@@ -137,17 +137,11 @@ export function hasAutoArchiveDutyChanges(before: AppData, after: AppData): bool
 }
 
 function stripDutyNote(text: string): string {
-  return stripHtml(text.replace(DUTY_NOTE_RE, " ").replace(/\s+/g, " "));
+  return stripHtml(text.replace(DUTY_NOTE_RE, " ").replace(/\s+/g, " ")).trim();
 }
 
 function buildDutyNoteText(dateIso: string): string {
   return `13:25-${getFacilityClosingTimeForDate(dateIso)}`;
-}
-
-function mergeDutyNote(existing: string, dutyNote: string | null): string {
-  const base = stripDutyNote(existing);
-  if (!dutyNote) return base;
-  return base ? `${dutyNote} ${base}` : dutyNote;
 }
 
 function isDutyNoteWindow(now: Date, workDayEndMinutes: number): boolean {
@@ -171,6 +165,13 @@ function collectDutyDatesByPhysio(data: AppData): Map<string, string[]> {
   return byPhysio;
 }
 
+function todayIsoDateFromDate(now: Date): string {
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function findActiveDutyNote(dutyDates: string[], now: Date): string | null {
   const todayIso = todayIsoDateFromDate(now);
   if (!dutyDates.includes(todayIso)) return null;
@@ -181,42 +182,43 @@ function findActiveDutyNote(dutyDates: string[], now: Date): string | null {
   return buildDutyNoteText(todayIso);
 }
 
-function todayIsoDateFromDate(now: Date): string {
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+/** Live duty badge text for a physiotherapist (not stored in headerNote). */
+export function getActiveDutyNoteForPhysio(
+  data: AppData,
+  physiotherapistId: string,
+  now = new Date()
+): string | null {
+  const dutyDates = collectDutyDatesByPhysio(data).get(physiotherapistId) ?? [];
+  return findActiveDutyNote(dutyDates, now);
 }
 
-/** Show duty note on physio header from 7:00 through facility closing on their duty day. */
-export function applyDutyNotes(data: AppData, now = new Date()): AppData {
-  const byPhysio = collectDutyDatesByPhysio(data);
+/** Remove auto duty times from stored header notes (vacation / manual text stays). */
+export function stripPersistedDutyNotes(text: string): string {
+  return stripDutyNote(text);
+}
 
+/**
+ * Clean persisted duty times from physio headers.
+ * Duty badges are computed live in the UI so sync cannot make them flicker.
+ */
+export function applyDutyNotes(data: AppData, _now = new Date()): AppData {
   let nextPhysios = data.physiotherapists;
   let changed = false;
 
-  for (const physio of data.physiotherapists) {
-    const dutyDates = byPhysio.get(physio.id) ?? [];
-    const dutyNote = findActiveDutyNote(dutyDates, now);
-    const merged = mergeDutyNote(physio.headerNote ?? "", dutyNote);
-    if (merged !== (physio.headerNote ?? "")) {
-      if (!changed) {
-        nextPhysios = [...data.physiotherapists];
-        changed = true;
-      }
-      const idx = nextPhysios.findIndex((p) => p.id === physio.id);
-      if (idx >= 0) {
-        nextPhysios[idx] = { ...nextPhysios[idx], headerNote: merged || undefined };
-      }
+  for (let i = 0; i < data.physiotherapists.length; i++) {
+    const physio = data.physiotherapists[i];
+    const current = physio.headerNote ?? "";
+    const cleaned = stripDutyNote(current);
+    if (cleaned === current) continue;
+    if (!changed) {
+      nextPhysios = [...data.physiotherapists];
+      changed = true;
     }
+    nextPhysios[i] = { ...physio, headerNote: cleaned || "" };
   }
 
   if (!changed) return data;
-
-  return {
-    ...data,
-    physiotherapists: nextPhysios,
-  };
+  return { ...data, physiotherapists: nextPhysios };
 }
 
 export function hasDutyNoteChanges(before: AppData, after: AppData): boolean {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useData } from "@/context/DataContext";
 import type { AppData, ColumnWidths, Patient } from "@/lib/types";
@@ -17,13 +17,14 @@ import {
 } from "@/lib/physio-utils";
 import { applyAutoDischarge, hasAutoDischargeChanges } from "@/lib/discharge-utils";
 import { applyVacationNotes, hasVacationNoteChanges } from "@/lib/vacation-utils";
-import { applyDutyNotes, hasDutyNoteChanges } from "@/lib/duty-utils";
+import { applyDutyNotes, getActiveDutyNoteForPhysio, hasDutyNoteChanges } from "@/lib/duty-utils";
 import { FloatingTodayCalendar } from "@/components/FloatingTodayCalendar";
 import { FloatingUpcomingAdmission } from "@/components/FloatingUpcomingAdmission";
 
 function PacjenciContent({ data }: { data: AppData }) {
   const { error, save } = useData();
   const dataRef = useRef(data);
+  const [nowTick, setNowTick] = useState(() => Date.now());
 
   dataRef.current = data;
 
@@ -46,6 +47,11 @@ function PacjenciContent({ data }: { data: AppData }) {
     const interval = setInterval(sync, 60_000);
     return () => clearInterval(interval);
   }, [save]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTick(Date.now()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const getPatients = (physioId: string) =>
     sortPatientsByDischargeDate(data.currentPatients[physioId] ?? []);
@@ -154,6 +160,7 @@ function PacjenciContent({ data }: { data: AppData }) {
               patients={getPatients(physio.id)}
               allPhysios={data.physiotherapists}
               substitutesAway={countSubstitutesAway(data, physio.id)}
+              dutyNote={getActiveDutyNoteForPhysio(data, physio.id, new Date(nowTick))}
               onUpdatePatient={(i, patient) => updatePatient(physio.id, i, patient)}
               onAddRow={() => addRow(physio.id)}
               onDeleteRow={(i) => deleteRow(physio.id, i)}

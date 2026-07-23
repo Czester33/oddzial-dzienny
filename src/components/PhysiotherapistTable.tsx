@@ -9,6 +9,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { DatePickerCell } from "@/components/DatePickerCell";
 import { FormattedEditor } from "@/components/FormattedEditor";
 import { stripHtml } from "@/lib/text-format";
+import { stripPersistedDutyNotes } from "@/lib/duty-utils";
 
 const WIDTH_LIMITS: Record<keyof ColumnWidths, { min: number; max: number }> = {
   lp: { min: 36, max: 80 },
@@ -274,6 +275,7 @@ export function PhysiotherapistTable({
   patients,
   allPhysios,
   substitutesAway = 0,
+  dutyNote = null,
   onUpdatePatient,
   onAddRow,
   onDeleteRow,
@@ -286,6 +288,8 @@ export function PhysiotherapistTable({
   patients: Patient[];
   allPhysios: Physiotherapist[];
   substitutesAway?: number;
+  /** Live duty badge (e.g. 13:25-21:00); not taken from stored headerNote. */
+  dutyNote?: string | null;
   onUpdatePatient: (index: number, patient: Patient) => void;
   onAddRow: () => void;
   onDeleteRow: (index: number) => void;
@@ -330,7 +334,7 @@ export function PhysiotherapistTable({
       ? allPhysios.find((p) => p.id === patient.ownerPhysiotherapistId)
       : undefined;
 
-  const headerNoteLabel = stripHtml(physio.headerNote ?? "");
+  const headerNoteLabel = stripPersistedDutyNotes(stripHtml(physio.headerNote ?? ""));
 
   return (
     <div className="overflow-hidden border border-slate-200 shadow-sm dark:border-slate-700">
@@ -340,6 +344,11 @@ export function PhysiotherapistTable({
       >
         <div className="flex min-w-0 flex-1 flex-wrap items-center justify-center gap-2 text-center">
           <span>{physio.name}</span>
+          {dutyNote ? (
+            <span className="rounded bg-yellow-300 px-1.5 py-0.5 text-[19px] font-semibold text-black">
+              {dutyNote}
+            </span>
+          ) : null}
           {headerNoteLabel ? (
             <span className="rounded bg-yellow-300 px-1.5 py-0.5 text-[19px] font-semibold text-black">
               {headerNoteLabel}
