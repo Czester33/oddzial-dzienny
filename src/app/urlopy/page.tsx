@@ -565,9 +565,7 @@ export default function UrlopyPage() {
   };
 
   const toggleRangePhysio = (id: string) => {
-    setRangePhysioIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+    setRangePhysioIds((prev) => (prev.includes(id) ? [] : [id]));
   };
 
   const applyRange = () => {
@@ -749,7 +747,7 @@ export default function UrlopyPage() {
             </div>
             <div className="flex min-w-[min(100%,20rem)] flex-1 flex-wrap items-center gap-2">
               <span className="shrink-0 text-[17px] font-medium text-slate-700 dark:text-slate-300">
-                Osoby
+                Osoba
               </span>
               {vacationStaff(data).map((p) => {
                 const selected = rangePhysioIds.includes(p.id);

@@ -105,7 +105,7 @@ const GUIDE_SECTIONS: GuideSection[] = [
     items: [
       "P = urlop pewny (na pewno). N = jeszcze niepewny.",
       "W święta i dni wolne od pracy nie da się wpisać urlopu.",
-      "Wiele dni naraz: u góry ustaw Od i Do, zaznacz osoby, kliknij „Dodaj do kalendarza”.",
+      "Wiele dni naraz: u góry ustaw Od i Do, wybierz jedną osobę, kliknij „Dodaj do kalendarza”.",
       "Jeden dzień: w kalendarzu kliknij „+” i wybierz osobę.",
       "Przed urlopem nad tabelą fizjoterapeuty (na stronie pacjentów) pojawi się przypomnienie.",
       "Jak rok był wyjęty z Archiwum, pojawi się „Archiwizuj” — wraca do Archiwum.",
