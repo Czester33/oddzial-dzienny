@@ -120,18 +120,37 @@ function ResizableHeader({
   );
 }
 
+function useIsMobile(): boolean {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 768px)");
+    const sync = () => setIsMobile(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  return isMobile;
+}
+
 function MovePatientButton({
   targets,
   onMove,
+  mode = "arrow",
+  lpNumber,
 }: {
   targets: Physiotherapist[];
   onMove: (toPhysioId: string) => void;
+  mode?: "arrow" | "lp";
+  lpNumber?: number;
 }) {
   const [open, setOpen] = useState(false);
   const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const isLpMode = mode === "lp";
 
   useEffect(() => {
     setPortalRoot(
@@ -228,14 +247,26 @@ function MovePatientButton({
         ref={buttonRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`rounded border border-black/15 bg-white/90 px-0.5 py-0 text-[9px] leading-tight text-slate-500 transition-opacity hover:bg-white focus:opacity-100 group-hover/row:opacity-100 dark:border-white/20 dark:bg-slate-900/90 dark:text-slate-300 dark:hover:bg-slate-800 ${
-          open ? "opacity-100" : "opacity-0"
-        }`}
+        className={
+          isLpMode
+            ? `min-h-[2.5rem] w-full rounded px-0.5 text-[19px] font-medium leading-none ${
+                open
+                  ? "bg-black/10 dark:bg-white/15"
+                  : "active:bg-black/10 dark:active:bg-white/10"
+              }`
+            : `rounded border border-black/15 bg-white/90 px-0.5 py-0 text-[9px] leading-tight text-slate-500 transition-opacity hover:bg-white focus:opacity-100 group-hover/row:opacity-100 dark:border-white/20 dark:bg-slate-900/90 dark:text-slate-300 dark:hover:bg-slate-800 ${
+                open ? "opacity-100" : "opacity-0"
+              }`
+        }
         title="Przenieś do innego fizjoterapeuty (zastępstwo)"
-        aria-label="Przenieś pacjenta"
+        aria-label={
+          isLpMode
+            ? `Zastępstwo dla pozycji ${lpNumber ?? ""}`
+            : "Przenieś pacjenta"
+        }
         aria-expanded={open}
       >
-        →
+        {isLpMode ? lpNumber : "→"}
       </button>
       {open &&
         portalRoot &&
@@ -299,6 +330,7 @@ export function PhysiotherapistTable({
   onColumnWidthsChange: (widths: ColumnWidths) => void;
 }) {
   const { theme } = useTheme();
+  const isMobile = useIsMobile();
   const [widths, setWidths] = useState(() => getDefaultColumnWidths(physio.columnWidths));
   const widthsRef = useRef(widths);
 
@@ -433,29 +465,44 @@ export function PhysiotherapistTable({
                         : "border-black/20 text-slate-700"
                     }`}
                   >
-                    <div className="flex min-h-[2.5rem] flex-col items-center justify-center gap-0.5">
-                      <div className="flex items-center justify-center gap-0.5">
-                        <span className="w-4">{index + 1}</span>
-                        <button
-                          type="button"
-                          onClick={() => onDeleteRow(index)}
-                          className={`rounded px-0.5 text-[19px] leading-none opacity-0 transition-opacity focus:opacity-100 group-hover/row:opacity-100 ${
-                            isDark
-                              ? "text-red-400 hover:bg-red-950/50 hover:text-red-300"
-                              : "text-red-600 hover:bg-red-100 hover:text-red-800"
-                          }`}
-                          title="Usuń wiersz"
-                        >
-                          ×
-                        </button>
-                      </div>
-                      {canMove && (
+                    {isMobile ? (
+                      canMove ? (
                         <MovePatientButton
                           targets={otherPhysios}
                           onMove={(toId) => onMovePatient(index, toId)}
+                          mode="lp"
+                          lpNumber={index + 1}
                         />
-                      )}
-                    </div>
+                      ) : (
+                        <span className="inline-flex min-h-[2.5rem] w-full items-center justify-center">
+                          {index + 1}
+                        </span>
+                      )
+                    ) : (
+                      <div className="flex min-h-[2.5rem] flex-col items-center justify-center gap-0.5">
+                        <div className="flex items-center justify-center gap-0.5">
+                          <span className="w-4">{index + 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => onDeleteRow(index)}
+                            className={`rounded px-0.5 text-[19px] leading-none opacity-0 transition-opacity focus:opacity-100 group-hover/row:opacity-100 ${
+                              isDark
+                                ? "text-red-400 hover:bg-red-950/50 hover:text-red-300"
+                                : "text-red-600 hover:bg-red-100 hover:text-red-800"
+                            }`}
+                            title="Usuń wiersz"
+                          >
+                            ×
+                          </button>
+                        </div>
+                        {canMove && (
+                          <MovePatientButton
+                            targets={otherPhysios}
+                            onMove={(toId) => onMovePatient(index, toId)}
+                          />
+                        )}
+                      </div>
+                    )}
                   </td>
                   <td
                     className={`border px-0.5 py-0 align-middle ${
