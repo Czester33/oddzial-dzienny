@@ -105,7 +105,7 @@ function NavTab({
 
 export function Navigation() {
   const pathname = usePathname();
-  const { data, saving, save, canUndo, undo, refresh } = useData();
+  const { data, saving, save, canUndo, canRedo, undo, redo, refresh } = useData();
   const silentRefresh = useCallback(() => refresh({ silent: true }), [refresh]);
   const dragIndexRef = useRef<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -144,7 +144,11 @@ export function Navigation() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "z" || e.shiftKey) return;
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const key = e.key.toLowerCase();
+      const isUndo = key === "z" && !e.shiftKey;
+      const isRedo = key === "y" || (key === "z" && e.shiftKey);
+      if (!isUndo && !isRedo) return;
 
       const target = e.target as HTMLElement | null;
       if (
@@ -157,12 +161,13 @@ export function Navigation() {
       }
 
       e.preventDefault();
-      if (canUndo && !saving) void undo();
+      if (isUndo && canUndo) void undo();
+      if (isRedo && canRedo) void redo();
     };
 
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [canUndo, saving, undo]);
+  }, [canUndo, canRedo, undo, redo]);
 
   return (
     <header className="app-header border-b border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
@@ -180,11 +185,52 @@ export function Navigation() {
             <button
               type="button"
               onClick={() => void undo()}
-              disabled={!canUndo || saving}
-              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-[15px] font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              disabled={!canUndo}
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-2 text-[15px] font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
               title="Cofnij ostatnią zmianę (Ctrl+Z)"
             >
+              <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" aria-hidden="true">
+                <path
+                  d="M7 7H4.5A2.5 2.5 0 0 0 2 9.5v0A2.5 2.5 0 0 0 4.5 12H14a3 3 0 1 0 0-6h-1"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M7 4.5 4.5 7 7 9.5"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
               Cofnij
+            </button>
+            <button
+              type="button"
+              onClick={() => void redo()}
+              disabled={!canRedo}
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-2 text-[15px] font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              title="Ponów cofniętą zmianę (Ctrl+Y)"
+            >
+              <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" aria-hidden="true">
+                <path
+                  d="M13 7h2.5A2.5 2.5 0 0 1 18 9.5v0A2.5 2.5 0 0 1 15.5 12H6a3 3 0 1 1 0-6h1"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M13 4.5 15.5 7 13 9.5"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              Ponów
             </button>
             <ThemeToggle />
             <AppGuideButton />

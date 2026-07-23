@@ -40,8 +40,10 @@ interface DataContextValue {
   saving: boolean;
   error: string | null;
   canUndo: boolean;
+  canRedo: boolean;
   save: (data: AppData) => Promise<void>;
   undo: () => Promise<void>;
+  redo: () => Promise<void>;
   refresh: (options?: { silent?: boolean }) => Promise<void>;
 }
 
@@ -53,9 +55,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
 
   const dataRef = useRef<AppData | null>(null);
   const historyRef = useRef<UndoEntry[]>([]);
+  const redoHistoryRef = useRef<UndoEntry[]>([]);
   const pendingSaveRef = useRef<AppData | null>(null);
   const saveInFlightRef = useRef(false);
   const undoBaselineRef = useRef<AppData | null>(null);
@@ -67,7 +71,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const clearHistory = useCallback(() => {
     historyRef.current = [];
+    redoHistoryRef.current = [];
     setCanUndo(false);
+    setCanRedo(false);
   }, []);
 
   const adoptServerState = useCallback((next: AppData, updatedAt: string) => {
@@ -225,6 +231,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const recordUndoEntry = useCallback((before: AppData, after: AppData) => {
+    if (deepEqual(before, after)) return;
+    const hist = historyRef.current;
+    const last = hist[hist.length - 1];
+    // Coalesce rapid edits that share the same baseline into one undo step.
+    if (last && deepEqual(last.before, before)) {
+      hist[hist.length - 1] = { before, after };
+    } else {
+      hist.push({ before, after });
+    }
+    historyRef.current = hist.slice(-MAX_UNDO_HISTORY);
+    setCanUndo(historyRef.current.length > 0);
+    // A new edit invalidates the redo chain.
+    redoHistoryRef.current = [];
+    setCanRedo(false);
+  }, []);
+
   const flushSaveQueue = useCallback(async () => {
     if (saveInFlightRef.current) return;
     saveInFlightRef.current = true;
@@ -234,8 +257,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       while (pendingSaveRef.current) {
         const next = pendingSaveRef.current;
         pendingSaveRef.current = null;
-        const baseline = undoBaselineRef.current;
-        undoBaselineRef.current = null;
 
         const result = await persist(next);
         if (!result.ok) {
@@ -244,23 +265,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
             if (!pendingSaveRef.current) {
               dataRef.current = result.data;
               setData(result.data);
+              undoBaselineRef.current = null;
               clearHistory();
             }
             break;
           }
           if (!pendingSaveRef.current) {
             pendingSaveRef.current = next;
-            undoBaselineRef.current = baseline;
           }
           break;
         }
 
-        if (baseline && !deepEqual(baseline, result.data)) {
-          historyRef.current = [
-            ...historyRef.current,
-            { before: baseline, after: result.data },
-          ].slice(-MAX_UNDO_HISTORY);
-          setCanUndo(historyRef.current.length > 0);
+        // Keep optimistic undo entry in sync with what was actually persisted.
+        const baseline = undoBaselineRef.current;
+        if (baseline) {
+          recordUndoEntry(baseline, result.data);
+        }
+
+        if (!pendingSaveRef.current) {
+          undoBaselineRef.current = null;
         }
       }
     } finally {
@@ -270,7 +293,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         void flushSaveQueue();
       }
     }
-  }, [clearHistory, persist]);
+  }, [clearHistory, persist, recordUndoEntry]);
 
   const save = useCallback(
     async (newData: AppData) => {
@@ -281,15 +304,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
       dataRef.current = newData;
       setData(newData);
 
-      if (!pendingSaveRef.current && !saveInFlightRef.current && current) {
+      if (!current) {
+        pendingSaveRef.current = newData;
+        void flushSaveQueue();
+        return;
+      }
+
+      // Fresh edit burst when idle; keep baseline when coalescing onto an in-flight save.
+      if (!saveInFlightRef.current && !pendingSaveRef.current) {
+        undoBaselineRef.current = current;
+      } else if (!undoBaselineRef.current) {
         undoBaselineRef.current = current;
       }
+
+      const baseline = undoBaselineRef.current ?? current;
+      recordUndoEntry(baseline, newData);
+
       pendingSaveRef.current = newData;
 
       // Do not await the full network round-trip on every click.
       void flushSaveQueue();
     },
-    [flushSaveQueue]
+    [flushSaveQueue, recordUndoEntry]
   );
 
   const undo = useCallback(async () => {
@@ -297,14 +333,44 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (!entry) return;
 
     setCanUndo(historyRef.current.length > 0);
+    redoHistoryRef.current = [...redoHistoryRef.current, entry].slice(-MAX_UNDO_HISTORY);
+    setCanRedo(true);
+
     pendingSaveRef.current = null;
     undoBaselineRef.current = null;
     lastLocalEditAtRef.current = Date.now();
 
-    const base = entry.after;
-    const local = entry.before;
-    const remote = syncedDataRef.current ?? dataRef.current ?? entry.before;
-    const restored = mergeAppData(base, local, remote);
+    // Restore the pre-edit snapshot directly so added vacations/ranges fully revert.
+    // Merge only when the server moved past the edited revision.
+    const remote = syncedDataRef.current;
+    const restored =
+      remote && !deepEqual(remote, entry.after) && !deepEqual(remote, entry.before)
+        ? mergeAppData(entry.after, entry.before, remote)
+        : entry.before;
+
+    dataRef.current = restored;
+    setData(restored);
+    pendingSaveRef.current = restored;
+    void flushSaveQueue();
+  }, [flushSaveQueue]);
+
+  const redo = useCallback(async () => {
+    const entry = redoHistoryRef.current.pop();
+    if (!entry) return;
+
+    setCanRedo(redoHistoryRef.current.length > 0);
+    historyRef.current = [...historyRef.current, entry].slice(-MAX_UNDO_HISTORY);
+    setCanUndo(true);
+
+    pendingSaveRef.current = null;
+    undoBaselineRef.current = null;
+    lastLocalEditAtRef.current = Date.now();
+
+    const remote = syncedDataRef.current;
+    const restored =
+      remote && !deepEqual(remote, entry.before) && !deepEqual(remote, entry.after)
+        ? mergeAppData(entry.before, entry.after, remote)
+        : entry.after;
 
     dataRef.current = restored;
     setData(restored);
@@ -313,7 +379,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [flushSaveQueue]);
 
   return (
-    <DataContext.Provider value={{ data, loading, saving, error, canUndo, save, undo, refresh }}>
+    <DataContext.Provider
+      value={{ data, loading, saving, error, canUndo, canRedo, save, undo, redo, refresh }}
+    >
       {children}
     </DataContext.Provider>
   );
