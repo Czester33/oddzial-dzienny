@@ -317,8 +317,12 @@ function VacationMonthTable({
 
       <div>
         <table
-          className="w-full table-fixed border-separate text-[18px]"
-          style={{ borderSpacing: "3px", backgroundColor: gridLine }}
+          className="w-full table-fixed text-[18px]"
+          style={{
+            borderCollapse: "separate",
+            borderSpacing: "3px",
+            backgroundColor: gridLine,
+          }}
         >
           <thead>
             <tr>
