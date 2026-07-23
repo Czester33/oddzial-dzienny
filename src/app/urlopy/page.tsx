@@ -298,10 +298,10 @@ function VacationMonthTable({
 }) {
   const colors = resolveMonthColors(month, isDark);
   const weeks = getWeekdayOnlyMonthGrid(yearNum, month);
-  const border = isDark ? "border-slate-600" : "border-black/25";
   const textMuted = isDark ? "text-slate-200" : "text-slate-900";
   const cellBg = colors.cell;
   const emptyBg = isDark ? "#1e293b" : "#f8fafc";
+  const gridLine = isDark ? "#64748b" : "#1e293b";
 
   return (
     <FitWidthScale contentWidthPx={tableRemPx(64)}>
@@ -316,13 +316,16 @@ function VacationMonthTable({
       </div>
 
       <div>
-        <table className="w-full table-fixed border-collapse text-[18px]">
+        <table
+          className="w-full table-fixed border-separate text-[18px]"
+          style={{ borderSpacing: "3px", backgroundColor: gridLine }}
+        >
           <thead>
             <tr>
               {WEEKDAY_NAMES_PL.slice(0, 5).map((label) => (
                 <th
                   key={label}
-                  className={`physio-col-header border ${border} px-1.5 py-1.5 text-center text-[17px] font-bold ${textMuted}`}
+                  className={`physio-col-header px-1.5 py-1.5 text-center text-[17px] font-bold ${textMuted}`}
                   style={{ backgroundColor: colors.header }}
                 >
                   {label}
@@ -338,7 +341,7 @@ function VacationMonthTable({
                     return (
                       <td
                         key={`empty-${month}-${wi}-${di}`}
-                        className={`border ${border} p-1.5 align-top`}
+                        className="p-1.5 align-top"
                         style={{ backgroundColor: emptyBg }}
                       />
                     );
@@ -352,7 +355,7 @@ function VacationMonthTable({
                   return (
                     <td
                       key={date}
-                      className={`border ${border} p-1.5 align-top`}
+                      className="p-1.5 align-top"
                       style={{ backgroundColor: cellBg }}
                     >
                       <div
