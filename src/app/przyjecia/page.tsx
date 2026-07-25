@@ -609,20 +609,22 @@ function PrzyjeciaPageContent() {
         )}
 
         {sessions.length > 0 ? (
-          <button
-            type="button"
-            onClick={() => setMoveMode((open) => !open)}
-            title={moveMode ? "Gotowe przenoszenie" : "Przenieś tabele do innego miesiąca"}
-            aria-label={moveMode ? "Gotowe przenoszenie" : "Przenieś tabele do innego miesiąca"}
-            aria-pressed={moveMode}
-            className={`fixed bottom-4 right-4 z-40 rounded-md border px-2.5 py-2 font-mono text-[17px] leading-none tracking-tight shadow-md transition-colors ${
-              moveMode
-                ? "border-blue-500 bg-blue-600 text-white hover:bg-blue-500"
-                : "border-slate-300 bg-white text-slate-500 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
-            }`}
-          >
-            &lt;-&gt;
-          </button>
+          <div className="flex justify-end pt-3 pb-1">
+            <button
+              type="button"
+              onClick={() => setMoveMode((open) => !open)}
+              title={moveMode ? "Gotowe przenoszenie" : "Przenieś tabele do innego miesiąca"}
+              aria-label={moveMode ? "Gotowe przenoszenie" : "Przenieś tabele do innego miesiąca"}
+              aria-pressed={moveMode}
+              className={`rounded border px-1.5 py-1 font-mono text-[12px] leading-none tracking-tight shadow-sm transition-colors ${
+                moveMode
+                  ? "border-blue-500 bg-blue-600 text-white hover:bg-blue-500"
+                  : "border-slate-300 bg-white text-slate-500 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
+              }`}
+            >
+              &lt;-&gt;
+            </button>
+          </div>
         ) : null}
       </div>
 
