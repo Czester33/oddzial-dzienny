@@ -344,6 +344,7 @@ export function mergeAppData(base: AppData, local: AppData, remote: AppData): Ap
       local.announcementsSeenAt,
       remote.announcementsSeenAt
     ),
+    notepadNotes: mergeById(base.notepadNotes, local.notepadNotes, remote.notepadNotes),
     admissionNotificationsSeenAt: mergeStringRecord(
       base.admissionNotificationsSeenAt,
       local.admissionNotificationsSeenAt,

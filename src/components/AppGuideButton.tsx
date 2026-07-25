@@ -23,7 +23,7 @@ const GUIDE_SECTIONS: GuideSection[] = [
       "Kliknij dwa razy w nazwę zakładki — możesz ją nazwać inaczej.",
       "Przycisk z księżycem/słońcem = jasny albo ciemny wygląd.",
       "Zielony przycisk „Przewodnik” = ta instrukcja.",
-      "Dzwonek = ogłoszenia dla wszystkich.",
+      "Dzwonek = ogłoszenia dla wszystkich. Na telefonie otwierają się na cały ekran (zamkniesz ✕ albo dotknięciem tła).",
     ],
   },
   {
@@ -46,7 +46,9 @@ const GUIDE_SECTIONS: GuideSection[] = [
     items: [
       "Każdy fizjoterapeuta ma swoją tabelę.",
       "Kliknij w kratkę — możesz pisać albo zmieniać.",
-      "Przeniesienie do kogoś innego (zastępstwo): najedź na pacjenta → kliknij strzałkę „→” → wybierz osobę. Przy pacjencie pojawi się napis „zastępstwo”.",
+      "Usunięcie wiersza: na komputerze najedź na pacjenta → kliknij „×” przy numerze Lp. Na telefonie: szybko dotknij dwa razy numer Lp.",
+      "Przeniesienie do kogoś innego (zastępstwo): na komputerze najedź na pacjenta → kliknij strzałkę „→” → wybierz osobę. Na telefonie: dotknij numer Lp. → wybierz osobę z listy.",
+      "Przy pacjencie w zastępstwie pojawi się napis „zastępstwo”.",
       "Cofnięcie zastępstwa: przy pacjencie jest przycisk powrotu, albo w nagłówku tabeli „Cofnij zastępstwa”.",
       "Po lewej: kalendarz i kto przychodzi w tym tygodniu. Po prawej: co się zmieniło w przyjęciach.",
     ],
@@ -109,6 +111,20 @@ const GUIDE_SECTIONS: GuideSection[] = [
       "Jeden dzień: w kalendarzu kliknij „+” i wybierz osobę.",
       "Przed urlopem nad tabelą fizjoterapeuty (na stronie pacjentów) pojawi się przypomnienie.",
       "Jak rok był wyjęty z Archiwum, pojawi się „Archiwizuj” — wraca do Archiwum.",
+    ],
+  },
+  {
+    title: "Notatnik",
+    href: "/notatnik",
+    intro: "Wspólne notatki oddziału — każdy może je czytać i edytować.",
+    items: [
+      "„Nowa notatka” = kolejny wpis na liście po lewej (na telefonie u góry).",
+      "Kliknij notatkę na liście, żeby ją otworzyć. Tytuł jest opcjonalny.",
+      "Treść zapisuje się sama — nie musisz klikać „Zapisz”.",
+      "Kliknij pole treści — po prawej pojawi się panel formatowania: pogrubienie, rozmiar, kolor.",
+      "Wyrównanie: L (do lewej), Ś (wyśrodkuj), P (do prawej).",
+      "Przyciski „•” i „1.” = lista punktowana albo numerowana. Tab = podpunkt, Shift+Tab = cofnij wcięcie.",
+      "„Usuń” kasuje całą notatkę.",
     ],
   },
   {

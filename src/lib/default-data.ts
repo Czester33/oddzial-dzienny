@@ -22,6 +22,7 @@ export function createDefaultData(): AppData {
     dutyArchive: [],
     announcements: [],
     announcementsSeenAt: "",
+    notepadNotes: [],
     admissionNotificationsSeenAt: {},
     admissionNotificationsReadIds: {},
     admissionTableThemes: {},

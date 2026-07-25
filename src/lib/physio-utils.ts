@@ -404,6 +404,13 @@ export function sanitizeAppData(data: AppData): AppData {
     },
     announcements: data.announcements ?? [],
     announcementsSeenAt: data.announcementsSeenAt ?? "",
+    notepadNotes: (data.notepadNotes ?? []).map((note) => ({
+      id: note.id,
+      title: String(note.title ?? "").trim(),
+      text: replaceNbspInHtml(note.text ?? "").trim(),
+      createdAt: note.createdAt ?? new Date().toISOString(),
+      updatedAt: note.updatedAt ?? note.createdAt ?? new Date().toISOString(),
+    })),
     admissionNotificationsSeenAt: data.admissionNotificationsSeenAt ?? {},
     admissionNotificationsReadIds: data.admissionNotificationsReadIds ?? {},
     clinicClosedDays: Array.isArray(data.clinicClosedDays)
@@ -636,6 +643,18 @@ export function migrateData(raw: any): AppData {
         ? { admissionLink: a.admissionLink as AppData["announcements"][number]["admissionLink"] }
         : {}),
     })),
+    notepadNotes: Array.isArray(raw.notepadNotes)
+      ? (raw.notepadNotes as Record<string, unknown>[]).map((note) => {
+          const createdAt = String(note.createdAt ?? new Date().toISOString());
+          return {
+            id: String(note.id ?? uuidv4()),
+            title: String(note.title ?? "").trim(),
+            text: replaceNbspInHtml(String(note.text ?? "")).trim(),
+            createdAt,
+            updatedAt: String(note.updatedAt ?? createdAt),
+          };
+        })
+      : [],
     announcementsSeenAt: raw.announcementsSeenAt ?? "",
     admissionNotificationsSeenAt:
       raw.admissionNotificationsSeenAt &&
@@ -680,6 +699,7 @@ function createEmptyAppData(): AppData {
     dutyArchive: [],
     announcements: [],
     announcementsSeenAt: "",
+    notepadNotes: [],
     admissionNotificationsSeenAt: {},
     admissionNotificationsReadIds: {},
     navOrder: [...normalizeNavOrder()],

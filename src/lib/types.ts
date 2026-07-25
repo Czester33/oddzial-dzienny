@@ -139,6 +139,14 @@ export interface Announcement {
   physiotherapistId?: string;
 }
 
+export interface NotepadNote {
+  id: string;
+  title: string;
+  text: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AppData {
   physiotherapists: Physiotherapist[];
   doctors: Doctor[];
@@ -168,6 +176,7 @@ export interface AppData {
   };
   announcements: Announcement[];
   announcementsSeenAt: string;
+  notepadNotes?: NotepadNote[];
   /** Last time each physiotherapist marked admission notifications as read. */
   admissionNotificationsSeenAt?: Record<string, string>;
   /** Per-physio list of individually read admission announcement ids. */

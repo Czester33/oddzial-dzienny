@@ -146,6 +146,7 @@ const FormatPanel = forwardRef<
   HTMLDivElement,
   {
     compact: boolean;
+    extendedFormatting?: boolean;
     panelStyle?: CSSProperties;
     currentSize: number;
     onPreserveSelection: () => void;
@@ -153,9 +154,29 @@ const FormatPanel = forwardRef<
     onSize: (size: number) => void;
     onNudgeSize: (delta: number) => void;
     onColor: (color: string) => void;
+    onAlignLeft?: () => void;
+    onAlignCenter?: () => void;
+    onAlignRight?: () => void;
+    onBulletList?: () => void;
+    onNumberedList?: () => void;
   }
 >(function FormatPanel(
-  { compact, panelStyle, currentSize, onPreserveSelection, onBold, onSize, onNudgeSize, onColor },
+  {
+    compact,
+    extendedFormatting = false,
+    panelStyle,
+    currentSize,
+    onPreserveSelection,
+    onBold,
+    onSize,
+    onNudgeSize,
+    onColor,
+    onAlignLeft,
+    onAlignCenter,
+    onAlignRight,
+    onBulletList,
+    onNumberedList,
+  },
   ref
 ) {
   const [sizeDraft, setSizeDraft] = useState(String(currentSize));
@@ -183,7 +204,7 @@ const FormatPanel = forwardRef<
       ref={ref}
       style={panelStyle}
       className={`shrink-0 rounded border border-slate-200 bg-white text-slate-800 shadow-md dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 ${
-        compact ? "w-[10rem] p-1" : "w-[11rem] p-1.5"
+        compact ? "w-[10rem] p-1" : extendedFormatting ? "w-[11.5rem] p-1.5" : "w-[11rem] p-1.5"
       }`}
       onMouseDown={(e) => {
         // Keep contentEditable focused and selection alive while using the panel,
@@ -208,6 +229,31 @@ const FormatPanel = forwardRef<
       >
         B
       </button>
+
+      {extendedFormatting && (
+        <div className="mb-1 border-t border-slate-100 pt-1 dark:border-slate-700">
+          <p className="mb-0.5 text-center text-[10px] font-medium text-slate-400">Wyrównanie</p>
+          <div className="grid grid-cols-3 gap-0.5">
+            <button type="button" onClick={onAlignLeft} className={`${btnClass} text-left`} title="Do lewej">
+              L
+            </button>
+            <button type="button" onClick={onAlignCenter} className={`${btnClass} text-center`} title="Wyśrodkuj">
+              Ś
+            </button>
+            <button type="button" onClick={onAlignRight} className={`${btnClass} text-right`} title="Do prawej">
+              P
+            </button>
+          </div>
+          <div className="mt-1 grid grid-cols-2 gap-0.5">
+            <button type="button" onClick={onBulletList} className={btnClass} title="Lista punktowana">
+              •
+            </button>
+            <button type="button" onClick={onNumberedList} className={btnClass} title="Lista numerowana">
+              1.
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="mb-1 border-t border-slate-100 pt-1 dark:border-slate-700">
         <p className="mb-0.5 text-center text-[10px] font-medium text-slate-400">Rozmiar</p>
@@ -302,6 +348,7 @@ export function FormattedEditor({
   placeholder,
   className = "",
   compact = false,
+  extendedFormatting = false,
   fontSize = DEFAULT_FONT_SIZE,
   color,
 }: {
@@ -311,6 +358,7 @@ export function FormattedEditor({
   placeholder?: string;
   className?: string;
   compact?: boolean;
+  extendedFormatting?: boolean;
   fontSize?: number;
   color?: string;
 }) {
@@ -589,6 +637,21 @@ export function FormattedEditor({
     finishFormatting(nextRange);
   };
 
+  const execBlockCommand = useCallback(
+    (command: string) => {
+      const el = ref.current;
+      if (!el) return;
+      formattingRef.current = true;
+      preserveSelection();
+      el.focus();
+      restoreSelection();
+      document.execCommand(command, false);
+      emit(true);
+      finishFormatting(selectionRangeRef.current);
+    },
+    [emit, finishFormatting, preserveSelection, restoreSelection]
+  );
+
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
     e.preventDefault();
     const raw = e.clipboardData.getData("text/plain");
@@ -618,6 +681,7 @@ export function FormattedEditor({
           <FormatPanel
             ref={panelRef}
             compact={compact}
+            extendedFormatting={extendedFormatting}
             panelStyle={panelStyle}
             currentSize={selectionFontSize}
             onPreserveSelection={preserveSelection}
@@ -625,6 +689,11 @@ export function FormattedEditor({
             onSize={applySize}
             onNudgeSize={nudgeFontSize}
             onColor={applyColor}
+            onAlignLeft={() => execBlockCommand("justifyLeft")}
+            onAlignCenter={() => execBlockCommand("justifyCenter")}
+            onAlignRight={() => execBlockCommand("justifyRight")}
+            onBulletList={() => execBlockCommand("insertUnorderedList")}
+            onNumberedList={() => execBlockCommand("insertOrderedList")}
           />,
           document.body
         )
@@ -646,12 +715,19 @@ export function FormattedEditor({
         onBlur={handleBlur}
         onPaste={handlePaste}
         onInput={() => emit()}
+        onKeyDown={(e) => {
+          if (!extendedFormatting || !multiline || e.key !== "Tab") return;
+          e.preventDefault();
+          execBlockCommand(e.shiftKey ? "outdent" : "indent");
+        }}
         onMouseUp={updateSelectionState}
         onKeyUp={updateSelectionState}
         data-placeholder={placeholder}
         style={{ fontSize: `${fontSize}px`, color: color ?? "var(--foreground)" }}
         className={`formatted-editor min-w-0 outline-none empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)] ${
-          multiline ? "min-h-[1.5em] whitespace-pre-wrap break-words" : "min-h-[1.25em] overflow-hidden whitespace-nowrap"
+          multiline
+            ? `min-h-[1.5em] break-words ${extendedFormatting ? "whitespace-normal" : "whitespace-pre-wrap"}`
+            : "min-h-[1.25em] overflow-hidden whitespace-nowrap"
         } ${className}`}
       />
 

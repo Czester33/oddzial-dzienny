@@ -10,6 +10,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/dyzury", label: "Dyżury wt/czw" },
   { href: "/przyjecia", label: "Przyjęcia" },
   { href: "/urlopy", label: "Urlopy" },
+  { href: "/notatnik", label: "Notatnik" },
   { href: "/archiwum", label: "Archiwum" },
 ];
 

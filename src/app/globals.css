@@ -169,6 +169,38 @@ textarea,
   pointer-events: none;
 }
 
+.formatted-editor ul,
+.formatted-editor ol {
+  margin: 0.35em 0;
+  padding-left: 1.5em;
+}
+
+.formatted-editor ul {
+  list-style-type: disc;
+}
+
+.formatted-editor ul ul {
+  list-style-type: circle;
+}
+
+.formatted-editor ol {
+  list-style-type: decimal;
+}
+
+.formatted-editor li {
+  display: list-item;
+}
+
+.formatted-editor [style*="text-align: center"],
+.formatted-editor [align="center"] {
+  text-align: center;
+}
+
+.formatted-editor [style*="text-align: right"],
+.formatted-editor [align="right"] {
+  text-align: right;
+}
+
 /* Vivid red text on dark backgrounds (Tailwind red utilities). */
 .dark :where(.text-red-600, .text-red-700) {
   color: var(--readable-red);
