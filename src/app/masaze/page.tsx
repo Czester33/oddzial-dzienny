@@ -253,7 +253,7 @@ function MasazeContent({ data }: { data: AppData }) {
     updateMassages({ active: sort ? sortMassagePatientsByHour(filled) : filled });
   };
 
-  const updateActiveAt = (index: number, patient: MassagePatient, sort = true) => {
+  const updateActivePatient = (patient: MassagePatient, sort = false) => {
     let next = [...massages.active];
 
     if (patient.id.startsWith("empty-")) {
@@ -272,10 +272,13 @@ function MasazeContent({ data }: { data: AppData }) {
     persistActive(next, sort);
   };
 
-  const deleteActiveAt = (index: number) => {
-    const patient = activeRows[index];
-    if (!patient || patient.id.startsWith("empty-")) return;
-    persistActive(massages.active.filter((p) => p.id !== patient.id));
+  const sortActiveRows = () => {
+    persistActive(massages.active, true);
+  };
+
+  const deleteActivePatient = (id: string) => {
+    if (id.startsWith("empty-")) return;
+    persistActive(massages.active.filter((p) => p.id !== id), true);
   };
 
   const addWaiting = () => {
@@ -377,7 +380,7 @@ function MasazeContent({ data }: { data: AppData }) {
                 <tbody>
                   {activeRows.map((p, index) => (
                     <tr
-                      key={`row-${index}`}
+                      key={p.id}
                       className="group/row"
                       style={{ backgroundColor: index % 2 === 0 ? ROW_BG : ROW_BG_ALT }}
                     >
@@ -387,7 +390,7 @@ function MasazeContent({ data }: { data: AppData }) {
                           {isRowFilled(p) && !p.id.startsWith("empty-") && (
                             <button
                               type="button"
-                              onClick={() => deleteActiveAt(index)}
+                              onClick={() => deleteActivePatient(p.id)}
                               className="text-red-600 opacity-0 transition-opacity hover:text-red-800 focus:opacity-100 group-hover/row:opacity-100 dark:text-red-400 dark:hover:text-red-300"
                               title="Usuń wiersz"
                             >
@@ -399,13 +402,13 @@ function MasazeContent({ data }: { data: AppData }) {
                       <td className={CELL}>
                         <PatientNameCell
                           value={p.name}
-                          onChange={(name) => updateActiveAt(index, { ...p, name }, false)}
+                          onChange={(name) => updateActivePatient({ ...p, name }, false)}
                         />
                       </td>
                       <td className={CELL}>
                         <TimePickerCell
                           value={p.hour}
-                          onChange={(hour) => updateActiveAt(index, { ...p, hour }, true)}
+                          onChange={(hour) => updateActivePatient({ ...p, hour }, false)}
                           scheduleHours={scheduleHours}
                           className={TIME_INPUT_CLASS}
                         />
@@ -414,8 +417,9 @@ function MasazeContent({ data }: { data: AppData }) {
                         <DatePickerCell
                           value={p.lastTreatmentDate}
                           onChange={(lastTreatmentDate) =>
-                            updateActiveAt(index, { ...p, lastTreatmentDate }, false)
+                            updateActivePatient({ ...p, lastTreatmentDate }, false)
                           }
+                          onPickerClose={sortActiveRows}
                           title="Do kiedy"
                           textClassName={MASSAGE_TABLE_TEXT}
                         />
@@ -424,7 +428,7 @@ function MasazeContent({ data }: { data: AppData }) {
                         <PhysioSelect
                           value={p.physiotherapistId}
                           onChange={(physiotherapistId) =>
-                            updateActiveAt(index, { ...p, physiotherapistId }, false)
+                            updateActivePatient({ ...p, physiotherapistId }, false)
                           }
                           options={physioOptions(data)}
                         />

@@ -22,6 +22,7 @@ export function DatePickerCell({
   readOnly = false,
   textClassName = "text-[19px]",
   defaultMonthKey,
+  onPickerClose,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -32,6 +33,8 @@ export function DatePickerCell({
   textClassName?: string;
   /** When value is empty, open calendar on this month (YYYY-MM). */
   defaultMonthKey?: string;
+  /** Called when the calendar popup closes. */
+  onPickerClose?: () => void;
 }) {
   const anchorRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -86,7 +89,10 @@ export function DatePickerCell({
         <PolishDatePicker
           value={value}
           onChange={onChange}
-          onClose={() => setOpen(false)}
+          onClose={() => {
+            setOpen(false);
+            onPickerClose?.();
+          }}
           anchorRef={anchorRef}
           defaultMonthKey={defaultMonthKey}
         />
