@@ -134,23 +134,60 @@ function useIsMobile(): boolean {
   return isMobile;
 }
 
+const LP_DOUBLE_TAP_MS = 300;
+
 function MovePatientButton({
   targets,
   onMove,
   mode = "arrow",
   lpNumber,
+  onDoubleActivate,
 }: {
   targets: Physiotherapist[];
   onMove: (toPhysioId: string) => void;
   mode?: "arrow" | "lp";
   lpNumber?: number;
+  onDoubleActivate?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const pendingClickRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLpMode = mode === "lp";
+
+  const clearPendingClick = useCallback(() => {
+    if (pendingClickRef.current) {
+      clearTimeout(pendingClickRef.current);
+      pendingClickRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => clearPendingClick(), [clearPendingClick]);
+
+  const handleDeleteActivate = useCallback(() => {
+    clearPendingClick();
+    setOpen(false);
+    onDoubleActivate?.();
+  }, [clearPendingClick, onDoubleActivate]);
+
+  const handlePrimaryClick = () => {
+    if (!isLpMode || !onDoubleActivate) {
+      setOpen((v) => !v);
+      return;
+    }
+
+    if (pendingClickRef.current) {
+      handleDeleteActivate();
+      return;
+    }
+
+    pendingClickRef.current = setTimeout(() => {
+      pendingClickRef.current = null;
+      setOpen((v) => !v);
+    }, LP_DOUBLE_TAP_MS);
+  };
 
   useEffect(() => {
     setPortalRoot(
@@ -246,7 +283,12 @@ function MovePatientButton({
       <button
         ref={buttonRef}
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={handlePrimaryClick}
+        onDoubleClick={(e) => {
+          if (!isLpMode || !onDoubleActivate) return;
+          e.preventDefault();
+          handleDeleteActivate();
+        }}
         className={
           isLpMode
             ? `min-h-[2.5rem] w-full rounded px-0.5 text-[19px] font-medium leading-none ${
@@ -258,10 +300,16 @@ function MovePatientButton({
                 open ? "opacity-100" : "opacity-0"
               }`
         }
-        title="Przenieś do innego fizjoterapeuty (zastępstwo)"
+        title={
+          isLpMode && onDoubleActivate
+            ? "Dotknij, aby przenieść. Dotknij dwukrotnie, aby usunąć wiersz."
+            : "Przenieś do innego fizjoterapeuty (zastępstwo)"
+        }
         aria-label={
           isLpMode
-            ? `Zastępstwo dla pozycji ${lpNumber ?? ""}`
+            ? onDoubleActivate
+              ? `Pozycja ${lpNumber ?? ""}. Dotknij dwukrotnie, aby usunąć wiersz.`
+              : `Zastępstwo dla pozycji ${lpNumber ?? ""}`
             : "Przenieś pacjenta"
         }
         aria-expanded={open}
@@ -298,6 +346,55 @@ function MovePatientButton({
           portalRoot
         )}
     </>
+  );
+}
+
+function MobileLpNumber({
+  lpNumber,
+  onDelete,
+}: {
+  lpNumber: number;
+  onDelete: () => void;
+}) {
+  const pendingClickRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearPendingClick = useCallback(() => {
+    if (pendingClickRef.current) {
+      clearTimeout(pendingClickRef.current);
+      pendingClickRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => clearPendingClick(), [clearPendingClick]);
+
+  const handleDelete = () => {
+    clearPendingClick();
+    onDelete();
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        if (pendingClickRef.current) {
+          handleDelete();
+          return;
+        }
+
+        pendingClickRef.current = setTimeout(() => {
+          pendingClickRef.current = null;
+        }, LP_DOUBLE_TAP_MS);
+      }}
+      onDoubleClick={(e) => {
+        e.preventDefault();
+        handleDelete();
+      }}
+      className="inline-flex min-h-[2.5rem] w-full items-center justify-center rounded active:bg-black/10 dark:active:bg-white/10"
+      title="Dotknij dwukrotnie, aby usunąć wiersz"
+      aria-label={`Pozycja ${lpNumber}. Dotknij dwukrotnie, aby usunąć wiersz.`}
+    >
+      {lpNumber}
+    </button>
   );
 }
 
@@ -472,11 +569,13 @@ export function PhysiotherapistTable({
                           onMove={(toId) => onMovePatient(index, toId)}
                           mode="lp"
                           lpNumber={index + 1}
+                          onDoubleActivate={() => onDeleteRow(index)}
                         />
                       ) : (
-                        <span className="inline-flex min-h-[2.5rem] w-full items-center justify-center">
-                          {index + 1}
-                        </span>
+                        <MobileLpNumber
+                          lpNumber={index + 1}
+                          onDelete={() => onDeleteRow(index)}
+                        />
                       )
                     ) : (
                       <div className="flex min-h-[2.5rem] flex-col items-center justify-center gap-0.5">
