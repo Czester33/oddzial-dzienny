@@ -37,6 +37,7 @@ import {
   admissionMonthOptions,
   preferredAdmissionMonthKey,
   resolveSessionPlannedDischarge,
+  moveAdmissionSessionToMonth,
 } from "@/lib/admission-utils";
 import { placePatientInFreeSlot, clearPatientSlot } from "@/lib/physio-utils";
 import { stripHtml } from "@/lib/text-format";
@@ -172,6 +173,7 @@ function PrzyjeciaPageContent() {
   );
   const [monthKeyValue, setMonthKeyValue] = useState(currentMonthKey());
   const [doctorsPanelOpen, setDoctorsPanelOpen] = useState(false);
+  const [moveMode, setMoveMode] = useState(false);
   const [todayTick, setTodayTick] = useState(() => todayIsoDate());
   const userPickedMonthRef = useRef(false);
 
@@ -194,7 +196,10 @@ function PrzyjeciaPageContent() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setDoctorsPanelOpen(false);
+      if (e.key === "Escape") {
+        setDoctorsPanelOpen(false);
+        setMoveMode(false);
+      }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -424,6 +429,13 @@ function PrzyjeciaPageContent() {
     saveMonthSessions(rawSessions.filter((s) => s.id !== sessionId));
   };
 
+  const moveSessionToMonth = (sessionId: string, targetMonthKey: string) => {
+    if (targetMonthKey === monthKeyValue) return;
+    const next = moveAdmissionSessionToMonth(data, sessionId, monthKeyValue, targetMonthKey, todayTick);
+    if (!next) return;
+    commitSave(next);
+  };
+
   const addSession = () => {
     saveMonthSessions([...rawSessions, createAdmissionSession()]);
     requestAnimationFrame(() => {
@@ -460,6 +472,11 @@ function PrzyjeciaPageContent() {
   };
 
   const monthIndexInOptions = monthOptions.indexOf(monthKeyValue);
+  const prevMonthKey = monthIndexInOptions > 0 ? monthOptions[monthIndexInOptions - 1] : null;
+  const nextMonthKey =
+    monthIndexInOptions >= 0 && monthIndexInOptions < monthOptions.length - 1
+      ? monthOptions[monthIndexInOptions + 1]
+      : null;
   const shiftMonth = (delta: number) => {
     const next = monthOptions[monthIndexInOptions + delta];
     if (next) selectMonth(next);
@@ -539,30 +556,74 @@ function PrzyjeciaPageContent() {
         ) : (
           <div className="space-y-4">
             {sessions.map((session) => (
-              <AdmissionSessionTable
-                key={session.id}
-                session={session}
-                data={data}
-                theme={resolveSessionAdmissionTheme(
-                  data,
-                  session,
-                  monthKeyValue,
-                  monthIndex
-                )}
-                onChange={replaceSession}
-                onAdmitSlot={(slotId) => admitSlot(session, slotId)}
-                onDisqualifySlot={(slotId) => disqualifySlot(session, slotId)}
-                onDelete={() => removeSession(session.id)}
-                onDoctorThemeChange={(doctorId, themeId) => {
-                  const doctor = data.doctors.find((d) => d.id === doctorId);
-                  if (doctor) updateDoctor({ ...doctor, themeId });
-                }}
-                monthKeyValue={monthKeyValue}
-                monthIndex={monthIndex}
-              />
+              <div key={session.id} className="flex items-center justify-center gap-1 sm:gap-2">
+                {moveMode ? (
+                  <button
+                    type="button"
+                    onClick={() => prevMonthKey && moveSessionToMonth(session.id, prevMonthKey)}
+                    disabled={!prevMonthKey}
+                    className="shrink-0 rounded-md border border-slate-300 bg-white px-2 py-3 text-[23px] leading-none text-slate-600 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                    title="Przenieś do poprzedniego miesiąca"
+                    aria-label="Przenieś do poprzedniego miesiąca"
+                  >
+                    ‹
+                  </button>
+                ) : null}
+                <div className="min-w-0 flex-1">
+                  <AdmissionSessionTable
+                    session={session}
+                    data={data}
+                    theme={resolveSessionAdmissionTheme(
+                      data,
+                      session,
+                      monthKeyValue,
+                      monthIndex
+                    )}
+                    onChange={replaceSession}
+                    onAdmitSlot={(slotId) => admitSlot(session, slotId)}
+                    onDisqualifySlot={(slotId) => disqualifySlot(session, slotId)}
+                    onDelete={() => removeSession(session.id)}
+                    onDoctorThemeChange={(doctorId, themeId) => {
+                      const doctor = data.doctors.find((d) => d.id === doctorId);
+                      if (doctor) updateDoctor({ ...doctor, themeId });
+                    }}
+                    monthKeyValue={monthKeyValue}
+                    monthIndex={monthIndex}
+                  />
+                </div>
+                {moveMode ? (
+                  <button
+                    type="button"
+                    onClick={() => nextMonthKey && moveSessionToMonth(session.id, nextMonthKey)}
+                    disabled={!nextMonthKey}
+                    className="shrink-0 rounded-md border border-slate-300 bg-white px-2 py-3 text-[23px] leading-none text-slate-600 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                    title="Przenieś do następnego miesiąca"
+                    aria-label="Przenieś do następnego miesiąca"
+                  >
+                    ›
+                  </button>
+                ) : null}
+              </div>
             ))}
           </div>
         )}
+
+        {sessions.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => setMoveMode((open) => !open)}
+            title={moveMode ? "Gotowe przenoszenie" : "Przenieś tabele do innego miesiąca"}
+            aria-label={moveMode ? "Gotowe przenoszenie" : "Przenieś tabele do innego miesiąca"}
+            aria-pressed={moveMode}
+            className={`fixed bottom-4 right-4 z-40 rounded-md border px-2.5 py-2 font-mono text-[17px] leading-none tracking-tight shadow-md transition-colors ${
+              moveMode
+                ? "border-blue-500 bg-blue-600 text-white hover:bg-blue-500"
+                : "border-slate-300 bg-white text-slate-500 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
+            }`}
+          >
+            &lt;-&gt;
+          </button>
+        ) : null}
       </div>
 
       <div className="fixed left-0 top-1/2 z-40 flex -translate-y-1/2 flex-col gap-2">

@@ -133,6 +133,34 @@ export function sessionsForMonth(
   return data.admissions[monthKeyValue] ?? [];
 }
 
+/** Move a session bucket from one month key to another (order preserved within target). */
+export function moveAdmissionSessionToMonth(
+  data: AppData,
+  sessionId: string,
+  fromMonthKey: string,
+  toMonthKey: string,
+  todayIso: string = todayIsoDate()
+): AppData | null {
+  if (fromMonthKey === toMonthKey) return null;
+
+  const fromList = data.admissions[fromMonthKey] ?? [];
+  const session = fromList.find((item) => item.id === sessionId);
+  if (!session) return null;
+
+  const nextAdmissions: Record<string, AdmissionSession[]> = { ...data.admissions };
+  const remaining = fromList.filter((item) => item.id !== sessionId);
+  if (remaining.length > 0) {
+    nextAdmissions[fromMonthKey] = orderAdmissionSessionsWithPastAtBottom(remaining, todayIso);
+  } else {
+    delete nextAdmissions[fromMonthKey];
+  }
+
+  const targetList = [...(nextAdmissions[toMonthKey] ?? []), session];
+  nextAdmissions[toMonthKey] = orderAdmissionSessionsWithPastAtBottom(targetList, todayIso);
+
+  return { ...data, admissions: nextAdmissions };
+}
+
 /** Month with the soonest upcoming admission; falls back to current calendar month. */
 export function preferredAdmissionMonthKey(
   admissions: Record<string, AdmissionSession[]>,
