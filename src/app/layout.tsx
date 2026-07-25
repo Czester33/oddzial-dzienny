@@ -2,10 +2,8 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Geist } from "next/font/google";
 import "./globals.css";
-import { DataProvider } from "@/context/DataContext";
 import { ThemeProvider } from "@/context/ThemeContext";
-import { Navigation } from "@/components/Navigation";
-import { TextFieldArrowNavigation } from "@/components/TextFieldArrowNavigation";
+import { AppShell } from "@/components/AppShell";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,13 +36,7 @@ export default function RootLayout({
           {themeInitScript}
         </Script>
         <ThemeProvider>
-          <DataProvider>
-            <div className="app-root">
-              <Navigation />
-              <TextFieldArrowNavigation />
-              <main className="mx-auto max-w-[1600px] px-3 py-4 sm:px-4 sm:py-6">{children}</main>
-            </div>
-          </DataProvider>
+          <AppShell>{children}</AppShell>
         </ThemeProvider>
       </body>
     </html>

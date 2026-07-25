@@ -150,7 +150,7 @@ function MovePatientButton({
   onDoubleActivate?: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [menuStyle, setMenuStyle] = useState<CSSProperties>({});
+  const [menuStyle, setMenuStyle] = useState<CSSProperties>({ visibility: "hidden" });
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -190,28 +190,21 @@ function MovePatientButton({
   };
 
   useEffect(() => {
-    setPortalRoot(
-      (document.querySelector(".app-root") as HTMLElement | null) ?? document.body
-    );
+    setPortalRoot(document.body);
   }, []);
 
   const updateMenuPosition = useCallback(() => {
     const button = buttonRef.current;
     if (!button) return;
 
-    const root =
-      (document.querySelector(".app-root") as HTMLElement | null) ?? document.body;
-    const zoomRaw = Number.parseFloat(getComputedStyle(root).zoom || "1");
-    const zoom = Number.isFinite(zoomRaw) && zoomRaw > 0 ? zoomRaw : 1;
-
     const rect = button.getBoundingClientRect();
     const margin = 8;
     const menuEl = menuRef.current;
     const menuWidth = menuEl?.offsetWidth
-      ? menuEl.offsetWidth * zoom
+      ? menuEl.offsetWidth
       : Math.min(180, window.innerWidth - margin * 2);
     const menuHeight = menuEl?.offsetHeight
-      ? menuEl.offsetHeight * zoom
+      ? menuEl.offsetHeight
       : Math.min(targets.length * 36 + 8, 280);
 
     let left = rect.left;
@@ -235,22 +228,23 @@ function MovePatientButton({
       }
     }
 
-    const maxHeightPx = Math.max(
-      80,
-      (openUp ? spaceAbove : spaceBelow) / zoom
-    );
+    const maxHeightPx = Math.max(80, openUp ? spaceAbove : spaceBelow);
 
     setMenuStyle({
       position: "fixed",
-      top: top / zoom,
-      left: left / zoom,
+      top,
+      left,
       zIndex: 10000,
       maxHeight: maxHeightPx,
+      visibility: "visible",
     });
   }, [targets.length]);
 
   useLayoutEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setMenuStyle({ visibility: "hidden" });
+      return;
+    }
     updateMenuPosition();
     const frame = requestAnimationFrame(updateMenuPosition);
     return () => cancelAnimationFrame(frame);
