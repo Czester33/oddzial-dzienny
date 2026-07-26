@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   APP_AUTH_COOKIE,
-  APP_AUTH_SESSION_MAX_AGE,
+  getSessionCookieMaxAgeSec,
   createSessionToken,
   isAppAuthEnabled,
   verifyAccessPassword,
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: APP_AUTH_SESSION_MAX_AGE,
+    maxAge: getSessionCookieMaxAgeSec(),
   });
   return response;
 }
