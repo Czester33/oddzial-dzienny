@@ -188,7 +188,10 @@ function PrzyjeciaPageContent() {
     setMonthKeyValue(key);
   };
 
-  const rawSessions = data?.admissions[monthKeyValue] ?? [];
+  const rawSessions = useMemo(
+    () => data?.admissions[monthKeyValue] ?? [],
+    [data?.admissions, monthKeyValue]
+  );
   const sessions = useMemo(
     () => orderAdmissionSessionsWithPastAtBottom(rawSessions, todayTick),
     [rawSessions, todayTick]

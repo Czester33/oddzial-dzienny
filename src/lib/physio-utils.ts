@@ -389,7 +389,8 @@ export function ensurePatientRows(patients: Patient[], count = 0): Patient[] {
 }
 
 export function getDefaultColumnWidths(widths?: Partial<ColumnWidths> & { comment?: number }): ColumnWidths {
-  const { comment: _comment, ...rest } = widths ?? {};
+  const rest = { ...(widths ?? {}) };
+  delete rest.comment;
   return {
     ...DEFAULT_COLUMN_WIDTHS,
     ...rest,

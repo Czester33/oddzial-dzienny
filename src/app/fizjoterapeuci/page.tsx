@@ -69,7 +69,8 @@ export default function FizjoterapeuciPage() {
   const deletePhysio = (id: string) => {
     if (!confirm("Usunąć fizjoterapeutę wraz z przypisanymi pacjentami?")) return;
 
-    const { [id]: _, ...restPatients } = data.currentPatients;
+    const restPatients = { ...data.currentPatients };
+    delete restPatients[id];
     updateData({
       ...data,
       physiotherapists: data.physiotherapists.filter((p) => p.id !== id),

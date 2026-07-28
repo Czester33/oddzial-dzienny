@@ -270,7 +270,7 @@ function MasazeContent({ data }: { data: AppData }) {
 
   const updateActivePatient = (patient: MassagePatient, sort = false) => {
     const current = dataRef.current;
-    let next = [...current.massages.active];
+    const next = [...current.massages.active];
 
     if (patient.id.startsWith("empty-")) {
       if (!isRowFilled(patient)) return;

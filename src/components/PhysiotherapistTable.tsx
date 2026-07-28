@@ -479,12 +479,9 @@ export function PhysiotherapistTable({
     setWidths((prev) => ({ ...prev, [key]: value }));
   }, []);
 
-  const handleResizeEnd = useCallback(
-    (_key: keyof ColumnWidths, _value: number) => {
-      onColumnWidthsChange(widthsRef.current);
-    },
-    [onColumnWidthsChange]
-  );
+  const handleResizeEnd = useCallback(() => {
+    onColumnWidthsChange(widthsRef.current);
+  }, [onColumnWidthsChange]);
 
   const getOwner = (patient: Patient) =>
     patient.ownerPhysiotherapistId

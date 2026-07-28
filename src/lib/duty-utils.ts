@@ -201,7 +201,7 @@ export function stripPersistedDutyNotes(text: string): string {
  * Clean persisted duty times from physio headers.
  * Duty badges are computed live in the UI so sync cannot make them flicker.
  */
-export function applyDutyNotes(data: AppData, _now = new Date()): AppData {
+export function applyDutyNotes(data: AppData): AppData {
   let nextPhysios = data.physiotherapists;
   let changed = false;
 

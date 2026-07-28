@@ -175,7 +175,7 @@ export function isWaitingReadyToActivate(patient: MassageWaiting, now = new Date
  */
 export function promoteWaitingToActive(data: AppData, now = new Date()): AppData {
   const todayIso = getTodayIso(now);
-  let active = [...(data.massages?.active ?? [])];
+  const active = [...(data.massages?.active ?? [])];
   const waiting = [...(data.massages?.waiting ?? [])];
 
   if (active.length >= MAX_MASSAGES_PER_DAY) return data;
@@ -245,7 +245,7 @@ function computeTodaySlotPeak(
 
 /** Clear finished actives, then fill free slots from waiting. */
 export function applyMassageSync(data: AppData, now = new Date()): AppData {
-  let next = promoteWaitingToActive(applyAutoClearMassages(data, now), now);
+  const next = promoteWaitingToActive(applyAutoClearMassages(data, now), now);
   const active = next.massages?.active ?? [];
   const waiting = next.massages?.waiting ?? [];
   const peak = computeTodaySlotPeak(active, waiting, next.massages?.todaySlotPeak, now);
