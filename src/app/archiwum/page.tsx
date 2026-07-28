@@ -140,8 +140,8 @@ export default function ArchiwumPage() {
     <div>
       <PageHeader title="Archiwum" />
       <p className="-mt-4 mb-6 text-[16px] text-slate-500 dark:text-slate-400">
-        Przyjęcia, dyżury i urlopy archiwizują się w ostatni dzień roboczy miesiąca.
-        Pełny rok urlopów można też zarchiwizować ręcznie na stronie Urlopy.
+        Przyjęcia i dyżury archiwizują się w ostatni dzień roboczy miesiąca.
+        Urlopy — na razie tylko ręcznie (przycisk „Archiwizuj” na stronie Urlopy).
       </p>
       {error && <ErrorBanner message={error} />}
 

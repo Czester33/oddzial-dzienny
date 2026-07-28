@@ -2,6 +2,9 @@ import type { AppData, ArchivedVacationMonth, ArchivedVacationYear, Physiotherap
 import { getLastWorkingDayOfMonth, isoFromParts, isWorkingDay, parseMonthKey, todayIsoDate, toDateInputValue } from "./date-utils";
 import { stripHtml } from "./text-format";
 
+/** Set true when vacation auto-archive should run (monthly, last working day). */
+export const VACATION_AUTO_ARCHIVE_ENABLED = false;
+
 /** Fixed vacation person for massage therapist (not in physiotherapists list). */
 export const VACATION_KRZYSZTOF_ID = "vacation-krzysztof";
 
@@ -35,16 +38,6 @@ function normalizeVacationEntry(entry: VacationEntry): VacationEntry {
 
 export function vacationMonthKey(year: number, monthIndex: number): string {
   return `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
-}
-
-/** True on/after the last working day of that month. */
-export function isVacationMonthClosed(
-  year: number,
-  monthIndex: number,
-  todayIso: string = todayIsoDate()
-): boolean {
-  const lastWorkingDay = getLastWorkingDayOfMonth(year, monthIndex);
-  return todayIso >= lastWorkingDay;
 }
 
 export function vacationEntriesInMonth(
@@ -229,6 +222,8 @@ export function applyAutoArchiveVacations(
   data: AppData,
   now = new Date()
 ): AppData {
+  if (!VACATION_AUTO_ARCHIVE_ENABLED) return data;
+
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const skip = new Set(data.autoArchiveSkip?.vacations ?? []);
 
