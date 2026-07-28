@@ -128,11 +128,27 @@ export async function loadDataRevision(): Promise<AppDataLoadResult> {
     hasVacationNoteChanges(archivedDuties, vacationNotes) ||
     hasDutyNoteChanges(vacationNotes, archived)
   ) {
-    const saved = await saveDataRevision(archived, revision.updatedAt);
-    if (saved.ok) {
-      return { data: archived, updatedAt: saved.updatedAt };
+    let baseUpdatedAt = revision.updatedAt;
+    let payload = archived;
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const saved = await saveDataRevision(payload, baseUpdatedAt);
+      if (saved.ok) {
+        return { data: payload, updatedAt: saved.updatedAt };
+      }
+      if (!saved.conflict) break;
+
+      baseUpdatedAt = saved.updatedAt;
+      const remigrated = migrateData(saved.data);
+      const rePurged = applyAutoDischarge(remigrated);
+      const reArchivedAdmissions = applyAutoArchiveAdmissions(rePurged);
+      const reArchivedVacations = applyAutoArchiveVacations(reArchivedAdmissions);
+      const reArchivedDuties = applyAutoArchiveDuties(reArchivedVacations);
+      const reVacationNotes = applyVacationNotes(reArchivedDuties);
+      payload = applyDutyNotes(reVacationNotes);
     }
-    return { data: archived, updatedAt: revision.updatedAt };
+
+    return { data: payload, updatedAt: revision.updatedAt };
   }
 
   return { data: archived, updatedAt: revision.updatedAt };

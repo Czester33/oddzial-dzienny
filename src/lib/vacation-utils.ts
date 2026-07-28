@@ -239,11 +239,13 @@ export function applyAutoArchiveVacations(
 
     for (let month = 0; month < 12; month++) {
       const monthKey = vacationMonthKey(yearNum, month);
-      if (skip.has(monthKey)) continue;
       if (!shouldAutoArchiveVacationMonth(monthKey, today)) continue;
 
       const activeEntries = next.vacations[yearKey] ?? [];
       const monthEntries = vacationEntriesInMonth(activeEntries, monthKey);
+
+      // Restored months stay editable while they still have active entries.
+      if (skip.has(monthKey) && monthEntries.length > 0) continue;
 
       if ((next.vacationMonthArchive ?? []).some((m) => m.monthKey === monthKey)) {
         if (!monthEntries.length) continue;
