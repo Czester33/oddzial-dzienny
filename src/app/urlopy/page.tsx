@@ -34,6 +34,7 @@ import {
 import {
   applyAutoArchiveVacations,
   applyVacationNotes,
+  archiveVacationMonth,
   archiveVacationYear,
   hasAutoArchiveVacationChanges,
   hasVacationNoteChanges,
@@ -285,6 +286,7 @@ function VacationMonthTable({
   onAdd,
   onRemove,
   onToggleCertainty,
+  onArchive,
 }: {
   yearNum: number;
   month: number;
@@ -296,6 +298,7 @@ function VacationMonthTable({
   onAdd: (date: string, physiotherapistId: string) => void;
   onRemove: (date: string, physiotherapistId: string) => void;
   onToggleCertainty: (date: string, physiotherapistId: string) => void;
+  onArchive?: () => void;
 }) {
   const colors = resolveMonthColors(month, isDark);
   const weeks = getWeekdayOnlyMonthGrid(yearNum, month);
@@ -308,12 +311,19 @@ function VacationMonthTable({
     <FitWidthScale contentWidthPx={tableRemPx(64)}>
       <div className="w-[64rem] max-w-none overflow-hidden rounded-sm shadow-md ring-1 ring-black/15 dark:ring-slate-600/50">
       <div
-        className={`physio-name-header border-b px-3 py-2 text-center text-[21px] font-bold ${
+        className={`physio-name-header relative border-b px-3 py-2 text-center text-[21px] font-bold ${
           isDark ? "border-slate-600 text-slate-100" : "border-black/20 text-slate-900"
         }`}
         style={{ backgroundColor: colors.header }}
       >
         {MONTH_NAMES[month]} {yearNum}
+        {onArchive ? (
+          <div className="absolute right-2 top-1/2 -translate-y-1/2">
+            <Btn variant="secondary" onClick={onArchive} className="text-[16px]">
+              Archiwizuj
+            </Btn>
+          </div>
+        ) : null}
       </div>
 
       <div>
@@ -528,6 +538,12 @@ export default function UrlopyPage() {
     if (!confirm("Zarchiwizować ponownie ten rok urlopów?")) return;
     save(archiveVacationYear(data, year));
     setYear(currentYearKey());
+  };
+
+  const archivePastMonth = (month: number) => {
+    const monthKeyValue = vacationMonthKey(yearNum, month);
+    if (!confirm(`Zarchiwizować urlopy — ${MONTH_NAMES[month]} ${yearNum}?`)) return;
+    save(archiveVacationMonth(data, year, monthKeyValue));
   };
 
   const saveVacations = (updated: VacationEntry[]) => {
@@ -841,6 +857,7 @@ export default function UrlopyPage() {
                     onAdd={addDayPhysio}
                     onRemove={removeEntry}
                     onToggleCertainty={toggleCertainty}
+                    onArchive={() => archivePastMonth(month)}
                   />
                 ))}
               </div>
