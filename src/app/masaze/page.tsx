@@ -245,7 +245,13 @@ function MasazeContent({ data }: { data: AppData }) {
   const headerNoteIsHtml = /<[a-z][\s\S]*>/i.test(headerNote);
 
   const updateMassages = (patch: Partial<typeof massages>) => {
-    save({ ...data, massages: { ...massages, ...patch } });
+    const current = dataRef.current;
+    const next: AppData = {
+      ...current,
+      massages: { ...current.massages, ...patch },
+    };
+    dataRef.current = next;
+    save(next);
   };
 
   const persistActive = (next: MassagePatient[], sort = true) => {
@@ -254,7 +260,8 @@ function MasazeContent({ data }: { data: AppData }) {
   };
 
   const updateActivePatient = (patient: MassagePatient, sort = false) => {
-    let next = [...massages.active];
+    const current = dataRef.current;
+    let next = [...current.massages.active];
 
     if (patient.id.startsWith("empty-")) {
       if (!isRowFilled(patient)) return;
@@ -273,12 +280,12 @@ function MasazeContent({ data }: { data: AppData }) {
   };
 
   const sortActiveRows = () => {
-    persistActive(massages.active, true);
+    persistActive(dataRef.current.massages.active, true);
   };
 
   const deleteActivePatient = (id: string) => {
     if (id.startsWith("empty-")) return;
-    persistActive(massages.active.filter((p) => p.id !== id), true);
+    persistActive(dataRef.current.massages.active.filter((p) => p.id !== id), true);
   };
 
   const addWaiting = () => {
@@ -289,21 +296,22 @@ function MasazeContent({ data }: { data: AppData }) {
       lastTreatmentDate: "",
       physiotherapistId: "",
     };
-    updateMassages({ waiting: [...massages.waiting, patient] });
+    updateMassages({ waiting: [...dataRef.current.massages.waiting, patient] });
   };
 
   const updateWaiting = (patient: MassageWaiting) => {
     updateMassages({
-      waiting: massages.waiting.map((p) => (p.id === patient.id ? patient : p)),
+      waiting: dataRef.current.massages.waiting.map((p) => (p.id === patient.id ? patient : p)),
     });
   };
 
   const deleteWaiting = (id: string) => {
-    updateMassages({ waiting: massages.waiting.filter((p) => p.id !== id) });
+    updateMassages({ waiting: dataRef.current.massages.waiting.filter((p) => p.id !== id) });
   };
 
   const moveToActive = (waiting: MassageWaiting) => {
-    if (massages.active.length >= MAX_ACTIVE) return;
+    const current = dataRef.current;
+    if (current.massages.active.length >= MAX_ACTIVE) return;
     const active: MassagePatient = {
       id: uuidv4(),
       name: waiting.name,
@@ -312,8 +320,8 @@ function MasazeContent({ data }: { data: AppData }) {
       physiotherapistId: waiting.physiotherapistId,
     };
     updateMassages({
-      active: sortMassagePatientsByHour([...massages.active, active]),
-      waiting: massages.waiting.filter((p) => p.id !== waiting.id),
+      active: sortMassagePatientsByHour([...current.massages.active, active]),
+      waiting: current.massages.waiting.filter((p) => p.id !== waiting.id),
     });
   };
 
@@ -380,7 +388,7 @@ function MasazeContent({ data }: { data: AppData }) {
                 <tbody>
                   {activeRows.map((p, index) => (
                     <tr
-                      key={p.id}
+                      key={p.id.startsWith("empty-") ? `empty-${index}-${sortedActive.length}` : p.id}
                       className="group/row"
                       style={{ backgroundColor: index % 2 === 0 ? ROW_BG : ROW_BG_ALT }}
                     >
