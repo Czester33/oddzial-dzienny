@@ -37,6 +37,16 @@ export function vacationMonthKey(year: number, monthIndex: number): string {
   return `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
 }
 
+/** True on/after the last working day of that month. */
+export function isVacationMonthClosed(
+  year: number,
+  monthIndex: number,
+  todayIso: string = todayIsoDate()
+): boolean {
+  const lastWorkingDay = getLastWorkingDayOfMonth(year, monthIndex);
+  return todayIso >= lastWorkingDay;
+}
+
 export function vacationEntriesInMonth(
   entries: VacationEntry[],
   monthKey: string

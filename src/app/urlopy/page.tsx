@@ -37,9 +37,11 @@ import {
   archiveVacationYear,
   hasAutoArchiveVacationChanges,
   hasVacationNoteChanges,
+  isVacationMonthClosed,
   vacationMonthKey,
   vacationStaff,
 } from "@/lib/vacation-utils";
+import { todayIsoDate } from "@/lib/date-utils";
 import { FitWidthScale, tableRemPx } from "@/components/FitWidthScale";
 import { applyDutyNotes, hasDutyNoteChanges } from "@/lib/duty-utils";
 
@@ -488,7 +490,7 @@ export default function UrlopyPage() {
   }, [data]);
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || !data) return;
     const sync = () => {
       const current = dataRef.current;
       if (!current) return;
@@ -504,7 +506,7 @@ export default function UrlopyPage() {
       }
     };
     sync();
-  }, [loading, save]);
+  }, [loading, data, save]);
 
   useEffect(() => {
     setPastMonthsOpen(false);
@@ -517,11 +519,16 @@ export default function UrlopyPage() {
   const yearArchived = (data.vacationArchive ?? []).some((y) => y.yearKey === year);
   const yearRestoredFromArchive = (data.autoArchiveSkip?.vacations ?? []).includes(year);
   const clinicClosedDays = data.clinicClosedDays ?? [];
+  const todayIso = todayIsoDate();
+  const vacationSkip = new Set(data.autoArchiveSkip?.vacations ?? []);
   const { upcoming: upcomingMonths, past: pastMonthsAll } = splitMonthIndexes(yearNum);
   const archivedMonthKeys = new Set((data.vacationMonthArchive ?? []).map((m) => m.monthKey));
-  const pastMonths = pastMonthsAll.filter(
-    (month) => !archivedMonthKeys.has(vacationMonthKey(yearNum, month))
-  );
+  const pastMonths = pastMonthsAll.filter((month) => {
+    const monthKey = vacationMonthKey(yearNum, month);
+    if (archivedMonthKeys.has(monthKey)) return false;
+    if (vacationSkip.has(year) || vacationSkip.has(monthKey)) return true;
+    return !isVacationMonthClosed(yearNum, month, todayIso);
+  });
 
   const archiveCurrentYear = () => {
     if (!yearRestoredFromArchive) return;
