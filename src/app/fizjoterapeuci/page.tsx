@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useData } from "@/context/DataContext";
 import type { AppData, Physiotherapist } from "@/lib/types";
 import { PageHeader, LoadingState, ErrorBanner, Card, Btn, Input } from "@/components/ui";
+import { PhysioColorPicker } from "@/components/PhysioColorPicker";
 import { COLOR_PRESETS, createPhysiotherapist, resolvePhysioRowColor } from "@/lib/physio-utils";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -25,80 +26,6 @@ function reorderPhysios(
   const [moved] = next.splice(fromIndex, 1);
   next.splice(toIndex, 0, moved);
   return next;
-}
-
-function ColorPickerButton({
-  physio,
-  onPick,
-}: {
-  physio: Physiotherapist;
-  onPick: (presetIndex: number) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDoc = (e: MouseEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", onDoc);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDoc);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  return (
-    <div ref={rootRef} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-center gap-2 rounded-md border border-black/15 bg-white/90 px-2 py-1.5 text-[16px] font-medium text-slate-800 hover:bg-white dark:border-white/20 dark:bg-slate-900/80 dark:text-slate-100 dark:hover:bg-slate-800"
-        aria-expanded={open}
-        title="Zmień kolor sekcji"
-      >
-        <span
-          className="h-4 w-4 shrink-0 rounded-sm border border-black/20 dark:border-white/30"
-          style={{ backgroundColor: physio.color }}
-          aria-hidden
-        />
-        Kolor
-      </button>
-
-      {open && (
-        <div className="absolute bottom-full left-1/2 z-20 mb-2 max-h-[min(16rem,50vh)] w-[11rem] -translate-x-1/2 overflow-y-auto rounded-md border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-600 dark:bg-slate-900">
-          <p className="mb-1.5 text-center text-[13px] font-medium text-slate-500 dark:text-slate-400">
-            Kolor sekcji
-          </p>
-          <div className="grid grid-cols-4 gap-1.5">
-            {COLOR_PRESETS.map((preset, i) => (
-              <button
-                key={preset.name}
-                type="button"
-                onClick={() => {
-                  onPick(i);
-                  setOpen(false);
-                }}
-                className={`aspect-square w-full rounded-md border-2 transition-transform hover:scale-105 ${
-                  physio.color === preset.color
-                    ? "border-slate-900 dark:border-white"
-                    : "border-transparent"
-                }`}
-                style={{ backgroundColor: preset.color }}
-                title={preset.name}
-                aria-label={preset.name}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
 }
 
 export default function FizjoterapeuciPage() {
@@ -191,6 +118,10 @@ export default function FizjoterapeuciPage() {
   const applyColorPreset = (physio: Physiotherapist, presetIndex: number) => {
     const preset = COLOR_PRESETS[presetIndex];
     updatePhysio({ ...physio, color: preset.color, rowColor: preset.rowColor });
+  };
+
+  const applyCustomColor = (physio: Physiotherapist, color: string, rowColor: string) => {
+    updatePhysio({ ...physio, color, rowColor });
   };
 
   return (
@@ -317,9 +248,10 @@ export default function FizjoterapeuciPage() {
                     </div>
 
                     <div className="mt-auto">
-                      <ColorPickerButton
+                      <PhysioColorPicker
                         physio={physio}
-                        onPick={(i) => applyColorPreset(physio, i)}
+                        onPickPreset={(i) => applyColorPreset(physio, i)}
+                        onPickCustom={(color, rowColor) => applyCustomColor(physio, color, rowColor)}
                       />
                     </div>
                   </div>
