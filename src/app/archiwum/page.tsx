@@ -6,13 +6,14 @@ import { PageHeader, LoadingState, ErrorBanner, Btn } from "@/components/ui";
 import { parseMonthKey } from "@/lib/date-utils";
 import { restoreAdmissionMonthFromArchive } from "@/lib/admission-utils";
 import { restoreDutyMonthFromArchive } from "@/lib/duty-utils";
-import { restoreVacationYearFromArchive } from "@/lib/vacation-utils";
+import { restoreVacationYearFromArchive, restoreVacationMonthFromArchive } from "@/lib/vacation-utils";
 import { ArchivedAdmissionMonthPanel } from "@/components/ArchivedAdmissionSessions";
-import { ArchivedVacationYearPanel } from "@/components/ArchivedVacationYear";
+import { ArchivedVacationMonthPanel, ArchivedVacationYearPanel } from "@/components/ArchivedVacationYear";
 import { ArchivedDutyMonthPanel } from "@/components/ArchivedDutyMonth";
 import type {
   ArchivedAdmissionMonth,
   ArchivedDutyMonth,
+  ArchivedVacationMonth,
   ArchivedVacationYear,
 } from "@/lib/types";
 
@@ -34,6 +35,7 @@ const MONTHS_PL = [
 export default function ArchiwumPage() {
   const { data, loading, error, save, saving } = useData();
   const [openAdmissionKey, setOpenAdmissionKey] = useState<string | null>(null);
+  const [openVacationMonthKey, setOpenVacationMonthKey] = useState<string | null>(null);
   const [openVacationYear, setOpenVacationYear] = useState<string | null>(null);
   const [openDutyKey, setOpenDutyKey] = useState<string | null>(null);
 
@@ -54,6 +56,24 @@ export default function ArchiwumPage() {
     }
     return [...map.entries()].sort((a, b) => b[0] - a[0]);
   }, [admissionMonths]);
+
+  const vacationMonths = useMemo(() => {
+    if (!data) return [] as ArchivedVacationMonth[];
+    return [...(data.vacationMonthArchive ?? [])].sort((a, b) =>
+      b.monthKey.localeCompare(a.monthKey)
+    );
+  }, [data]);
+
+  const vacationsByYear = useMemo(() => {
+    const map = new Map<number, ArchivedVacationMonth[]>();
+    for (const entry of vacationMonths) {
+      const { year } = parseMonthKey(entry.monthKey);
+      const list = map.get(year) ?? [];
+      list.push(entry);
+      map.set(year, list);
+    }
+    return [...map.entries()].sort((a, b) => b[0] - a[0]);
+  }, [vacationMonths]);
 
   const vacationYears = useMemo(() => {
     if (!data) return [] as ArchivedVacationYear[];
@@ -84,6 +104,7 @@ export default function ArchiwumPage() {
 
   const empty =
     admissionsByYear.length === 0 &&
+    vacationsByYear.length === 0 &&
     vacationYears.length === 0 &&
     dutiesByYear.length === 0;
 
@@ -101,6 +122,13 @@ export default function ArchiwumPage() {
     setOpenDutyKey(null);
   }
 
+  async function restoreVacationMonth(monthKey: string) {
+    if (!data) return;
+    if (!confirm("Przywrócić ten miesiąc urlopów z archiwum?")) return;
+    await save(restoreVacationMonthFromArchive(data, monthKey));
+    setOpenVacationMonthKey(null);
+  }
+
   async function restoreVacation(yearKey: string) {
     if (!data) return;
     if (!confirm("Przywrócić ten rok urlopów z archiwum?")) return;
@@ -112,8 +140,8 @@ export default function ArchiwumPage() {
     <div>
       <PageHeader title="Archiwum" />
       <p className="-mt-4 mb-6 text-[16px] text-slate-500 dark:text-slate-400">
-        Przyjęcia i dyżury archiwizują się w ostatni dzień roboczy miesiąca.
-        Urlopy — w ostatni dzień roboczy grudnia (cały rok).
+        Przyjęcia, dyżury i urlopy archiwizują się w ostatni dzień roboczy miesiąca.
+        Pełny rok urlopów można też zarchiwizować ręcznie na stronie Urlopy.
       </p>
       {error && <ErrorBanner message={error} />}
 
@@ -244,51 +272,109 @@ export default function ArchiwumPage() {
             </section>
           )}
 
-          {vacationYears.length > 0 && (
+          {(vacationsByYear.length > 0 || vacationYears.length > 0) && (
             <section>
               <h2 className="mb-4 text-[24px] font-bold text-slate-800 dark:text-slate-100">
                 Urlopy
               </h2>
-              <div className="flex flex-wrap gap-2">
-                {vacationYears.map((entry) => {
-                  const isOpen = openVacationYear === entry.yearKey;
-                  return (
-                    <button
-                      key={entry.yearKey}
-                      type="button"
-                      onClick={() =>
-                        setOpenVacationYear((cur) =>
-                          cur === entry.yearKey ? null : entry.yearKey
-                        )
-                      }
-                      className={`rounded-md border px-4 py-2 text-[19px] font-medium transition-colors ${
-                        isOpen
-                          ? "border-emerald-600 bg-emerald-600 text-white"
-                          : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
-                      }`}
-                    >
-                      Urlopy {entry.yearKey}
-                    </button>
-                  );
-                })}
-              </div>
 
-              {vacationYears.map((entry) =>
-                openVacationYear === entry.yearKey ? (
-                  <div key={`vac-${entry.yearKey}`} className="mt-4 space-y-3">
-                    <div className="flex justify-end">
-                      <Btn
-                        variant="secondary"
-                        disabled={saving}
-                        onClick={() => void restoreVacation(entry.yearKey)}
-                      >
-                        Cofnij z archiwum
-                      </Btn>
+              {vacationsByYear.length > 0 ? (
+                <div className="mb-8 space-y-8">
+                  {vacationsByYear.map(([year, entries]) => (
+                    <div key={year}>
+                      <h3 className="mb-3 text-[22px] font-bold text-slate-800 dark:text-slate-100">
+                        {year}
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {entries.map((entry) => {
+                          const { month } = parseMonthKey(entry.monthKey);
+                          const isOpen = openVacationMonthKey === entry.monthKey;
+                          return (
+                            <button
+                              key={entry.monthKey}
+                              type="button"
+                              onClick={() =>
+                                setOpenVacationMonthKey((cur) =>
+                                  cur === entry.monthKey ? null : entry.monthKey
+                                )
+                              }
+                              className={`rounded-md border px-4 py-2 text-[19px] font-medium transition-colors ${
+                                isOpen
+                                  ? "border-emerald-600 bg-emerald-600 text-white"
+                                  : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                              }`}
+                            >
+                              {MONTHS_PL[month]}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {entries.map((entry) =>
+                        openVacationMonthKey === entry.monthKey ? (
+                          <div key={`vac-month-${entry.monthKey}`} className="mt-4 space-y-3">
+                            <div className="flex justify-end">
+                              <Btn
+                                variant="secondary"
+                                disabled={saving}
+                                onClick={() => void restoreVacationMonth(entry.monthKey)}
+                              >
+                                Cofnij z archiwum
+                              </Btn>
+                            </div>
+                            <ArchivedVacationMonthPanel entry={entry} data={data} />
+                          </div>
+                        ) : null
+                      )}
                     </div>
-                    <ArchivedVacationYearPanel entry={entry} data={data} />
+                  ))}
+                </div>
+              ) : null}
+
+              {vacationYears.length > 0 ? (
+                <>
+                  <div className="flex flex-wrap gap-2">
+                    {vacationYears.map((entry) => {
+                      const isOpen = openVacationYear === entry.yearKey;
+                      return (
+                        <button
+                          key={entry.yearKey}
+                          type="button"
+                          onClick={() =>
+                            setOpenVacationYear((cur) =>
+                              cur === entry.yearKey ? null : entry.yearKey
+                            )
+                          }
+                          className={`rounded-md border px-4 py-2 text-[19px] font-medium transition-colors ${
+                            isOpen
+                              ? "border-emerald-600 bg-emerald-600 text-white"
+                              : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                          }`}
+                        >
+                          Urlopy {entry.yearKey} (cały rok)
+                        </button>
+                      );
+                    })}
                   </div>
-                ) : null
-              )}
+
+                  {vacationYears.map((entry) =>
+                    openVacationYear === entry.yearKey ? (
+                      <div key={`vac-${entry.yearKey}`} className="mt-4 space-y-3">
+                        <div className="flex justify-end">
+                          <Btn
+                            variant="secondary"
+                            disabled={saving}
+                            onClick={() => void restoreVacation(entry.yearKey)}
+                          >
+                            Cofnij z archiwum
+                          </Btn>
+                        </div>
+                        <ArchivedVacationYearPanel entry={entry} data={data} />
+                      </div>
+                    ) : null
+                  )}
+                </>
+              ) : null}
             </section>
           )}
         </div>

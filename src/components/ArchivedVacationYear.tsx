@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import type { AppData, ArchivedVacationYear, Physiotherapist, VacationEntry } from "@/lib/types";
+import type { AppData, ArchivedVacationMonth, ArchivedVacationYear, Physiotherapist, VacationEntry } from "@/lib/types";
 import {
   MONTH_NAMES,
   WEEKDAY_NAMES_PL,
@@ -10,6 +10,7 @@ import {
   getWeekdayOnlyMonthGrid,
   isClinicClosedDay,
   isPolishPublicHoliday,
+  parseMonthKey,
 } from "@/lib/date-utils";
 import {
   resolvePhysioColumnHeaderColor,
@@ -239,6 +240,34 @@ function ArchivedVacationMonthTable({
       </div>
       </div>
     </FitWidthScale>
+  );
+}
+
+export function ArchivedVacationMonthPanel({
+  entry,
+  data,
+}: {
+  entry: ArchivedVacationMonth;
+  data: AppData;
+}) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const { year, month } = parseMonthKey(entry.monthKey);
+  const clinicClosedDays = data.clinicClosedDays ?? [];
+  const physioById = useMemo(
+    () => Object.fromEntries(vacationStaff(data).map((p) => [p.id, p])),
+    [data]
+  );
+
+  return (
+    <ArchivedVacationMonthTable
+      yearNum={year}
+      month={month}
+      vacations={entry.entries}
+      clinicClosedDays={clinicClosedDays}
+      physioById={physioById}
+      isDark={isDark}
+    />
   );
 }
 

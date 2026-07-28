@@ -4,6 +4,7 @@ import type {
   ArchivedAdmissionMonth,
   ArchivedDutyMonth,
   ArchivedVacationYear,
+  ArchivedVacationMonth,
   ColumnWidths,
   Doctor,
   Patient,
@@ -524,6 +525,17 @@ export function sanitizeAppData(data: AppData): AppData {
           })),
         }))
       : [],
+    vacationMonthArchive: Array.isArray(data.vacationMonthArchive)
+      ? data.vacationMonthArchive.map((m) => ({
+          monthKey: m.monthKey,
+          archivedAt: m.archivedAt ?? new Date().toISOString(),
+          entries: (m.entries ?? []).map((v) => ({
+            date: v.date,
+            physiotherapistId: v.physiotherapistId ?? "",
+            certainty: v.certainty === "uncertain" ? ("uncertain" as const) : ("certain" as const),
+          })),
+        }))
+      : [],
     dutyArchive: Array.isArray(data.dutyArchive)
       ? data.dutyArchive.map((m) => ({
           monthKey: m.monthKey,
@@ -710,6 +722,17 @@ export function migrateData(raw: any): AppData {
           })),
         }))
       : undefined,
+    vacationMonthArchive: Array.isArray(raw.vacationMonthArchive)
+      ? (raw.vacationMonthArchive as ArchivedVacationMonth[]).map((m) => ({
+          monthKey: m.monthKey,
+          archivedAt: m.archivedAt ?? new Date().toISOString(),
+          entries: (m.entries ?? []).map((v) => ({
+            date: v.date,
+            physiotherapistId: migratePhysioRef(v.physiotherapistId ?? ""),
+            certainty: v.certainty === "uncertain" ? ("uncertain" as const) : ("certain" as const),
+          })),
+        }))
+      : undefined,
     dutyArchive: Array.isArray(raw.dutyArchive)
       ? (raw.dutyArchive as ArchivedDutyMonth[]).map((m) => ({
           monthKey: m.monthKey,
@@ -795,6 +818,7 @@ function createEmptyAppData(): AppData {
     archive: [],
     admissionArchive: [],
     vacationArchive: [],
+    vacationMonthArchive: [],
     dutyArchive: [],
     announcements: [],
     announcementsSeenAt: "",

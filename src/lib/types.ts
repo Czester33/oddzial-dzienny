@@ -118,6 +118,13 @@ export interface ArchivedVacationYear {
   entries: VacationEntry[];
 }
 
+/** Vacation month snapshot for archive. */
+export interface ArchivedVacationMonth {
+  monthKey: string;
+  archivedAt: string;
+  entries: VacationEntry[];
+}
+
 /** Duty month snapshot for archive. */
 export interface ArchivedDutyMonth {
   monthKey: string;
@@ -165,6 +172,8 @@ export interface AppData {
   admissionArchive?: ArchivedAdmissionMonth[];
   /** Archived vacation years. */
   vacationArchive?: ArchivedVacationYear[];
+  /** Archived vacation months. */
+  vacationMonthArchive?: ArchivedVacationMonth[];
   /** Archived duty months. */
   dutyArchive?: ArchivedDutyMonth[];
   /**

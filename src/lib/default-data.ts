@@ -19,6 +19,7 @@ export function createDefaultData(): AppData {
     archive: [],
     admissionArchive: [],
     vacationArchive: [],
+    vacationMonthArchive: [],
     dutyArchive: [],
     announcements: [],
     announcementsSeenAt: "",

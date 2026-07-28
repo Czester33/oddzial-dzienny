@@ -37,6 +37,7 @@ import {
   archiveVacationYear,
   hasAutoArchiveVacationChanges,
   hasVacationNoteChanges,
+  vacationMonthKey,
   vacationStaff,
 } from "@/lib/vacation-utils";
 import { FitWidthScale, tableRemPx } from "@/components/FitWidthScale";
@@ -516,7 +517,11 @@ export default function UrlopyPage() {
   const yearArchived = (data.vacationArchive ?? []).some((y) => y.yearKey === year);
   const yearRestoredFromArchive = (data.autoArchiveSkip?.vacations ?? []).includes(year);
   const clinicClosedDays = data.clinicClosedDays ?? [];
-  const { upcoming: upcomingMonths, past: pastMonths } = splitMonthIndexes(yearNum);
+  const { upcoming: upcomingMonths, past: pastMonthsAll } = splitMonthIndexes(yearNum);
+  const archivedMonthKeys = new Set((data.vacationMonthArchive ?? []).map((m) => m.monthKey));
+  const pastMonths = pastMonthsAll.filter(
+    (month) => !archivedMonthKeys.has(vacationMonthKey(yearNum, month))
+  );
 
   const archiveCurrentYear = () => {
     if (!yearRestoredFromArchive) return;

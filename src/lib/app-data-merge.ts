@@ -314,6 +314,13 @@ export function mergeAppData(base: AppData, local: AppData, remote: AppData): Ap
       (item) => item.yearKey,
       { sortByKey: true }
     ),
+    vacationMonthArchive: mergeByKey(
+      base.vacationMonthArchive,
+      local.vacationMonthArchive,
+      remote.vacationMonthArchive,
+      (item) => item.monthKey,
+      { sortByKey: true }
+    ),
     dutyArchive: mergeByKey(
       base.dutyArchive,
       local.dutyArchive,

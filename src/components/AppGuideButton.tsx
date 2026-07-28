@@ -39,7 +39,7 @@ const GUIDE_SECTIONS: GuideSection[] = [
       "Jak coś zmienisz w Przyjęciach, na stronie pacjentów pojawia się powiadomienie (po prawej; na telefonie — na dole).",
       "W masażach skończone osoby znikają same. Ktoś z kolejki może wejść na wolne miejsce.",
       "Stare przyjęcia (już po terminie) spadają na dół listy.",
-      "Stare miesiące przyjęć i dyżurów same idą do Archiwum (w ostatni dzień roboczy miesiąca). Urlopy — cały rok, w ostatni dzień roboczy grudnia.",
+      "Stare miesiące przyjęć, dyżurów i urlopów same idą do Archiwum (w ostatni dzień roboczy miesiąca).",
     ],
   },
   {
