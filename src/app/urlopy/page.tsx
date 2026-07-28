@@ -660,6 +660,7 @@ export default function UrlopyPage() {
           value={year}
           onChange={setYear}
           extraYears={data.autoArchiveSkip?.vacations ?? []}
+          minYear={Number(currentYearKey())}
         />
       </PageHeader>
       {error && <ErrorBanner message={error} />}

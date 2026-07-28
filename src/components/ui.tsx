@@ -187,19 +187,25 @@ export function YearSelector({
   value,
   onChange,
   extraYears = [],
+  minYear,
 }: {
   value: string;
   onChange: (v: string) => void;
   /** Extra years (e.g. restored from archive) merged into the list. */
   extraYears?: string[];
+  /** Earliest year in the dropdown (default: previous calendar year). */
+  minYear?: number;
 }) {
   const currentYear = new Date().getFullYear();
+  const floor = minYear ?? currentYear - 1;
   const years = [
     ...new Set([
       ...extraYears.filter(Boolean),
-      ...Array.from({ length: 5 }, (_, i) => String(currentYear - 1 + i)),
+      ...Array.from({ length: 5 }, (_, i) => String(floor + i)),
     ]),
-  ].sort();
+  ]
+    .filter((y) => Number(y) >= floor)
+    .sort();
 
   return (
     <select
