@@ -23,7 +23,9 @@ const GUIDE_SECTIONS: GuideSection[] = [
       "Kliknij dwa razy w nazwę zakładki — możesz ją nazwać inaczej.",
       "Przycisk z księżycem/słońcem = jasny albo ciemny wygląd.",
       "Zielony przycisk „Przewodnik” = ta instrukcja.",
-      "Dzwonek = ogłoszenia dla wszystkich. Na telefonie otwierają się na cały ekran (zamkniesz ✕ albo dotknięciem tła).",
+      "Przy wejściu może być hasło do całej aplikacji. Po zalogowaniu sesja trwa do rana (ok. do 6:00 następnego dnia) — potem trzeba wpisać hasło ponownie.",
+      "Dzwonek = ogłoszenia dla wszystkich. Kliknij drugi raz dzwonek, żeby zamknąć panel. Na telefonie też ✕ albo dotknięcie tła.",
+      "Przy każdym ogłoszeniu: „Odczytano” oznacza tylko to jedno ogłoszenie. Przy przeczytanym — „Nieprzeczytane” cofa oznaczenie.",
     ],
   },
   {
@@ -32,6 +34,7 @@ const GUIDE_SECTIONS: GuideSection[] = [
     items: [
       "Jak minie data wypisu pacjenta, znika z listy obecnych. W dniu wypisu — po 18:00.",
       "Jak ktoś ma urlop, nad jego tabelą pojawia się przypomnienie (2 dni robocze wcześniej). Przy masażach (Krzysztof) — już 14 dni wcześniej.",
+      "W przypomnieniu urlop widać pełny zakres (np. 10.08–24.08) — weekendy, święta i dni zamknięcia placówki (np. 14.08) nie przerywają wpisu.",
       "We wtorek albo czwartek, gdy ktoś ma dyżur, od rana (od 7:00) nad jego tabelą widać godziny dyżuru, np. 13:25-21:00.",
       "Jak coś zmienisz w Przyjęciach, na stronie pacjentów pojawia się powiadomienie (po prawej; na telefonie — na dole).",
       "W masażach skończone osoby znikają same. Ktoś z kolejki może wejść na wolne miejsce.",
@@ -72,7 +75,7 @@ const GUIDE_SECTIONS: GuideSection[] = [
       "Górna tabela = osoby, które już mają termin (godzina, imię, daty).",
       "Dolna tabela = kolejka (czekają na wolne miejsce).",
       "Możesz ręcznie wziąć kogoś z kolejki do grafiku. Aplikacja też może to zrobić sama, gdy zwolni się miejsce.",
-      "Obok widać najbliższe wolne terminy.",
+      "Obok widać najbliższe wolne terminy. Jeśli danego dnia było 12 masaży i ktoś skończy wcześniej, wolne miejsce pojawi się w tym panelu dopiero od jutra.",
     ],
   },
   {
@@ -97,6 +100,7 @@ const GUIDE_SECTIONS: GuideSection[] = [
       "„×” = nie przyszedł / dyskwalifikacja. Kliknij drugi raz = cofasz.",
       "„Usuń” = kasujesz ten wiersz z listy.",
       "Jak coś zmienisz, fizjoterapeuta dostanie powiadomienie na stronie pacjentów.",
+      "Na dole strony (po prawej): przycisk przenoszenia tabel ‹ › — przenosisz całe przyjęcie do innego miesiąca. Kliknij ponownie, gdy skończysz.",
       "Jak miesiąc był wyjęty z Archiwum, pojawi się „Archiwizuj” — wraca do Archiwum.",
     ],
   },
