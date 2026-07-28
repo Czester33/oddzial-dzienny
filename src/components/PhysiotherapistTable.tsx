@@ -136,6 +136,66 @@ function useIsMobile(): boolean {
 
 const LP_DOUBLE_TAP_MS = 300;
 
+const HIDDEN_MENU_STYLE: CSSProperties = {
+  position: "fixed",
+  top: -9999,
+  left: -9999,
+  zIndex: 10000,
+  visibility: "hidden",
+  opacity: 0,
+  pointerEvents: "none",
+};
+
+function computeSubstituteMenuStyle(
+  button: HTMLElement,
+  targetCount: number,
+  menuEl?: HTMLElement | null
+): CSSProperties {
+  const rect = button.getBoundingClientRect();
+  const margin = 8;
+  const estimatedHeight = Math.min(targetCount * 36 + 8, 280);
+  const menuWidth = menuEl?.offsetWidth
+    ? menuEl.offsetWidth
+    : Math.min(180, window.innerWidth - margin * 2);
+  const menuHeight = menuEl?.offsetHeight
+    ? Math.min(menuEl.offsetHeight, estimatedHeight)
+    : estimatedHeight;
+
+  let left = rect.left;
+  if (left + menuWidth > window.innerWidth - margin) {
+    left = Math.max(margin, window.innerWidth - menuWidth - margin);
+  }
+  left = Math.max(margin, left);
+
+  const spaceBelow = window.innerHeight - rect.bottom - margin;
+  const spaceAbove = rect.top - margin;
+  const openUp = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
+
+  let top: number;
+  if (openUp) {
+    top = rect.top - menuHeight - 4;
+    if (top < margin) top = margin;
+  } else {
+    top = rect.bottom + 4;
+    if (top + menuHeight > window.innerHeight - margin) {
+      top = Math.max(margin, window.innerHeight - menuHeight - margin);
+    }
+  }
+
+  const maxHeightPx = Math.max(80, openUp ? spaceAbove : spaceBelow);
+
+  return {
+    position: "fixed",
+    top,
+    left,
+    zIndex: 10000,
+    maxHeight: maxHeightPx,
+    visibility: "visible",
+    opacity: 1,
+    pointerEvents: "auto",
+  };
+}
+
 function MovePatientButton({
   targets,
   onMove,
@@ -150,7 +210,7 @@ function MovePatientButton({
   onDoubleActivate?: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [menuStyle, setMenuStyle] = useState<CSSProperties>({ visibility: "hidden" });
+  const [menuStyle, setMenuStyle] = useState<CSSProperties>(HIDDEN_MENU_STYLE);
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -166,15 +226,25 @@ function MovePatientButton({
 
   useEffect(() => () => clearPendingClick(), [clearPendingClick]);
 
+  const closeMenu = useCallback(() => {
+    setOpen(false);
+    setMenuStyle(HIDDEN_MENU_STYLE);
+  }, []);
+
   const handleDeleteActivate = useCallback(() => {
     clearPendingClick();
-    setOpen(false);
+    closeMenu();
     onDoubleActivate?.();
-  }, [clearPendingClick, onDoubleActivate]);
+  }, [clearPendingClick, closeMenu, onDoubleActivate]);
 
   const handlePrimaryClick = () => {
     if (!isLpMode || !onDoubleActivate) {
-      setOpen((v) => !v);
+      if (open) {
+        closeMenu();
+      } else {
+        setMenuStyle(HIDDEN_MENU_STYLE);
+        setOpen(true);
+      }
       return;
     }
 
@@ -185,7 +255,12 @@ function MovePatientButton({
 
     pendingClickRef.current = setTimeout(() => {
       pendingClickRef.current = null;
-      setOpen((v) => !v);
+      if (open) {
+        closeMenu();
+      } else {
+        setMenuStyle(HIDDEN_MENU_STYLE);
+        setOpen(true);
+      }
     }, LP_DOUBLE_TAP_MS);
   };
 
@@ -196,53 +271,12 @@ function MovePatientButton({
   const updateMenuPosition = useCallback(() => {
     const button = buttonRef.current;
     if (!button) return;
-
-    const rect = button.getBoundingClientRect();
-    const margin = 8;
-    const menuEl = menuRef.current;
-    const menuWidth = menuEl?.offsetWidth
-      ? menuEl.offsetWidth
-      : Math.min(180, window.innerWidth - margin * 2);
-    const menuHeight = menuEl?.offsetHeight
-      ? menuEl.offsetHeight
-      : Math.min(targets.length * 36 + 8, 280);
-
-    let left = rect.left;
-    if (left + menuWidth > window.innerWidth - margin) {
-      left = Math.max(margin, window.innerWidth - menuWidth - margin);
-    }
-    left = Math.max(margin, left);
-
-    const spaceBelow = window.innerHeight - rect.bottom - margin;
-    const spaceAbove = rect.top - margin;
-    const openUp = spaceBelow < menuHeight && spaceAbove > spaceBelow;
-
-    let top: number;
-    if (openUp) {
-      top = rect.top - menuHeight - 4;
-      if (top < margin) top = margin;
-    } else {
-      top = rect.bottom + 4;
-      if (top + menuHeight > window.innerHeight - margin) {
-        top = Math.max(margin, window.innerHeight - menuHeight - margin);
-      }
-    }
-
-    const maxHeightPx = Math.max(80, openUp ? spaceAbove : spaceBelow);
-
-    setMenuStyle({
-      position: "fixed",
-      top,
-      left,
-      zIndex: 10000,
-      maxHeight: maxHeightPx,
-      visibility: "visible",
-    });
+    setMenuStyle(computeSubstituteMenuStyle(button, targets.length, menuRef.current));
   }, [targets.length]);
 
   useLayoutEffect(() => {
     if (!open) {
-      setMenuStyle({ visibility: "hidden" });
+      setMenuStyle(HIDDEN_MENU_STYLE);
       return;
     }
     updateMenuPosition();
@@ -255,10 +289,10 @@ function MovePatientButton({
     const handleClick = (e: MouseEvent) => {
       const target = e.target as Node;
       if (buttonRef.current?.contains(target) || menuRef.current?.contains(target)) return;
-      setOpen(false);
+      closeMenu();
     };
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") closeMenu();
     };
     window.addEventListener("scroll", updateMenuPosition, true);
     window.addEventListener("resize", updateMenuPosition);
@@ -270,7 +304,7 @@ function MovePatientButton({
       document.removeEventListener("mousedown", handleClick);
       document.removeEventListener("keydown", handleKey);
     };
-  }, [open, updateMenuPosition]);
+  }, [open, updateMenuPosition, closeMenu]);
 
   return (
     <>
@@ -324,7 +358,7 @@ function MovePatientButton({
                 type="button"
                 onClick={() => {
                   onMove(p.id);
-                  setOpen(false);
+                  closeMenu();
                 }}
                 className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[17px] leading-snug text-slate-800 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
               >
