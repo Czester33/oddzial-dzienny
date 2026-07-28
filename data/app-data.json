@@ -192,11 +192,7 @@
         }
       ],
       "scheduleHours": "7:45-13:45",
-      "headerNote": "<span style=\"font-weight: bold; color: #dc2626;\">10.08-24.08-Urlop Krzysztofa</span>",
-      "todaySlotPeak": {
-        "date": "2026-07-28",
-        "count": 7
-      }
+      "headerNote": "<span style=\"font-weight: bold; color: #dc2626;\">10.08-24.08-Urlop Krzysztofa</span>"
     },
     "navOrder": [
       "/pacjenci",
@@ -2460,7 +2456,39 @@
         "e80c5403-3e97-4c8b-a451-50ba125caaf2",
         "f31722a2-9691-4d36-a552-48d3255aa1b4"
       ]
-    }
+    },
+    "vacationMonthArchive": [
+      {
+        "monthKey": "2026-06",
+        "archivedAt": "2026-07-28T14:19:17.436Z",
+        "entries": []
+      },
+      {
+        "monthKey": "2026-05",
+        "archivedAt": "2026-07-28T14:19:17.436Z",
+        "entries": []
+      },
+      {
+        "monthKey": "2026-04",
+        "archivedAt": "2026-07-28T14:19:17.436Z",
+        "entries": []
+      },
+      {
+        "monthKey": "2026-03",
+        "archivedAt": "2026-07-28T14:19:17.436Z",
+        "entries": []
+      },
+      {
+        "monthKey": "2026-02",
+        "archivedAt": "2026-07-28T14:19:17.436Z",
+        "entries": []
+      },
+      {
+        "monthKey": "2026-01",
+        "archivedAt": "2026-07-28T14:19:17.436Z",
+        "entries": []
+      }
+    ]
   },
-  "updatedAt": "2026-07-28T11:36:55.404Z"
+  "updatedAt": "2026-07-28T14:19:17.448Z"
 }

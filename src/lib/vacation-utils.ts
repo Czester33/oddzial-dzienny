@@ -3,7 +3,7 @@ import { getLastWorkingDayOfMonth, isoFromParts, isWorkingDay, parseMonthKey, to
 import { stripHtml } from "./text-format";
 
 /** Set true when vacation auto-archive should run (monthly, last working day). */
-export const VACATION_AUTO_ARCHIVE_ENABLED = false;
+export const VACATION_AUTO_ARCHIVE_ENABLED = true;
 
 /** Fixed vacation person for massage therapist (not in physiotherapists list). */
 export const VACATION_KRZYSZTOF_ID = "vacation-krzysztof";
@@ -47,20 +47,22 @@ export function vacationEntriesInMonth(
   return entries.filter((entry) => entry.date.slice(0, 7) === monthKey);
 }
 
-function vacationMonthHasData(entries: VacationEntry[]): boolean {
-  return entries.length > 0;
+function collectVacationYearsToArchive(data: AppData, now: Date): string[] {
+  const years = new Set(Object.keys(data.vacations ?? {}));
+  years.add(String(now.getFullYear()));
+  for (const month of data.vacationMonthArchive ?? []) {
+    years.add(month.monthKey.slice(0, 4));
+  }
+  return [...years].sort();
 }
 
 /**
- * Archive on/after the last working day of that month.
- * Empty months are skipped.
+ * Archive on/after the last working day of that month (including empty months).
  */
 export function shouldAutoArchiveVacationMonth(
   monthKeyValue: string,
-  entries: VacationEntry[],
   todayIso: string = todayIsoDate()
 ): boolean {
-  if (!vacationMonthHasData(entries)) return false;
   const { year, month } = parseMonthKey(monthKeyValue);
   const lastWorkingDay = getLastWorkingDayOfMonth(year, month);
   return todayIso >= lastWorkingDay;
@@ -74,7 +76,6 @@ export function archiveVacationMonth(
 ): AppData {
   const allEntries = data.vacations[yearKey] ?? [];
   const monthEntries = vacationEntriesInMonth(allEntries, monthKeyValue);
-  if (!vacationMonthHasData(monthEntries)) return data;
 
   const archivedKeys = new Set(
     monthEntries.map((entry) => `${entry.date}::${entry.physiotherapistId}`)
@@ -230,8 +231,7 @@ export function applyAutoArchiveVacations(
   let next = data;
   let changed = false;
 
-  for (const [yearKey, entries] of Object.entries(data.vacations ?? {})) {
-    if (!entries.length) continue;
+  for (const yearKey of collectVacationYearsToArchive(data, now)) {
     if (skip.has(yearKey)) continue;
 
     const yearNum = Number(yearKey);
@@ -240,18 +240,20 @@ export function applyAutoArchiveVacations(
     for (let month = 0; month < 12; month++) {
       const monthKey = vacationMonthKey(yearNum, month);
       if (skip.has(monthKey)) continue;
+      if (!shouldAutoArchiveVacationMonth(monthKey, today)) continue;
 
-      const monthEntries = vacationEntriesInMonth(entries, monthKey);
-      if (!shouldAutoArchiveVacationMonth(monthKey, monthEntries, today)) continue;
+      const activeEntries = next.vacations[yearKey] ?? [];
+      const monthEntries = vacationEntriesInMonth(activeEntries, monthKey);
 
       if ((next.vacationMonthArchive ?? []).some((m) => m.monthKey === monthKey)) {
-        const activeEntries = next.vacations[yearKey] ?? [];
+        if (!monthEntries.length) continue;
         const remaining = activeEntries.filter(
-          (entry) => !monthEntries.some(
-            (archived) =>
-              archived.date === entry.date &&
-              archived.physiotherapistId === entry.physiotherapistId
-          )
+          (entry) =>
+            !monthEntries.some(
+              (archived) =>
+                archived.date === entry.date &&
+                archived.physiotherapistId === entry.physiotherapistId
+            )
         );
         const nextVacations = { ...next.vacations, [yearKey]: remaining };
         if (remaining.length === 0) {

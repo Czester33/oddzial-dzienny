@@ -54,6 +54,9 @@ export default function ArchiwumPage() {
       list.push(entry);
       map.set(year, list);
     }
+    for (const list of map.values()) {
+      list.sort((a, b) => a.monthKey.localeCompare(b.monthKey));
+    }
     return [...map.entries()].sort((a, b) => b[0] - a[0]);
   }, [admissionMonths]);
 
@@ -71,6 +74,9 @@ export default function ArchiwumPage() {
       const list = map.get(year) ?? [];
       list.push(entry);
       map.set(year, list);
+    }
+    for (const list of map.values()) {
+      list.sort((a, b) => a.monthKey.localeCompare(b.monthKey));
     }
     return [...map.entries()].sort((a, b) => b[0] - a[0]);
   }, [vacationMonths]);
@@ -96,6 +102,9 @@ export default function ArchiwumPage() {
       const list = map.get(year) ?? [];
       list.push(entry);
       map.set(year, list);
+    }
+    for (const list of map.values()) {
+      list.sort((a, b) => a.monthKey.localeCompare(b.monthKey));
     }
     return [...map.entries()].sort((a, b) => b[0] - a[0]);
   }, [dutyMonths]);
@@ -140,8 +149,8 @@ export default function ArchiwumPage() {
     <div>
       <PageHeader title="Archiwum" />
       <p className="-mt-4 mb-6 text-[16px] text-slate-500 dark:text-slate-400">
-        Przyjęcia i dyżury archiwizują się w ostatni dzień roboczy miesiąca.
-        Urlopy — na razie tylko ręcznie (przycisk „Archiwizuj” na stronie Urlopy).
+        Przyjęcia, dyżury i urlopy archiwizują się w ostatni dzień roboczy miesiąca.
+        Pełny rok urlopów można też zarchiwizować ręcznie na stronie Urlopy.
       </p>
       {error && <ErrorBanner message={error} />}
 
