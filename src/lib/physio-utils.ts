@@ -663,10 +663,14 @@ export function migrateData(raw: any): AppData {
       : [],
     announcementsSeenAt: raw.announcementsSeenAt ?? "",
     announcementsReadIds: Array.isArray(raw.announcementsReadIds)
-      ? raw.announcementsReadIds.filter((id): id is string => typeof id === "string")
+      ? (raw.announcementsReadIds as unknown[]).filter(
+          (id): id is string => typeof id === "string"
+        )
       : undefined,
     announcementsUnreadIds: Array.isArray(raw.announcementsUnreadIds)
-      ? raw.announcementsUnreadIds.filter((id): id is string => typeof id === "string")
+      ? (raw.announcementsUnreadIds as unknown[]).filter(
+          (id): id is string => typeof id === "string"
+        )
       : undefined,
     admissionNotificationsSeenAt:
       raw.admissionNotificationsSeenAt &&
