@@ -156,11 +156,20 @@ function PatientNameCell({
 function FreeMassageSlotsPanel({
   active,
   waiting,
+  todaySlotPeak,
 }: {
   active: MassagePatient[];
   waiting: MassageWaiting[];
+  todaySlotPeak?: { date: string; count: number };
 }) {
-  const slots = getNearestFreeMassageSlots(active, waiting);
+  const slots = getNearestFreeMassageSlots(
+    active,
+    waiting,
+    new Date(),
+    MAX_MASSAGES_PER_DAY,
+    8,
+    todaySlotPeak
+  );
 
   return (
     <aside className="w-[300px] shrink-0 rounded-lg border border-black bg-white p-5 shadow-sm dark:border-slate-600 dark:bg-slate-900">
@@ -448,7 +457,11 @@ function MasazeContent({ data }: { data: AppData }) {
             </div>
           </FitWidthScale>
           <div className="absolute left-full top-0 ml-4 hidden lg:block">
-            <FreeMassageSlotsPanel active={sortedActive} waiting={massages.waiting} />
+            <FreeMassageSlotsPanel
+              active={sortedActive}
+              waiting={massages.waiting}
+              todaySlotPeak={massages.todaySlotPeak}
+            />
           </div>
         </div>
       </div>

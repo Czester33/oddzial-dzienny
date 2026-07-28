@@ -8,7 +8,8 @@ import {
   getAnnouncementCategory,
   hasUnreadAnnouncements,
   isAnnouncementUnread,
-  markAnnouncementsSeen,
+  markAnnouncementRead,
+  markAnnouncementUnread,
 } from "@/lib/announcement-utils";
 import { FormattedEditor } from "@/components/FormattedEditor";
 import { adaptHtmlColorsForTheme } from "@/lib/text-format";
@@ -51,6 +52,7 @@ export function AnnouncementsButton({
   const { theme } = useTheme();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState("");
+  const rootRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const unread = hasUnreadAnnouncements(data);
 
@@ -69,7 +71,7 @@ export function AnnouncementsButton({
     if (!open) return;
 
     const handleClick = (e: MouseEvent) => {
-      if (panelRef.current?.contains(e.target as Node)) return;
+      if (rootRef.current?.contains(e.target as Node)) return;
       setOpen(false);
     };
     const handleKey = (e: KeyboardEvent) => {
@@ -106,8 +108,12 @@ export function AnnouncementsButton({
     });
   };
 
-  const confirmRead = () => {
-    onSave(markAnnouncementsSeen(data));
+  const confirmRead = (id: string) => {
+    onSave(markAnnouncementRead(data, id));
+  };
+
+  const markUnread = (id: string) => {
+    onSave(markAnnouncementUnread(data, id));
   };
 
   const panel = open ? (
@@ -175,16 +181,27 @@ export function AnnouncementsButton({
                         className="whitespace-pre-wrap"
                         dangerouslySetInnerHTML={{ __html: adaptHtmlColorsForTheme(a.text, theme) }}
                       />
-                      {isNew && (
+                      {isNew ? (
                         <div className="mt-3 flex justify-end">
                           <button
                             type="button"
-                            onClick={confirmRead}
+                            onClick={() => confirmRead(a.id)}
                             className="inline-flex items-center gap-1 rounded border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[13px] font-medium text-emerald-800 hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900"
                             title="Potwierdź odczytanie"
                           >
                             <span aria-hidden="true">✓</span>
                             Odczytano
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="mt-3 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => markUnread(a.id)}
+                            className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-0.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                            title="Oznacz jako nieprzeczytane"
+                          >
+                            Nieprzeczytane
                           </button>
                         </div>
                       )}
@@ -216,7 +233,7 @@ export function AnnouncementsButton({
   ) : null;
 
   return (
-    <div className="relative inline-flex shrink-0">
+    <div ref={rootRef} className="relative inline-flex shrink-0">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

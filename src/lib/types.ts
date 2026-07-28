@@ -46,6 +46,8 @@ export interface MassagesData {
   waiting: MassageWaiting[];
   scheduleHours?: string;
   headerNote?: string;
+  /** Max occupancy reached today — same-day freed slots stay hidden until tomorrow. */
+  todaySlotPeak?: { date: string; count: number };
 }
 
 export interface DutyEntry {
@@ -176,6 +178,10 @@ export interface AppData {
   };
   announcements: Announcement[];
   announcementsSeenAt: string;
+  /** Individually read general announcement ids. */
+  announcementsReadIds?: string[];
+  /** Explicit unread override (e.g. after legacy bulk read). */
+  announcementsUnreadIds?: string[];
   notepadNotes?: NotepadNote[];
   /** Last time each physiotherapist marked admission notifications as read. */
   admissionNotificationsSeenAt?: Record<string, string>;

@@ -225,9 +225,10 @@ function buildKrzysztofVacationNoteHtml(start: string, end: string): string {
 
 function findActiveKrzysztofVacationNote(
   dates: string[],
-  todayIso: string
+  todayIso: string,
+  extraClosedDates: readonly string[] = []
 ): string | null {
-  for (const { start, end } of groupVacationRanges(dates)) {
+  for (const { start, end } of groupVacationRanges(dates, extraClosedDates)) {
     const notifyFrom = addDaysIso(start, -KRZYSZTOF_VACATION_NOTICE_DAYS);
     if (todayIso >= notifyFrom && todayIso <= end) {
       return buildKrzysztofVacationNoteHtml(start, end);
@@ -242,14 +243,24 @@ function mergeKrzysztofVacationNote(existing: string, vacationHtml: string | nul
   return base ? `${vacationHtml} ${base}` : vacationHtml;
 }
 
-function daysBetweenIso(a: string, b: string): number {
-  const da = new Date(`${a}T12:00:00`).getTime();
-  const db = new Date(`${b}T12:00:00`).getTime();
-  return Math.round((db - da) / 86_400_000);
+function canBridgeVacationGap(
+  from: string,
+  to: string,
+  extraClosedDates: readonly string[] = []
+): boolean {
+  let current = from;
+  while (true) {
+    current = addDaysIso(current, 1);
+    if (current >= to) return true;
+    if (isWorkingDay(current, extraClosedDates)) return false;
+  }
 }
 
-/** Merge marked vacation days into ranges (weekends may gap up to 3 days). */
-function groupVacationRanges(dates: string[]): { start: string; end: string }[] {
+/** Merge marked vacation days; gaps of only non-working days stay in one range. */
+function groupVacationRanges(
+  dates: string[],
+  extraClosedDates: readonly string[] = []
+): { start: string; end: string }[] {
   const sorted = [...new Set(dates)].sort();
   if (sorted.length === 0) return [];
 
@@ -259,7 +270,7 @@ function groupVacationRanges(dates: string[]): { start: string; end: string }[] 
 
   for (let i = 1; i < sorted.length; i++) {
     const date = sorted[i];
-    if (daysBetweenIso(end, date) <= 3) {
+    if (canBridgeVacationGap(end, date, extraClosedDates)) {
       end = date;
     } else {
       ranges.push({ start, end });
@@ -293,7 +304,7 @@ function findActiveVacationNote(
   todayIso: string,
   extraClosedDates: readonly string[] = []
 ): string | null {
-  for (const { start, end } of groupVacationRanges(dates)) {
+  for (const { start, end } of groupVacationRanges(dates, extraClosedDates)) {
     const notifyFrom = subtractWorkingDays(
       start,
       PHYSIO_VACATION_NOTICE_WORKING_DAYS,
@@ -338,7 +349,11 @@ export function applyVacationNotes(
   }
 
   const krzysztofDates = byPhysio.get(VACATION_KRZYSZTOF_ID) ?? [];
-  const krzysztofNote = findActiveKrzysztofVacationNote(krzysztofDates, todayIso);
+  const krzysztofNote = findActiveKrzysztofVacationNote(
+    krzysztofDates,
+    todayIso,
+    clinicClosedDays
+  );
   const mergedMassageNote = mergeKrzysztofVacationNote(
     data.massages?.headerNote ?? "",
     krzysztofNote

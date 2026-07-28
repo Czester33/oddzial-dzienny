@@ -217,9 +217,49 @@ export function promoteWaitingToActive(data: AppData, now = new Date()): AppData
   };
 }
 
+function countOccupancyOnDay(
+  active: MassagePatient[],
+  waiting: MassageWaiting[],
+  day: string,
+  todayIso: string
+): number {
+  return (
+    active.reduce((n, p) => (occupiesActiveOnDay(p, day) ? n + 1 : n), 0) +
+    waiting.reduce((n, p) => (occupiesWaitingOnDay(p, day, todayIso) ? n + 1 : n), 0)
+  );
+}
+
+function computeTodaySlotPeak(
+  active: MassagePatient[],
+  waiting: MassageWaiting[],
+  existing: { date: string; count: number } | undefined,
+  now = new Date()
+): { date: string; count: number } {
+  const todayIso = getTodayIso(now);
+  const current = countOccupancyOnDay(active, waiting, todayIso, todayIso);
+  if (!existing || existing.date !== todayIso) {
+    return { date: todayIso, count: current };
+  }
+  return { date: todayIso, count: Math.max(existing.count, current) };
+}
+
 /** Clear finished actives, then fill free slots from waiting. */
 export function applyMassageSync(data: AppData, now = new Date()): AppData {
-  return promoteWaitingToActive(applyAutoClearMassages(data, now), now);
+  let next = promoteWaitingToActive(applyAutoClearMassages(data, now), now);
+  const active = next.massages?.active ?? [];
+  const waiting = next.massages?.waiting ?? [];
+  const peak = computeTodaySlotPeak(active, waiting, next.massages?.todaySlotPeak, now);
+  const prev = next.massages?.todaySlotPeak;
+  if (prev?.date === peak.date && prev?.count === peak.count) {
+    return next;
+  }
+  return {
+    ...next,
+    massages: {
+      ...next.massages,
+      todaySlotPeak: peak,
+    },
+  };
 }
 
 export function hasMassageSyncChanges(before: AppData, after: AppData): boolean {
@@ -227,7 +267,10 @@ export function hasMassageSyncChanges(before: AppData, after: AppData): boolean 
   const aw = before.massages?.waiting ?? [];
   const bw = after.massages?.waiting ?? [];
   if (aw.length !== bw.length) return true;
-  return aw.some((patient, index) => patient.id !== bw[index]?.id);
+  if (aw.some((patient, index) => patient.id !== bw[index]?.id)) return true;
+  const bp = before.massages?.todaySlotPeak;
+  const ap = after.massages?.todaySlotPeak;
+  return bp?.date !== ap?.date || bp?.count !== ap?.count;
 }
 
 function addDaysIso(iso: string, days: number): string {
@@ -277,22 +320,24 @@ function occupiesWaitingOnDay(
 /**
  * Nearest free massage places (max 12/day, weekdays only).
  * Active + waiting reservations occupy slots through "Do kiedy".
- * Shows today (if free) and weekdays when capacity changes.
- * Count = total free places that day.
+ * If today reached full capacity, freed same-day slots appear from tomorrow only.
  */
 export function getNearestFreeMassageSlots(
   active: MassagePatient[],
   waiting: MassageWaiting[] = [],
   now = new Date(),
   maxPerDay = MAX_MASSAGES_PER_DAY,
-  maxDaysToShow = 8
+  maxDaysToShow = 8,
+  todaySlotPeak?: { date: string; count: number }
 ): FreeMassageDay[] {
   const todayIso = getTodayIso(now);
 
   const freeOnDay = (day: string) => {
-    const occupying =
-      active.reduce((n, p) => (occupiesActiveOnDay(p, day) ? n + 1 : n), 0) +
-      waiting.reduce((n, p) => (occupiesWaitingOnDay(p, day, todayIso) ? n + 1 : n), 0);
+    const occupying = countOccupancyOnDay(active, waiting, day, todayIso);
+    if (day === todayIso && todaySlotPeak?.date === todayIso) {
+      const effective = Math.max(occupying, todaySlotPeak.count);
+      return Math.max(0, maxPerDay - effective);
+    }
     return Math.max(0, maxPerDay - occupying);
   };
 

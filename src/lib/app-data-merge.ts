@@ -344,6 +344,16 @@ export function mergeAppData(base: AppData, local: AppData, remote: AppData): Ap
       local.announcementsSeenAt,
       remote.announcementsSeenAt
     ),
+    announcementsReadIds: mergeStringSet(
+      base.announcementsReadIds,
+      local.announcementsReadIds,
+      remote.announcementsReadIds
+    ),
+    announcementsUnreadIds: mergeStringSet(
+      base.announcementsUnreadIds,
+      local.announcementsUnreadIds,
+      remote.announcementsUnreadIds
+    ),
     notepadNotes: mergeById(base.notepadNotes, local.notepadNotes, remote.notepadNotes),
     admissionNotificationsSeenAt: mergeStringRecord(
       base.admissionNotificationsSeenAt,

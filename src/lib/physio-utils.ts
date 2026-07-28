@@ -404,6 +404,12 @@ export function sanitizeAppData(data: AppData): AppData {
     },
     announcements: data.announcements ?? [],
     announcementsSeenAt: data.announcementsSeenAt ?? "",
+    announcementsReadIds: Array.isArray(data.announcementsReadIds)
+      ? data.announcementsReadIds.filter((id): id is string => typeof id === "string")
+      : undefined,
+    announcementsUnreadIds: Array.isArray(data.announcementsUnreadIds)
+      ? data.announcementsUnreadIds.filter((id): id is string => typeof id === "string")
+      : undefined,
     notepadNotes: (data.notepadNotes ?? []).map((note) => ({
       id: note.id,
       title: String(note.title ?? "").trim(),
@@ -656,6 +662,12 @@ export function migrateData(raw: any): AppData {
         })
       : [],
     announcementsSeenAt: raw.announcementsSeenAt ?? "",
+    announcementsReadIds: Array.isArray(raw.announcementsReadIds)
+      ? raw.announcementsReadIds.filter((id): id is string => typeof id === "string")
+      : undefined,
+    announcementsUnreadIds: Array.isArray(raw.announcementsUnreadIds)
+      ? raw.announcementsUnreadIds.filter((id): id is string => typeof id === "string")
+      : undefined,
     admissionNotificationsSeenAt:
       raw.admissionNotificationsSeenAt &&
       typeof raw.admissionNotificationsSeenAt === "object" &&
