@@ -71,7 +71,7 @@ function ColorPickerButton({
       </button>
 
       {open && (
-        <div className="absolute bottom-full left-1/2 z-20 mb-2 w-[11rem] -translate-x-1/2 rounded-md border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-600 dark:bg-slate-900">
+        <div className="absolute bottom-full left-1/2 z-20 mb-2 max-h-[min(16rem,50vh)] w-[11rem] -translate-x-1/2 overflow-y-auto rounded-md border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-600 dark:bg-slate-900">
           <p className="mb-1.5 text-center text-[13px] font-medium text-slate-500 dark:text-slate-400">
             Kolor sekcji
           </p>

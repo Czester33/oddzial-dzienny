@@ -23,6 +23,14 @@ export const COLOR_PRESETS = [
   { name: "Żółty", color: "#F9A825", rowColor: "#FFE082" },
   { name: "Zielony", color: "#2E7D32", rowColor: "#81C784" },
   { name: "Czerwony", color: "#C62828", rowColor: "#E57373" },
+  { name: "Turkusowy", color: "#00695C", rowColor: "#4DB6AC" },
+  { name: "Indigo", color: "#283593", rowColor: "#7986CB" },
+  { name: "Granatowy", color: "#1A237E", rowColor: "#5C6BC0" },
+  { name: "Cyjan", color: "#00838F", rowColor: "#4DD0E1" },
+  { name: "Oliwkowy", color: "#558B2F", rowColor: "#AED581" },
+  { name: "Limonkowy", color: "#827717", rowColor: "#DCE775" },
+  { name: "Brązowy", color: "#5D4037", rowColor: "#BCAAA4" },
+  { name: "Bordowy", color: "#880E4F", rowColor: "#EC407A" },
 ];
 
 function parseHex(hex: string): [number, number, number] | null {
