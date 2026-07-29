@@ -13,7 +13,7 @@ import { FloatingTodayCalendar } from "@/components/FloatingTodayCalendar";
 import { FitWidthScale } from "@/components/FitWidthScale";
 import { stripHtml, adaptHtmlColorsForTheme } from "@/lib/text-format";
 import { formatDatePL } from "@/lib/date-utils";
-import { resolvePhysioRowColor } from "@/lib/physio-utils";
+import { resolvePhysioRowColor, physioShortName } from "@/lib/physio-utils";
 import {
   applyMassageSync,
   formatFreePlacesLabel,
@@ -41,8 +41,9 @@ const TH_DARK = `${CELL_DARK} bg-[#7a4a2e] text-center font-bold text-amber-50 s
 /** Active: lp + pacjent + godzina + do kiedy + od kogo */
 const ACTIVE_COL_WIDTHS = [48, 520, 144, 144, 160] as const;
 const TABLE_WIDTH = ACTIVE_COL_WIDTHS.reduce((sum, w) => sum + w, 0);
-/** Waiting: same total width, with extra "dodaj" column */
-const WAITING_COL_WIDTHS = [48, 448, 120, 120, 140, 140] as const;
+/** Waiting: lp + pacjent + godzina + od kiedy + do kiedy + od kogo + dodaj */
+const WAITING_COL_WIDTHS = [48, 304, 144, 120, 120, 140, 140] as const;
+const WAITING_TABLE_WIDTH = WAITING_COL_WIDTHS.reduce((sum, w) => sum + w, 0);
 const INPUT_CLASS_LIGHT =
   `w-full border-0 bg-transparent px-1 py-1 text-center ${MASSAGE_TABLE_TEXT} focus:bg-white/70`;
 const INPUT_CLASS_DARK =
@@ -52,7 +53,7 @@ const TIME_INPUT_CLASS = `w-full border-0 bg-transparent px-0.5 py-0.5 text-cent
 function physioOptions(data: AppData) {
   return data.physiotherapists.map((p) => ({
     value: p.id,
-    label: p.name.split(" ")[0] || p.name,
+    label: physioShortName(p.name),
     color: p.color,
     rowColor: p.rowColor,
   }));
@@ -301,6 +302,7 @@ function MasazeContent({ data }: { data: AppData }) {
     const patient: MassageWaiting = {
       id: uuidv4(),
       name: "",
+      hour: "",
       startDate: "",
       lastTreatmentDate: "",
       physiotherapistId: "",
@@ -324,7 +326,7 @@ function MasazeContent({ data }: { data: AppData }) {
     const active: MassagePatient = {
       id: uuidv4(),
       name: waiting.name,
-      hour: "",
+      hour: waiting.hour ?? "",
       lastTreatmentDate: waiting.lastTreatmentDate,
       physiotherapistId: waiting.physiotherapistId,
     };
@@ -470,13 +472,13 @@ function MasazeContent({ data }: { data: AppData }) {
         Lista oczekujących
       </p>
 
-      <FitWidthScale className="mx-auto" contentWidthPx={TABLE_WIDTH}>
+      <FitWidthScale className="mx-auto" contentWidthPx={WAITING_TABLE_WIDTH}>
         <div className="border border-black bg-white shadow-sm dark:border-slate-600 dark:bg-slate-900">
           <table
             className={`table-fixed border-collapse ${MASSAGE_TABLE_TEXT} ${
               isDark ? "text-slate-100" : "text-slate-900"
             }`}
-            style={{ width: TABLE_WIDTH }}
+            style={{ width: WAITING_TABLE_WIDTH }}
           >
             <colgroup>
               {WAITING_COL_WIDTHS.map((width, i) => (
@@ -487,6 +489,7 @@ function MasazeContent({ data }: { data: AppData }) {
               <tr>
                 <th className={TH}>Lp.</th>
                 <th className={TH}>Pacjent</th>
+                <th className={TH}>Godzina</th>
                 <th className={TH}>OD kiedy</th>
                 <th className={TH}>Do kiedy</th>
                 <th className={TH}>Od kogo</th>
@@ -497,7 +500,7 @@ function MasazeContent({ data }: { data: AppData }) {
               {massages.waiting.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className={`${CELL} py-4 text-center text-slate-400 dark:bg-slate-900 dark:text-slate-500`}
                   >
                     Brak oczekujących
@@ -523,6 +526,14 @@ function MasazeContent({ data }: { data: AppData }) {
                       <PatientNameCell
                         value={p.name}
                         onChange={(name) => updateWaiting({ ...p, name })}
+                      />
+                    </td>
+                    <td className={CELL}>
+                      <TimePickerCell
+                        value={p.hour ?? ""}
+                        onChange={(hour) => updateWaiting({ ...p, hour })}
+                        scheduleHours={scheduleHours}
+                        className={TIME_INPUT_CLASS}
                       />
                     </td>
                     <td className={CELL}>

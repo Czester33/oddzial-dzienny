@@ -4,6 +4,7 @@ import { DEFAULT_NAV_ORDER } from "./nav-utils";
 export function createDefaultData(): AppData {
   return {
     physiotherapists: [],
+    retiredPhysiotherapists: [],
     doctors: [],
     currentPatients: {},
     massages: {

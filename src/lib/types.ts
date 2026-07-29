@@ -36,6 +36,7 @@ export interface MassagePatient {
 export interface MassageWaiting {
   id: string;
   name: string;
+  hour: string;
   startDate: string;
   lastTreatmentDate: string;
   physiotherapistId: string;
@@ -154,10 +155,14 @@ export interface NotepadNote {
   text: string;
   createdAt: string;
   updatedAt: string;
+  /** Optional author — used for tile accent color. */
+  physiotherapistId?: string;
 }
 
 export interface AppData {
   physiotherapists: Physiotherapist[];
+  /** Removed physios kept for archive labels (name, colors). */
+  retiredPhysiotherapists?: Physiotherapist[];
   doctors: Doctor[];
   currentPatients: Record<string, Patient[]>;
   massages: MassagesData;

@@ -39,7 +39,7 @@ import {
   resolveSessionPlannedDischarge,
   moveAdmissionSessionToMonth,
 } from "@/lib/admission-utils";
-import { placePatientInFreeSlot, clearPatientSlot } from "@/lib/physio-utils";
+import { placePatientInFreeSlot, clearPatientSlot, physioShortName } from "@/lib/physio-utils";
 import { stripHtml } from "@/lib/text-format";
 import {
   ADMISSION_TABLE_THEMES,
@@ -110,7 +110,7 @@ function AdmissionPatientCell({
 }
 
 function shortName(name: string): string {
-  return name.split(" ")[0] || name;
+  return physioShortName(name);
 }
 
 function SideToolButton({

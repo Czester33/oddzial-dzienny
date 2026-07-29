@@ -135,64 +135,67 @@
         {
           "id": "a58df16f-34b2-4895-82e9-445880455c37",
           "hour": "08:00",
-          "name": "Wiesław Brudak =&gt;11.15",
+          "name": "Wiesława Brudak =&gt;11.15",
           "lastTreatmentDate": "2026-08-04",
           "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
         },
         {
           "id": "164e8611-5478-4e4e-856c-c48da7fcab47",
           "hour": "08:30",
-          "name": "Zbigniew   Pawlak",
+          "name": "Zbigniew   Pawlak =&gt; 12",
           "lastTreatmentDate": "2026-08-04",
           "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
         },
         {
+          "id": "c8697b62-8e50-4338-a7c3-64b460697540",
+          "hour": "09:00",
+          "name": "Bartosz Flisiński od 3/07",
+          "lastTreatmentDate": "2026-08-07",
+          "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
+        },
+        {
           "id": "46be4663-bf37-4a3c-a03f-ffbb025df662",
           "hour": "09:30",
-          "name": "Jerzy Wasiński =&gt;11.30",
+          "name": "Jerzy Wasiński =&gt;11.45",
           "lastTreatmentDate": "2026-08-05",
           "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
         },
         {
           "id": "25e01e58-d9c4-4239-b3c9-b6fb5a7297fc",
           "hour": "10:00",
-          "name": "Jacek Olejniczak",
+          "name": "Jacek Olejniczak =&gt;11:30",
           "lastTreatmentDate": "2026-08-05",
           "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
         },
         {
           "id": "db7bf2ff-0ea2-4a20-8153-449c5ef41160",
           "hour": "11:30",
-          "name": "Elżbieta Gaca ",
+          "name": "Elżbieta Gaca  8:00",
           "lastTreatmentDate": "2026-08-04",
           "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
         },
         {
           "id": "fd5ba4fa-06b3-4082-9f17-9f9e97bcd3f4",
           "hour": "12:30",
-          "name": "Stanisława Popławska barki",
+          "name": "Stanisława Popławska barki ",
           "lastTreatmentDate": "2026-08-04",
           "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
         },
         {
           "id": "2bd4e1be-3bcc-4a55-8326-79e42b8fe624",
           "hour": "13:00",
-          "name": "Malgorzata Tyburska masaż limfatyczny Lewa ręka",
+          "name": "Malgorzata Tyburska masaż limfatyczny Lewa ręka  11:00",
           "lastTreatmentDate": "2026-08-07",
           "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
         }
       ],
-      "waiting": [
-        {
-          "id": "7112e928-cc66-4bb5-84b3-490fdebc80ad",
-          "name": "",
-          "startDate": "",
-          "lastTreatmentDate": "",
-          "physiotherapistId": ""
-        }
-      ],
+      "waiting": [],
       "scheduleHours": "7:45-13:45",
-      "headerNote": "<span style=\"font-weight: bold; color: #dc2626;\">10.08-24.08-Urlop Krzysztofa</span>"
+      "headerNote": "<span style=\"font-weight: bold; color: #dc2626;\">10.08-24.08-Urlop Krzysztofa</span>",
+      "todaySlotPeak": {
+        "date": "2026-07-29",
+        "count": 8
+      }
     },
     "navOrder": [
       "/pacjenci",
@@ -678,6 +681,11 @@
           "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7"
         },
         {
+          "date": "2026-12-03",
+          "certainty": "certain",
+          "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
+        },
+        {
           "date": "2026-12-04",
           "certainty": "certain",
           "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
@@ -766,11 +774,6 @@
           "date": "2026-12-31",
           "certainty": "certain",
           "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
-        },
-        {
-          "date": "2026-12-03",
-          "certainty": "certain",
-          "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
         }
       ],
       "2027": [
@@ -1384,10 +1387,39 @@
     "notepadNotes": [],
     "announcements": [
       {
-        "id": "551d30c4-7cab-43b9-8852-c1f078955780",
-        "text": "Smolińska Beata - nie będzie dziś tj.28.08 rezygnuje",
-        "source": "manual",
-        "createdAt": "2026-07-28T09:51:48.750Z"
+        "id": "0475bcf5-c729-443c-a583-a2369c72fffc",
+        "text": "Usunięto przyjęcie (Wrzesień 2026)",
+        "source": "admission",
+        "createdAt": "2026-07-29T10:46:19.383Z",
+        "admissionLink": {
+          "monthKey": "2026-09",
+          "sessionId": "c2d0ab01-3c66-4b27-879f-9846c6ad7016"
+        },
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
+      },
+      {
+        "id": "5079f6c6-1462-433b-8563-c56352c32566",
+        "text": "Zmieniono pacjenta — fizjoterapeuta: Irek",
+        "source": "admission",
+        "createdAt": "2026-07-29T10:46:15.494Z",
+        "admissionLink": {
+          "slotId": "70122fe2-ac59-45e1-b8fa-6e9b4c04016d",
+          "monthKey": "2026-09",
+          "sessionId": "c2d0ab01-3c66-4b27-879f-9846c6ad7016"
+        },
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
+      },
+      {
+        "id": "12655bfa-3927-4587-8d73-b69185f7e57f",
+        "text": "Zmieniono pacjenta — fizjoterapeuta: Irek",
+        "source": "admission",
+        "createdAt": "2026-07-29T10:29:59.740Z",
+        "admissionLink": {
+          "slotId": "6bd1a6b5-c2b6-4c19-992e-2e259aa36934",
+          "monthKey": "2026-09",
+          "sessionId": "ac5f979d-1304-49c8-b180-532edea82c4e"
+        },
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
       },
       {
         "id": "6d28736c-22b6-45bf-bee5-c1f3827cf2f2",
@@ -1400,12 +1432,6 @@
           "sessionId": "053166aa-aa6f-4bad-bf10-368c17223523"
         },
         "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939"
-      },
-      {
-        "id": "f8237272-8528-4191-9d2f-4494c4c1aaeb",
-        "text": "Majak Marlena dzwoniła że nie będzie jej 27.07. oraz we wtorek 28.07",
-        "source": "manual",
-        "createdAt": "2026-07-27T13:14:37.516Z"
       },
       {
         "id": "39682987-947e-48c7-95d7-8f4a26e397d2",
@@ -2152,6 +2178,17 @@
           "sessionId": "cca2cbda-a457-438d-8188-132dbebb7638"
         },
         "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c"
+      },
+      {
+        "id": "19c40422-1345-4d7b-8e2b-5acce2357a5a",
+        "text": "Usunięto przyjęcie (Wrzesień 2026)",
+        "source": "admission",
+        "createdAt": "2026-07-29T10:30:18.567Z",
+        "admissionLink": {
+          "monthKey": "2026-09",
+          "sessionId": "ac5f979d-1304-49c8-b180-532edea82c4e"
+        },
+        "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b"
       }
     ],
     "autoArchiveSkip": {
@@ -2178,7 +2215,7 @@
         },
         {
           "id": "af76f47e-cf39-46b4-9ef5-df008aa05344",
-          "text": "Bartosz Flisiński <span style=\"color: rgb(255, 64, 0);\"><span style=\"color: rgb(228, 3, 3);\">ZSN</span><span style=\"color: rgb(228, 3, 3);\">​<span style=\"color: rgb(228, 3, 3);\">​</span></span></span>",
+          "text": "Bartosz Flisiński<span style=\"font-weight: bold;\"> <span style=\"color: rgb(255, 64, 0);\"><span style=\"color: #ef4444;\">ZSN</span></span></span><span style=\"color: rgb(255, 64, 0);\"><span style=\"color: #ef4444;\"></span><span style=\"color: #ef4444;\">​<span style=\"color: #ef4444;\">​</span></span></span>",
           "dischargeDate": "2026-08-11"
         },
         {
@@ -2207,32 +2244,22 @@
         },
         {
           "id": "652b9b9f-06ba-4c2b-9dcf-7ac9f98cc421",
-          "text": "Jadwiga Linkiewicz 10:00",
+          "text": "Jadwiga Linkiewicz 15:00",
           "dischargeDate": "2026-08-11"
         },
         {
           "id": "04a840b8-f42b-4377-9298-930dfd2de6f7",
-          "text": "Czesław Milczarek 8:00",
+          "text": "Czesław Milczarek 11:30",
           "dischargeDate": "2026-08-12"
         },
         {
           "id": "a93c8185-4fd4-4923-8c20-2deff8bd65e1",
-          "text": "Szczepan Witczak 13 <span style=\"color: rgb(228, 3, 3);\">kontrola 30.07!</span>",
+          "text": "Szczepan Witczak 13<span style=\"color: rgb(128, 255, 0);\"> <span><span>kontrola 30.07!</span></span></span><span style=\"color: #ef4444;\"><span style=\"color: #ef4444;\"></span></span>",
           "dischargeDate": "2026-08-12",
           "ownerPhysiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939"
         }
       ],
       "ba71be11-70ae-4888-a69b-21cc2a69110c": [
-        {
-          "id": "5c325d18-99a5-4a83-be6f-43a76b0f9fb5",
-          "text": "Jadwiga Marczak ",
-          "dischargeDate": "2026-07-28"
-        },
-        {
-          "id": "be873fae-045d-41b2-8957-145df306c6b1",
-          "text": "Mirosława Rajska ",
-          "dischargeDate": "2026-07-28"
-        },
         {
           "id": "0a1c97b7-387c-4758-af9b-b392117ca90f",
           "text": "Jakub Grzelak ",
@@ -2245,27 +2272,17 @@
         },
         {
           "id": "2116d62e-7cee-41e0-8b6c-7da9fae80849",
-          "text": "Jerzy Wasiński ",
+          "text": "Jerzy Wasiński  <span style=\"color: rgb(255, 140, 0);\"><span style=\"color: rgb(128, 255, 0);\"><span style=\"color: rgb(0, 200, 83);\"><span style=\"color: rgb(0, 128, 255);\"><span style=\"color: rgb(0, 200, 83);\"><span style=\"color: rgb(128, 255, 0);\">Kontr. 30.07</span><span style=\"color: rgb(128, 255, 0);\">​</span></span></span></span></span><span style=\"color: rgb(255, 191, 0);\">​<span style=\"color: rgb(255, 237, 0);\">​<span style=\"color: rgb(0, 200, 83);\">​</span></span></span></span>",
           "dischargeDate": "2026-08-12"
         },
         {
           "id": "ce787f60-fe12-443d-8a3e-e29cae0ac2d2",
-          "text": "Jolanta Chajdys wt 7:00<span style=\"color: rgb(228, 3, 3);\"> kontrola 30.07!</span>",
+          "text": "Jolanta Chajdys wt 7:00<span style=\"color: #ef4444;\"> <span style=\"color: rgb(128, 255, 0);\">kontrola 30.07!</span></span>",
           "dischargeDate": "2026-08-12",
           "ownerPhysiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939"
         }
       ],
       "f726b015-678a-4f49-8b9e-ceb35599ee4b": [
-        {
-          "id": "03b68e1d-b50d-4250-bf9f-60305b5e99c0",
-          "text": "Danuta Jatczak 9",
-          "dischargeDate": "2026-07-28"
-        },
-        {
-          "id": "4b0eb26d-e662-4661-9cb0-8aa42abc635c",
-          "text": "Mirosław Adamowicz  12",
-          "dischargeDate": "2026-07-28"
-        },
         {
           "id": "7188fccf-4000-4c4f-b680-2a1d67ce34f5",
           "text": "Wiesław Rolczyński 11",
@@ -2278,12 +2295,12 @@
         },
         {
           "id": "bfb634a7-557e-4cb0-9ef5-16ef8c292ced",
-          "text": "Zbigniew Pawlak 8",
+          "text": "Zbigniew Pawlak 7",
           "dischargeDate": "2026-08-11"
         },
         {
           "id": "ca118d6e-b8ee-430e-a245-06831ef72d61",
-          "text": "Krystyna Sobczyk 11",
+          "text": "Krystyna Sobczyk 9",
           "dischargeDate": "2026-08-12"
         },
         {
@@ -2296,7 +2313,10 @@
     },
     "vacationArchive": [],
     "admissionArchive": [],
-    "clinicClosedDays": [],
+    "clinicClosedDays": [
+      "2026-01-02",
+      "2026-01-05"
+    ],
     "physiotherapists": [
       {
         "id": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
@@ -2313,8 +2333,8 @@
       {
         "id": "a931d2b8-aa19-49e7-9d72-461bba23f939",
         "name": "Klaudia",
-        "color": "#2196F3",
-        "rowColor": "#E3F2FD",
+        "color": "#1565C0",
+        "rowColor": "#64B5F6",
         "headerNote": "urlop 29.07-31.07",
         "columnWidths": {
           "lp": 40,
@@ -2327,7 +2347,7 @@
         "name": "Edyta",
         "color": "#E65100",
         "rowColor": "#FFB74D",
-        "headerNote": "urlop 27.07-28.07",
+        "headerNote": "",
         "columnWidths": {
           "lp": 40,
           "patient": 280,
@@ -2336,9 +2356,9 @@
       },
       {
         "id": "ba71be11-70ae-4888-a69b-21cc2a69110c",
-        "name": "Dorota",
-        "color": "#7B1FA2",
-        "rowColor": "#F3E5F5",
+        "name": "Dorota👻⛰️",
+        "color": "#52042e",
+        "rowColor": "#b18ea1",
         "headerNote": "",
         "columnWidths": {
           "lp": 40,
@@ -2375,6 +2395,241 @@
     "admissionTableThemes": {
       "2026-07": "feb"
     },
+    "announcementsReadIds": [],
+    "vacationMonthArchive": [
+      {
+        "monthKey": "2026-01",
+        "archivedAt": "2026-07-28T14:38:26.579Z",
+        "entries": [
+          {
+            "date": "2026-01-12",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+            "certainty": "certain"
+          }
+        ]
+      },
+      {
+        "monthKey": "2026-02",
+        "archivedAt": "2026-07-28T14:38:29.440Z",
+        "entries": [
+          {
+            "date": "2026-02-12",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-02-13",
+            "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-02-27",
+            "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-02-27",
+            "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-02-25",
+            "physiotherapistId": "vacation-krzysztof",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-02-25",
+            "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-02-16",
+            "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+            "certainty": "certain"
+          }
+        ]
+      },
+      {
+        "monthKey": "2026-03",
+        "archivedAt": "2026-07-28T14:38:32.377Z",
+        "entries": [
+          {
+            "date": "2026-03-02",
+            "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-03-02",
+            "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-03-12",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-03-24",
+            "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-03-25",
+            "physiotherapistId": "vacation-krzysztof",
+            "certainty": "certain"
+          }
+        ]
+      },
+      {
+        "monthKey": "2026-04",
+        "archivedAt": "2026-07-28T14:25:27.977Z",
+        "entries": [
+          {
+            "date": "2026-04-02",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-04-03",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-04-10",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-04-17",
+            "physiotherapistId": "vacation-krzysztof",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-04-20",
+            "physiotherapistId": "vacation-krzysztof",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-04-24",
+            "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-04-24",
+            "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+            "certainty": "certain"
+          }
+        ]
+      },
+      {
+        "monthKey": "2026-05",
+        "archivedAt": "2026-07-28T14:25:27.977Z",
+        "entries": [
+          {
+            "date": "2026-05-11",
+            "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-05-15",
+            "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-05-22",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-05-25",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-05-26",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-05-27",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-05-28",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-05-29",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+            "certainty": "certain"
+          }
+        ]
+      },
+      {
+        "monthKey": "2026-06",
+        "archivedAt": "2026-07-28T14:25:27.977Z",
+        "entries": [
+          {
+            "date": "2026-06-01",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-06-02",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-06-03",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-06-05",
+            "physiotherapistId": "ba71be11-70ae-4888-a69b-21cc2a69110c",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-06-08",
+            "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-06-09",
+            "physiotherapistId": "b70a7921-b39f-465d-a963-9d159ddd2438",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-06-10",
+            "physiotherapistId": "a931d2b8-aa19-49e7-9d72-461bba23f939",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-06-17",
+            "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-06-16",
+            "physiotherapistId": "ed605276-3ef0-4e67-9dc4-6df7027eddc7",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-06-26",
+            "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+            "certainty": "certain"
+          },
+          {
+            "date": "2026-06-29",
+            "physiotherapistId": "f726b015-678a-4f49-8b9e-ceb35599ee4b",
+            "certainty": "certain"
+          }
+        ]
+      }
+    ],
+    "announcementsUnreadIds": [],
     "admissionNotificationsSeenAt": {
       "a931d2b8-aa19-49e7-9d72-461bba23f939": "2026-07-22T10:50:09.706Z",
       "b70a7921-b39f-465d-a963-9d159ddd2438": "2026-07-21T13:57:17.069Z",
@@ -2387,6 +2642,7 @@
         "0909f951-0c7f-41ad-b2f2-e37d7e023d57",
         "09a09200-94f3-4e5f-a18d-97a0a1ae507d",
         "0a799059-dd5f-40af-a1d5-bc560a039376",
+        "27d1d0e6-703f-4216-9e46-e4f4a7e202ce",
         "2bee8e2d-f47e-4bc0-be12-f26123095b0a",
         "50e91061-ec37-4d90-b6e4-0978f4fa0fa9",
         "6b29348b-5cb4-46cd-a2a8-8308a4ced979",
@@ -2454,41 +2710,12 @@
         "cfa80ac0-f437-44b0-b143-fe60db7c8508",
         "e215b21d-c31b-447a-b7db-c96b331d3b8e",
         "e80c5403-3e97-4c8b-a451-50ba125caaf2",
-        "f31722a2-9691-4d36-a552-48d3255aa1b4"
+        "f31722a2-9691-4d36-a552-48d3255aa1b4",
+        "19c40422-1345-4d7b-8e2b-5acce2357a5a",
+        "12655bfa-3927-4587-8d73-b69185f7e57f"
       ]
     },
-    "vacationMonthArchive": [
-      {
-        "monthKey": "2026-06",
-        "archivedAt": "2026-07-28T14:19:17.436Z",
-        "entries": []
-      },
-      {
-        "monthKey": "2026-05",
-        "archivedAt": "2026-07-28T14:19:17.436Z",
-        "entries": []
-      },
-      {
-        "monthKey": "2026-04",
-        "archivedAt": "2026-07-28T14:19:17.436Z",
-        "entries": []
-      },
-      {
-        "monthKey": "2026-03",
-        "archivedAt": "2026-07-28T14:19:17.436Z",
-        "entries": []
-      },
-      {
-        "monthKey": "2026-02",
-        "archivedAt": "2026-07-28T14:19:17.436Z",
-        "entries": []
-      },
-      {
-        "monthKey": "2026-01",
-        "archivedAt": "2026-07-28T14:19:17.436Z",
-        "entries": []
-      }
-    ]
+    "retiredPhysiotherapists": []
   },
-  "updatedAt": "2026-07-28T14:19:17.448Z"
+  "updatedAt": "2026-07-29T11:50:53.257Z"
 }

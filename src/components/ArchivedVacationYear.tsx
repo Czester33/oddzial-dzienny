@@ -15,8 +15,9 @@ import {
 import {
   resolvePhysioColumnHeaderColor,
   resolvePhysioRowColor,
+  physioShortName,
 } from "@/lib/physio-utils";
-import { vacationStaff } from "@/lib/vacation-utils";
+import { vacationDisplayStaff } from "@/lib/vacation-utils";
 import { useTheme } from "@/context/ThemeContext";
 import { FitWidthScale, tableRemPx } from "@/components/FitWidthScale";
 
@@ -36,7 +37,7 @@ const MONTH_COLORS = [
 ];
 
 function shortPhysioName(name: string): string {
-  return name.split(" ")[0] || name || "—";
+  return physioShortName(name) || "—";
 }
 
 function entryCertain(entry: VacationEntry): boolean {
@@ -255,7 +256,7 @@ export function ArchivedVacationMonthPanel({
   const { year, month } = parseMonthKey(entry.monthKey);
   const clinicClosedDays = data.clinicClosedDays ?? [];
   const physioById = useMemo(
-    () => Object.fromEntries(vacationStaff(data).map((p) => [p.id, p])),
+    () => Object.fromEntries(vacationDisplayStaff(data).map((p) => [p.id, p])),
     [data]
   );
 
@@ -283,7 +284,7 @@ export function ArchivedVacationYearPanel({
   const yearNum = Number(entry.yearKey);
   const clinicClosedDays = data.clinicClosedDays ?? [];
   const physioById = useMemo(
-    () => Object.fromEntries(vacationStaff(data).map((p) => [p.id, p])),
+    () => Object.fromEntries(vacationDisplayStaff(data).map((p) => [p.id, p])),
     [data]
   );
 

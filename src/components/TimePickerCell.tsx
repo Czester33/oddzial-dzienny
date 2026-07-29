@@ -100,19 +100,20 @@ export function TimePickerCell({
   onChange,
   className = INPUT_CLASS,
 }: {
-  value: string;
+  value?: string;
   onChange: (v: string) => void;
   scheduleHours?: string;
   className?: string;
 }) {
-  const [draft, setDraft] = useState(value);
+  const safeValue = value ?? "";
+  const [draft, setDraft] = useState(safeValue);
   const [focused, setFocused] = useState(false);
 
   const displayValue = (() => {
-    const parsed = parseTimeLabel(value);
+    const parsed = parseTimeLabel(safeValue);
     return parsed
       ? formatTimeLabel(clampHour(parsed.hours), clampMinute(parsed.minutes))
-      : value;
+      : safeValue;
   })();
 
   useEffect(() => {

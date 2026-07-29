@@ -31,6 +31,15 @@ export function stripHtml(html: string): string {
   return decodeHtmlEntities(withoutTags).trim();
 }
 
+/** Strip emoji pictographs for plain-text UI labels. */
+export function stripEmojis(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/\p{Extended_Pictographic}/gu, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 export function isHtmlContent(value: string): boolean {
   return /<[^>]+>/.test(value);
 }

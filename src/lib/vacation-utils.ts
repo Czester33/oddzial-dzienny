@@ -1,5 +1,6 @@
 import type { AppData, ArchivedVacationMonth, ArchivedVacationYear, Physiotherapist, VacationEntry } from "./types";
 import { getLastWorkingDayOfMonth, isoFromParts, isWorkingDay, parseMonthKey, todayIsoDate, toDateInputValue } from "./date-utils";
+import { getPhysioById } from "./physio-utils";
 import { stripHtml } from "./text-format";
 
 /** Set true when vacation auto-archive should run (monthly, last working day). */
@@ -20,12 +21,17 @@ export function vacationStaff(data: AppData): Physiotherapist[] {
   return [...data.physiotherapists, VACATION_KRZYSZTOF];
 }
 
+/** Active + retired staff for archived vacation display. */
+export function vacationDisplayStaff(data: AppData): Physiotherapist[] {
+  return [...vacationStaff(data), ...(data.retiredPhysiotherapists ?? [])];
+}
+
 export function resolveVacationPerson(
   data: AppData,
   id: string
 ): Physiotherapist | undefined {
   if (id === VACATION_KRZYSZTOF_ID) return VACATION_KRZYSZTOF;
-  return data.physiotherapists.find((p) => p.id === id);
+  return getPhysioById(data, id);
 }
 
 function normalizeVacationEntry(entry: VacationEntry): VacationEntry {

@@ -13,7 +13,7 @@ import type {
 import { getPlannedDischargeDate, toDateInputValue } from "./date-utils";
 import { normalizeAdmissions, migrateFlatArchiveToMonths } from "./admission-utils";
 import { normalizeNavLabels, normalizeNavOrder } from "./nav-utils";
-import { stripHtml, replaceNbspInHtml } from "./text-format";
+import { stripHtml, replaceNbspInHtml, stripEmojis } from "./text-format";
 
 export const COLOR_PRESETS = [
   { name: "Różowy", color: "#C2185B", rowColor: "#F48FB1" },
@@ -196,12 +196,35 @@ export const DEFAULT_COLUMN_WIDTHS: ColumnWidths = {
   discharge: 108,
 };
 
+export function retirePhysiotherapist(physio: Physiotherapist): Physiotherapist {
+  return {
+    id: physio.id,
+    name: physio.name,
+    color: physio.color,
+    rowColor: physio.rowColor,
+  };
+}
+
 export function getPhysioById(data: AppData, id: string): Physiotherapist | undefined {
-  return data.physiotherapists.find((p) => p.id === id);
+  return (
+    data.physiotherapists.find((p) => p.id === id) ??
+    data.retiredPhysiotherapists?.find((p) => p.id === id)
+  );
+}
+
+/** Physio name without emoji — use everywhere except Pacjenci column headers. */
+export function physioDisplayName(name: string): string {
+  return stripEmojis(name);
+}
+
+export function physioShortName(name: string): string {
+  const plain = physioDisplayName(name);
+  return plain.split(" ")[0] || plain || name.split(" ")[0] || name;
 }
 
 export function getPhysioName(data: AppData, id: string): string {
-  return getPhysioById(data, id)?.name ?? "";
+  const raw = getPhysioById(data, id)?.name ?? "";
+  return raw ? physioDisplayName(raw) : "";
 }
 
 export function physioNames(data: AppData): string[] {
@@ -476,10 +499,22 @@ export function sanitizeAppData(data: AppData): AppData {
         ...(headerNote ? { headerNote } : { headerNote: "" }),
       };
     }),
+    retiredPhysiotherapists: (data.retiredPhysiotherapists ?? []).map((p) => ({
+      id: p.id,
+      name: p.name ?? "",
+      color: p.color ?? "#64748b",
+      rowColor: p.rowColor ?? "#e2e8f0",
+    })),
     currentPatients,
     massages: {
-      active: data.massages?.active ?? [],
-      waiting: data.massages?.waiting ?? [],
+      active: (data.massages?.active ?? []).map((m) => ({
+        ...m,
+        hour: m.hour ?? "",
+      })),
+      waiting: (data.massages?.waiting ?? []).map((m) => ({
+        ...m,
+        hour: m.hour ?? "",
+      })),
       scheduleHours: data.massages?.scheduleHours ?? "7:45-13:45",
       headerNote: (() => {
         const cleaned = replaceNbspInHtml(data.massages?.headerNote ?? "").trim();
@@ -500,6 +535,7 @@ export function sanitizeAppData(data: AppData): AppData {
       text: replaceNbspInHtml(note.text ?? "").trim(),
       createdAt: note.createdAt ?? new Date().toISOString(),
       updatedAt: note.updatedAt ?? note.createdAt ?? new Date().toISOString(),
+      ...(note.physiotherapistId ? { physiotherapistId: note.physiotherapistId } : {}),
     })),
     admissionNotificationsSeenAt: data.admissionNotificationsSeenAt ?? {},
     admissionNotificationsReadIds: data.admissionNotificationsReadIds ?? {},
@@ -647,6 +683,7 @@ export function migrateData(raw: any): AppData {
       waiting: (raw.massages?.waiting ?? []).map((m: Record<string, string>) => ({
         id: m.id ?? uuidv4(),
         name: m.name ?? "",
+        hour: m.hour ?? "",
         startDate: m.startDate ?? "",
         lastTreatmentDate: m.lastTreatmentDate ?? "",
         physiotherapistId: migratePhysioRef(m.physiotherapistId ?? m.physiotherapist ?? ""),
@@ -764,6 +801,9 @@ export function migrateData(raw: any): AppData {
             text: replaceNbspInHtml(String(note.text ?? "")).trim(),
             createdAt,
             updatedAt: String(note.updatedAt ?? createdAt),
+            ...(typeof note.physiotherapistId === "string" && note.physiotherapistId
+              ? { physiotherapistId: note.physiotherapistId }
+              : {}),
           };
         })
       : [],
@@ -808,6 +848,7 @@ export function migrateData(raw: any): AppData {
 function createEmptyAppData(): AppData {
   return {
     physiotherapists: [],
+    retiredPhysiotherapists: [],
     doctors: [],
     currentPatients: {},
     massages: { active: [], waiting: [], scheduleHours: "7:45-13:45", headerNote: "" },

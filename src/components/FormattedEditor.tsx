@@ -24,6 +24,30 @@ import {
 import { useTheme } from "@/context/ThemeContext";
 
 const VIEWPORT_MARGIN = 12;
+/** Match app mobile breakpoint (see Navigation / FitWidthScale). */
+const MOBILE_MAX_WIDTH = 768;
+
+function getVisualViewportBox() {
+  const vv = window.visualViewport;
+  if (!vv) {
+    return {
+      top: 0,
+      left: 0,
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+  }
+  return {
+    top: vv.offsetTop,
+    left: vv.offsetLeft,
+    width: vv.width,
+    height: vv.height,
+  };
+}
+
+function isMobileViewport(width: number): boolean {
+  return width <= MOBILE_MAX_WIDTH;
+}
 
 function clampFontSize(size: number): number {
   if (!Number.isFinite(size)) return DEFAULT_FONT_SIZE;
@@ -425,16 +449,64 @@ export function FormattedEditor({
   }, [keepSelection]);
 
   const updatePanelPosition = useCallback(() => {
-    // Dock on the right edge of the viewport so it never covers the edited field.
+    const el = ref.current;
+    const panel = panelRef.current;
+    const { top, left, width, height } = getVisualViewportBox();
+    const mobile = isMobileViewport(width);
+    const panelHeight = panel?.offsetHeight ?? (mobile ? 220 : 280);
+    const panelWidth = panel?.offsetWidth ?? (compact ? 160 : extendedFormatting ? 184 : 176);
+    const gap = VIEWPORT_MARGIN;
+
+    if (mobile) {
+      const maxWidth = width - gap * 2;
+      const resolvedWidth = Math.min(panelWidth, maxWidth);
+      const panelTop = top + height - panelHeight - gap;
+
+      setPanelStyle({
+        position: "fixed",
+        top: panelTop,
+        left: left + (width - resolvedWidth) / 2,
+        width: resolvedWidth,
+        right: "auto",
+        transform: "none",
+        zIndex: 9999,
+        maxHeight: Math.max(120, height - gap * 3),
+        overflowY: "auto",
+      });
+
+      if (el) {
+        const editorRect = el.getBoundingClientRect();
+        const clearBottom = panelTop - gap;
+        if (editorRect.bottom > clearBottom) {
+          window.scrollBy({ top: editorRect.bottom - clearBottom, behavior: "smooth" });
+        } else if (editorRect.top < top + gap) {
+          window.scrollBy({ top: editorRect.top - top - gap, behavior: "smooth" });
+        }
+      }
+      return;
+    }
+
+    // Desktop: dock on the right; keep the field left of the panel when possible.
+    let panelTop = top + height / 2;
+    if (el) {
+      const editorRect = el.getBoundingClientRect();
+      const editorCenter = editorRect.top + editorRect.height / 2;
+      const minTop = top + gap + panelHeight / 2;
+      const maxTop = top + height - gap - panelHeight / 2;
+      panelTop = Math.min(maxTop, Math.max(minTop, editorCenter));
+    }
+
     setPanelStyle({
       position: "fixed",
-      top: "50%",
-      right: VIEWPORT_MARGIN,
+      top: panelTop,
+      right: gap,
       left: "auto",
       transform: "translateY(-50%)",
       zIndex: 9999,
+      maxHeight: height - gap * 2,
+      overflowY: "auto",
     });
-  }, []);
+  }, [compact, extendedFormatting]);
 
   useEffect(() => {
     // Never clobber DOM while the user is editing or applying formats.
@@ -456,7 +528,27 @@ export function FormattedEditor({
 
   useLayoutEffect(() => {
     if (!focused) return;
-    updatePanelPosition();
+
+    const reposition = () => {
+      updatePanelPosition();
+    };
+
+    reposition();
+    const raf = requestAnimationFrame(reposition);
+
+    const vv = window.visualViewport;
+    vv?.addEventListener("resize", reposition);
+    vv?.addEventListener("scroll", reposition);
+    window.addEventListener("resize", reposition);
+    window.addEventListener("scroll", reposition, true);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      vv?.removeEventListener("resize", reposition);
+      vv?.removeEventListener("scroll", reposition);
+      window.removeEventListener("resize", reposition);
+      window.removeEventListener("scroll", reposition, true);
+    };
   }, [focused, updatePanelPosition]);
 
   const emitNow = useCallback(() => {
@@ -709,8 +801,11 @@ export function FormattedEditor({
         aria-multiline={multiline}
         onFocus={() => {
           setFocused(true);
-          updatePanelPosition();
           updateSelectionState();
+          requestAnimationFrame(() => {
+            updatePanelPosition();
+            requestAnimationFrame(updatePanelPosition);
+          });
         }}
         onBlur={handleBlur}
         onPaste={handlePaste}
@@ -720,8 +815,14 @@ export function FormattedEditor({
           e.preventDefault();
           execBlockCommand(e.shiftKey ? "outdent" : "indent");
         }}
-        onMouseUp={updateSelectionState}
-        onKeyUp={updateSelectionState}
+        onMouseUp={() => {
+          updateSelectionState();
+          updatePanelPosition();
+        }}
+        onKeyUp={() => {
+          updateSelectionState();
+          updatePanelPosition();
+        }}
         data-placeholder={placeholder}
         style={{ fontSize: `${fontSize}px`, color: color ?? "var(--foreground)" }}
         className={`formatted-editor min-w-0 outline-none empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)] ${

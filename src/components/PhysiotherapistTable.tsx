@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import type { ColumnWidths, Physiotherapist, Patient } from "@/lib/types";
-import { getDefaultColumnWidths, resolvePhysioColumnHeaderColor, resolvePhysioRowColor } from "@/lib/physio-utils";
+import { getDefaultColumnWidths, physioDisplayName, resolvePhysioColumnHeaderColor, resolvePhysioRowColor } from "@/lib/physio-utils";
 import { toDateInputValue } from "@/lib/date-utils";
 import { useTheme } from "@/context/ThemeContext";
 import { DatePickerCell } from "@/components/DatePickerCell";
@@ -367,7 +367,7 @@ function MovePatientButton({
                   style={{ backgroundColor: p.color }}
                   aria-hidden="true"
                 />
-                {p.name}
+                {physioDisplayName(p.name)}
               </button>
             ))}
           </div>,
@@ -516,7 +516,7 @@ export function PhysiotherapistTable({
             className="shrink-0 rounded-md border border-white/40 bg-black/25 px-2 py-1 text-[13px] font-semibold text-white hover:bg-black/40"
             title={`Cofnij ${substitutesAway} ${
               substitutesAway === 1 ? "zastępstwo" : "zastępstwa"
-            } do ${physio.name}`}
+            } do ${physioDisplayName(physio.name)}`}
           >
             Cofnij zastępstwa ({substitutesAway})
           </button>
@@ -639,9 +639,9 @@ export function PhysiotherapistTable({
                             <span
                               className="inline-block max-w-full truncate rounded px-1 py-0.5 text-[11px] font-semibold text-white"
                               style={{ backgroundColor: owner.color }}
-                              title={`Pacjent fizjoterapeuty: ${owner.name}`}
+                              title={`Pacjent fizjoterapeuty: ${physioDisplayName(owner.name)}`}
                             >
-                              zastępstwo · {owner.name}
+                              zastępstwo · {physioDisplayName(owner.name)}
                             </span>
                             {onReturnSubstitute && (
                               <button
@@ -652,8 +652,8 @@ export function PhysiotherapistTable({
                                   color: "#fff",
                                   backgroundColor: owner.color,
                                 }}
-                                title={`Cofnij do ${owner.name}`}
-                                aria-label={`Cofnij do ${owner.name}`}
+                                title={`Cofnij do ${physioDisplayName(owner.name)}`}
+                                aria-label={`Cofnij do ${physioDisplayName(owner.name)}`}
                               >
                                 ←
                               </button>

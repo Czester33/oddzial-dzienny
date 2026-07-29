@@ -11,11 +11,12 @@ import {
   markPhysioAdmissionNotificationsSeen,
   markPhysioAdmissionAnnouncementRead,
 } from "@/lib/admission-announcement-utils";
+import { physioDisplayName, physioShortName } from "@/lib/physio-utils";
 import { adaptHtmlColorsForTheme } from "@/lib/text-format";
 import { useTheme } from "@/context/ThemeContext";
 
 function shortName(name: string): string {
-  return name.split(" ")[0] || name;
+  return physioShortName(name);
 }
 
 function formatTime(iso: string): string {
@@ -46,7 +47,7 @@ function SideNotificationTab({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      aria-label={`Przyjęcia — ${physio.name}, ${unreadCount} nowe`}
+      aria-label={`Przyjęcia — ${physioDisplayName(physio.name)}, ${unreadCount} nowe`}
       className={`relative rounded-l-lg border border-r-0 px-2.5 py-3 text-[19px] font-medium shadow-md transition-colors ${
         active
           ? "border-red-600 bg-red-600 text-white"
@@ -99,7 +100,7 @@ function ExpandedNotificationsPanel({
     <aside
       className="flex max-h-[min(70vh,520px)] w-[min(calc(100vw-3rem),22rem)] flex-col overflow-hidden rounded-l-lg border border-r-0 border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900"
       role="dialog"
-      aria-label={`Powiadomienia o przyjęciach — ${physio.name}`}
+      aria-label={`Powiadomienia o przyjęciach — ${physioDisplayName(physio.name)}`}
     >
       <div
         className="flex items-center justify-between gap-2 border-b border-slate-200 px-4 py-3 dark:border-slate-700"
@@ -107,7 +108,7 @@ function ExpandedNotificationsPanel({
       >
         <div className="min-w-0">
           <h3 className="truncate text-[18px] font-semibold text-slate-800 dark:text-slate-100">
-            Przyjęcia · {physio.name}
+            Przyjęcia · {physioDisplayName(physio.name)}
           </h3>
           <p className="text-[14px] text-red-700 dark:text-red-400">
             {unreadAnnouncements.length}{" "}

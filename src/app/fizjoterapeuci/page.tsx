@@ -5,7 +5,7 @@ import { useData } from "@/context/DataContext";
 import type { AppData, Physiotherapist } from "@/lib/types";
 import { PageHeader, LoadingState, ErrorBanner, Card, Btn, Input } from "@/components/ui";
 import { PhysioColorPicker } from "@/components/PhysioColorPicker";
-import { COLOR_PRESETS, createPhysiotherapist, resolvePhysioRowColor } from "@/lib/physio-utils";
+import { COLOR_PRESETS, createPhysiotherapist, physioDisplayName, resolvePhysioRowColor, retirePhysiotherapist } from "@/lib/physio-utils";
 import { useTheme } from "@/context/ThemeContext";
 
 function reorderPhysios(
@@ -69,11 +69,17 @@ export default function FizjoterapeuciPage() {
   const deletePhysio = (id: string) => {
     if (!confirm("Usunąć fizjoterapeutę wraz z przypisanymi pacjentami?")) return;
 
+    const physio = data.physiotherapists.find((p) => p.id === id);
     const restPatients = { ...data.currentPatients };
     delete restPatients[id];
+    const retired = [...(data.retiredPhysiotherapists ?? [])];
+    if (physio && !retired.some((p) => p.id === id)) {
+      retired.push(retirePhysiotherapist(physio));
+    }
     updateData({
       ...data,
       physiotherapists: data.physiotherapists.filter((p) => p.id !== id),
+      retiredPhysiotherapists: retired,
       currentPatients: restPatients,
       massages: {
         active: data.massages.active.map((m) =>
@@ -86,25 +92,6 @@ export default function FizjoterapeuciPage() {
       archive: data.archive.map((a) =>
         a.physiotherapistId === id ? { ...a, physiotherapistId: "" } : a
       ),
-      admissionArchive: (data.admissionArchive ?? []).map((month) => ({
-        ...month,
-        sessions: month.sessions.map((session) => ({
-          ...session,
-          patients: session.patients.map((slot) =>
-            slot.physiotherapistId === id
-              ? { ...slot, physiotherapistId: "" }
-              : slot
-          ),
-        })),
-      })),
-      vacationArchive: (data.vacationArchive ?? []).map((year) => ({
-        ...year,
-        entries: year.entries.map((entry) =>
-          entry.physiotherapistId === id
-            ? { ...entry, physiotherapistId: "" }
-            : entry
-        ),
-      })),
       dutyArchive: (data.dutyArchive ?? []).map((month) => ({
         ...month,
         entries: month.entries.map((entry) =>
@@ -211,7 +198,7 @@ export default function FizjoterapeuciPage() {
                       ⠿
                     </span>
                     <span className="truncate text-center text-[17px] font-semibold">
-                      {physio.name || `Fizjoterapeuta ${index + 1}`}
+                      {physioDisplayName(physio.name) || `Fizjoterapeuta ${index + 1}`}
                     </span>
                     <button
                       type="button"

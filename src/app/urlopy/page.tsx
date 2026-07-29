@@ -30,6 +30,7 @@ import {
 import {
   resolvePhysioColumnHeaderColor,
   resolvePhysioRowColor,
+  physioShortName,
 } from "@/lib/physio-utils";
 import {
   applyAutoArchiveVacations,
@@ -63,7 +64,7 @@ const MONTH_COLORS = [
 ];
 
 function shortPhysioName(name: string): string {
-  return name.split(" ")[0] || name || "—";
+  return physioShortName(name) || "—";
 }
 
 function entryCertainty(entry: VacationEntry): Certainty {

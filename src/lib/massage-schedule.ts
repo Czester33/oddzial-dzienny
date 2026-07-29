@@ -3,8 +3,8 @@ import { isoFromParts, isWeekend, toDateInputValue } from "@/lib/date-utils";
 
 export const MAX_MASSAGES_PER_DAY = 12;
 
-export function parseTimeLabel(value: string): { hours: number; minutes: number } | null {
-  const match = value.trim().match(/^(\d{1,2}):(\d{2})$/);
+export function parseTimeLabel(value: string | undefined | null): { hours: number; minutes: number } | null {
+  const match = (value ?? "").trim().match(/^(\d{1,2}):(\d{2})$/);
   if (!match) return null;
   return { hours: Number(match[1]), minutes: Number(match[2]) };
 }
@@ -198,7 +198,7 @@ export function promoteWaitingToActive(data: AppData, now = new Date()): AppData
     active.push({
       id: patient.id,
       name: patient.name,
-      hour: "",
+      hour: patient.hour ?? "",
       lastTreatmentDate: patient.lastTreatmentDate,
       physiotherapistId: patient.physiotherapistId,
     });
