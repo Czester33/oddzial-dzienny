@@ -205,6 +205,16 @@ export function retirePhysiotherapist(physio: Physiotherapist): Physiotherapist 
   };
 }
 
+export function restorePhysiotherapist(physio: Physiotherapist): Physiotherapist {
+  return {
+    id: physio.id,
+    name: physio.name,
+    color: physio.color,
+    rowColor: physio.rowColor,
+    columnWidths: { ...DEFAULT_COLUMN_WIDTHS },
+  };
+}
+
 export function getPhysioById(data: AppData, id: string): Physiotherapist | undefined {
   return (
     data.physiotherapists.find((p) => p.id === id) ??

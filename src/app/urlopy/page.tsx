@@ -41,6 +41,7 @@ import {
   hasVacationNoteChanges,
   vacationMonthKey,
   vacationStaff,
+  vacationDisplayStaff,
 } from "@/lib/vacation-utils";
 import { FitWidthScale, tableRemPx } from "@/components/FitWidthScale";
 import { applyDutyNotes, hasDutyNoteChanges } from "@/lib/duty-utils";
@@ -495,7 +496,7 @@ export default function UrlopyPage() {
 
   const physioById = useMemo(() => {
     if (!data) return {} as Record<string, Physiotherapist>;
-    return Object.fromEntries(vacationStaff(data).map((p) => [p.id, p]));
+    return Object.fromEntries(vacationDisplayStaff(data).map((p) => [p.id, p]));
   }, [data]);
 
   useEffect(() => {

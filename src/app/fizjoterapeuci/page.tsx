@@ -5,7 +5,7 @@ import { useData } from "@/context/DataContext";
 import type { AppData, Physiotherapist } from "@/lib/types";
 import { PageHeader, LoadingState, ErrorBanner, Card, Btn, Input } from "@/components/ui";
 import { PhysioColorPicker } from "@/components/PhysioColorPicker";
-import { COLOR_PRESETS, createPhysiotherapist, physioDisplayName, resolvePhysioRowColor, retirePhysiotherapist } from "@/lib/physio-utils";
+import { COLOR_PRESETS, createPhysiotherapist, physioDisplayName, resolvePhysioRowColor, restorePhysiotherapist, retirePhysiotherapist } from "@/lib/physio-utils";
 import { useTheme } from "@/context/ThemeContext";
 
 function reorderPhysios(
@@ -111,6 +111,33 @@ export default function FizjoterapeuciPage() {
   const applyCustomColor = (physio: Physiotherapist, color: string, rowColor: string) => {
     updatePhysio({ ...physio, color, rowColor });
   };
+
+  const restorePhysio = (id: string) => {
+    const retired = data.retiredPhysiotherapists ?? [];
+    const physio = retired.find((p) => p.id === id);
+    if (!physio) return;
+
+    const label = physioDisplayName(physio.name) || "fizjoterapeutę";
+    if (
+      !confirm(
+        `Przywrócić ${label}? Urlopy i archiwum pozostaną przypisane do tej samej osoby.`
+      )
+    ) {
+      return;
+    }
+
+    updateData({
+      ...data,
+      physiotherapists: [...data.physiotherapists, restorePhysiotherapist(physio)],
+      retiredPhysiotherapists: retired.filter((p) => p.id !== id),
+      currentPatients: {
+        ...data.currentPatients,
+        [physio.id]: data.currentPatients[physio.id] ?? [],
+      },
+    });
+  };
+
+  const retiredPhysios = data.retiredPhysiotherapists ?? [];
 
   return (
     <div>
@@ -249,6 +276,29 @@ export default function FizjoterapeuciPage() {
           </div>
         </>
       )}
+
+      {retiredPhysios.length > 0 ? (
+        <div className="mt-12 pt-2">
+          <details className="mx-auto max-w-md">
+            <summary className="cursor-pointer list-none text-center text-[13px] text-slate-400/70 marker:content-none hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-500 [&::-webkit-details-marker]:hidden">
+              Przywróć usuniętego fizjoterapeutę
+            </summary>
+            <ul className="mt-2 space-y-1 text-center">
+              {retiredPhysios.map((physio) => (
+                <li key={physio.id}>
+                  <button
+                    type="button"
+                    onClick={() => restorePhysio(physio.id)}
+                    className="text-[13px] text-slate-400/80 underline-offset-2 hover:text-slate-600 hover:underline dark:text-slate-600 dark:hover:text-slate-400"
+                  >
+                    {physioDisplayName(physio.name) || "Bez nazwy"}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </details>
+        </div>
+      ) : null}
     </div>
   );
 }
