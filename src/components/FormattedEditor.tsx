@@ -380,7 +380,7 @@ const FormatPanel = forwardRef<
               max={Math.max(0, mobileToolbar.maxVerticalOffset)}
               value={Math.min(mobileToolbar.verticalOffset, mobileToolbar.maxVerticalOffset)}
               onChange={(e) => mobileToolbar.onVerticalOffsetChange(Number(e.target.value))}
-              className="min-w-0 flex-1 accent-blue-600"
+              className="min-w-0 flex-1 touch-none accent-blue-600"
               aria-label="Pozycja panelu formatowania"
             />
           </label>
@@ -550,6 +550,7 @@ export function FormattedEditor({
   const [mobilePanelMinimized, setMobilePanelMinimized] = useState(false);
   const [mobilePanelOffset, setMobilePanelOffset] = useState(0);
   const [mobilePanelMaxOffset, setMobilePanelMaxOffset] = useState(0);
+  const mobileBaseTopRef = useRef<number | null>(null);
   const [selectionFontSize, setSelectionFontSize] = useState(fontSize);
   const selectionFontSizeRef = useRef(fontSize);
   selectionFontSizeRef.current = selectionFontSize;
@@ -603,7 +604,7 @@ export function FormattedEditor({
     return Boolean(selectionRangeRef.current);
   }, [keepSelection]);
 
-  const updatePanelPosition = useCallback(() => {
+  const updatePanelPosition = useCallback((options?: { recomputeBase?: boolean }) => {
     const el = ref.current;
     const panel = panelRef.current;
     const { top, left, width, height } = getVisualViewportBox();
@@ -624,51 +625,36 @@ export function FormattedEditor({
         : Math.min(panelWidth ?? 176, maxWidth);
       const viewportBottom = top + height;
       const bottomAnchoredTop = viewportBottom - panelHeight - gap;
+      const minTop = top + gap;
 
       let panelTop = bottomAnchoredTop;
-      if (!minimized && el) {
-        const editorRect = el.getBoundingClientRect();
-        const caretRect = getCaretClientRect(el);
-        const minTop = top + gap;
-        const idealTop = computeIdealMobilePanelTop(
-          top,
-          viewportBottom,
-          panelHeight,
-          editorRect,
-          caretRect,
-          gap
-        );
-        const maxManualUp = Math.max(0, Math.round(idealTop - minTop));
-        setMobilePanelMaxOffset(maxManualUp);
-        const manualUp = Math.min(mobilePanelOffset, maxManualUp);
-        panelTop = idealTop - manualUp;
 
-        const panelBottom = panelTop + panelHeight;
-        const clearLine = panelTop - gap;
-        if (editorRect.bottom > clearLine) {
-          window.scrollBy({
-            top: editorRect.bottom - clearLine + gap,
-            behavior: "smooth",
-          });
-        } else if (editorRect.top < top + gap) {
-          window.scrollBy({
-            top: editorRect.top - top - gap,
-            behavior: "smooth",
-          });
-        }
-
-        if (caretRect && caretRect.bottom > clearLine && caretRect.top < panelBottom) {
-          const caretCenter = caretRect.top + caretRect.height / 2;
-          if (caretCenter >= panelTop && caretCenter <= panelBottom) {
-            window.scrollBy({
-              top: caretRect.bottom - clearLine + gap,
-              behavior: "smooth",
-            });
-          }
-        }
-      } else if (minimized) {
+      if (minimized) {
+        mobileBaseTopRef.current = null;
         setMobilePanelMaxOffset(0);
-        panelTop = bottomAnchoredTop;
+      } else if (el) {
+        const shouldRecomputeBase =
+          options?.recomputeBase || mobileBaseTopRef.current === null;
+
+        if (shouldRecomputeBase) {
+          const editorRect = el.getBoundingClientRect();
+          const caretRect = getCaretClientRect(el);
+          const idealTop = computeIdealMobilePanelTop(
+            top,
+            viewportBottom,
+            panelHeight,
+            editorRect,
+            caretRect,
+            gap
+          );
+          mobileBaseTopRef.current = idealTop;
+          const maxManualUp = Math.max(0, Math.round(idealTop - minTop));
+          setMobilePanelMaxOffset(maxManualUp);
+        }
+
+        const baseTop = mobileBaseTopRef.current ?? bottomAnchoredTop;
+        const manualUp = Math.min(mobilePanelOffset, Math.max(0, baseTop - minTop));
+        panelTop = baseTop - manualUp;
       }
 
       setPanelStyle({
@@ -735,27 +721,34 @@ export function FormattedEditor({
   useLayoutEffect(() => {
     if (!focused) return;
 
-    const reposition = () => {
-      updatePanelPosition();
+    const reposition = (recomputeBase = false) => {
+      updatePanelPosition({ recomputeBase });
     };
 
-    reposition();
-    const raf = requestAnimationFrame(reposition);
+    reposition(true);
+    const raf = requestAnimationFrame(() => reposition(true));
 
     const vv = window.visualViewport;
-    vv?.addEventListener("resize", reposition);
-    vv?.addEventListener("scroll", reposition);
-    window.addEventListener("resize", reposition);
-    window.addEventListener("scroll", reposition, true);
+    const onViewportResize = () => reposition(true);
+    vv?.addEventListener("resize", onViewportResize);
+
+    const onWindowResize = () => {
+      const mobile = isMobileViewport(window.innerWidth);
+      reposition(mobile);
+    };
+    window.addEventListener("resize", onWindowResize);
 
     return () => {
       cancelAnimationFrame(raf);
-      vv?.removeEventListener("resize", reposition);
-      vv?.removeEventListener("scroll", reposition);
-      window.removeEventListener("resize", reposition);
-      window.removeEventListener("scroll", reposition, true);
+      vv?.removeEventListener("resize", onViewportResize);
+      window.removeEventListener("resize", onWindowResize);
     };
-  }, [focused, updatePanelPosition, mobilePanelMinimized, mobilePanelOffset]);
+  }, [focused, updatePanelPosition, mobilePanelMinimized]);
+
+  useLayoutEffect(() => {
+    if (!focused) return;
+    updatePanelPosition({ recomputeBase: false });
+  }, [mobilePanelOffset, focused, updatePanelPosition]);
 
   const emitNow = useCallback(() => {
     const el = ref.current;
@@ -971,21 +964,23 @@ export function FormattedEditor({
     setFocused(false);
     setMobilePanelMinimized(false);
     setMobilePanelOffset(0);
+    mobileBaseTopRef.current = null;
     selectionRangeRef.current = null;
     emit(true);
   };
 
   const handleMobileOffsetChange = useCallback((value: number) => {
     setMobilePanelOffset(value);
-    requestAnimationFrame(updatePanelPosition);
-  }, [updatePanelPosition]);
+  }, []);
 
   const toggleMobilePanelMinimized = useCallback(() => {
-    setMobilePanelMinimized((current) => !current);
-    requestAnimationFrame(() => {
-      requestAnimationFrame(updatePanelPosition);
+    setMobilePanelMinimized((current) => {
+      if (current) {
+        mobileBaseTopRef.current = null;
+      }
+      return !current;
     });
-  }, [updatePanelPosition]);
+  }, []);
 
   const panel =
     focused && typeof document !== "undefined"
@@ -1031,11 +1026,11 @@ export function FormattedEditor({
         role="textbox"
         aria-multiline={multiline}
         onFocus={() => {
+          mobileBaseTopRef.current = null;
           setFocused(true);
           updateSelectionState();
           requestAnimationFrame(() => {
-            updatePanelPosition();
-            requestAnimationFrame(updatePanelPosition);
+            updatePanelPosition({ recomputeBase: true });
           });
         }}
         onBlur={handleBlur}
@@ -1048,11 +1043,9 @@ export function FormattedEditor({
         }}
         onMouseUp={() => {
           updateSelectionState();
-          updatePanelPosition();
         }}
         onKeyUp={() => {
           updateSelectionState();
-          updatePanelPosition();
         }}
         data-placeholder={placeholder}
         style={{ fontSize: `${fontSize}px`, color: color ?? "var(--foreground)" }}
@@ -1060,7 +1053,7 @@ export function FormattedEditor({
           multiline
             ? `min-h-[1.5em] break-words ${extendedFormatting ? "whitespace-normal" : "whitespace-pre-wrap"}`
             : "min-h-[1.25em] overflow-hidden whitespace-nowrap"
-        } ${focused && isMobile ? "scroll-mb-[14rem]" : ""} ${className}`}
+        } ${focused && isMobile ? "scroll-mb-48" : ""} ${className}`}
       />
 
       {panel}
