@@ -1,5 +1,5 @@
-import type { AppData, MassagePatient, MassageWaiting } from "@/lib/types";
-import { isoFromParts, isWeekend, toDateInputValue } from "@/lib/date-utils";
+import type { AppData, MassageHourChange, MassagePatient, MassageWaiting } from "@/lib/types";
+import { formatDatePL, isoFromParts, isWeekend, toDateInputValue } from "@/lib/date-utils";
 
 export const MAX_MASSAGES_PER_DAY = 12;
 
@@ -201,6 +201,7 @@ export function promoteWaitingToActive(data: AppData, now = new Date()): AppData
       hour: patient.hour ?? "",
       lastTreatmentDate: patient.lastTreatmentDate,
       physiotherapistId: patient.physiotherapistId,
+      ...(patient.plannedHourChange ? { plannedHourChange: patient.plannedHourChange } : {}),
     });
     promotedIds.add(patient.id);
   }
@@ -243,9 +244,11 @@ function computeTodaySlotPeak(
   return { date: todayIso, count: Math.max(existing.count, current) };
 }
 
-/** Clear finished actives, then fill free slots from waiting. */
+/** Clear finished actives, apply planned hour changes, then fill free slots from waiting. */
 export function applyMassageSync(data: AppData, now = new Date()): AppData {
-  const next = promoteWaitingToActive(applyAutoClearMassages(data, now), now);
+  const cleared = applyAutoClearMassages(data, now);
+  const withHours = applyPlannedHourChanges(cleared, now);
+  const next = promoteWaitingToActive(withHours, now);
   const active = next.massages?.active ?? [];
   const waiting = next.massages?.waiting ?? [];
   const peak = computeTodaySlotPeak(active, waiting, next.massages?.todaySlotPeak, now);
@@ -264,10 +267,36 @@ export function applyMassageSync(data: AppData, now = new Date()): AppData {
 
 export function hasMassageSyncChanges(before: AppData, after: AppData): boolean {
   if (hasAutoClearMassageChanges(before, after)) return true;
+  const aa = before.massages?.active ?? [];
+  const ba = after.massages?.active ?? [];
+  if (aa.length !== ba.length) return true;
+  if (
+    aa.some(
+      (patient, index) =>
+        patient.id !== ba[index]?.id ||
+        patient.hour !== ba[index]?.hour ||
+        patient.plannedHourChange?.effectiveDate !==
+          ba[index]?.plannedHourChange?.effectiveDate ||
+        patient.plannedHourChange?.hour !== ba[index]?.plannedHourChange?.hour
+    )
+  ) {
+    return true;
+  }
   const aw = before.massages?.waiting ?? [];
   const bw = after.massages?.waiting ?? [];
   if (aw.length !== bw.length) return true;
   if (aw.some((patient, index) => patient.id !== bw[index]?.id)) return true;
+  if (
+    aw.some(
+      (patient, index) =>
+        patient.hour !== bw[index]?.hour ||
+        patient.plannedHourChange?.effectiveDate !==
+          bw[index]?.plannedHourChange?.effectiveDate ||
+        patient.plannedHourChange?.hour !== bw[index]?.plannedHourChange?.hour
+    )
+  ) {
+    return true;
+  }
   const bp = before.massages?.todaySlotPeak;
   const ap = after.massages?.todaySlotPeak;
   return bp?.date !== ap?.date || bp?.count !== ap?.count;
@@ -291,6 +320,92 @@ function toWeekdayIso(iso: string): string {
 function getTodayIso(now = new Date()): string {
   const warsaw = getWarsawDateParts(now);
   return `${warsaw.year}-${String(warsaw.month).padStart(2, "0")}-${String(warsaw.day).padStart(2, "0")}`;
+}
+
+function normalizePlannedHourChange(
+  value: MassageHourChange | undefined
+): MassageHourChange | undefined {
+  if (!value) return undefined;
+  const effectiveDate = toDateInputValue(value.effectiveDate);
+  const hour = (value.hour ?? "").trim();
+  if (!effectiveDate || !isCompleteTime(hour)) return undefined;
+  return { effectiveDate, hour };
+}
+
+export function buildPlannedHourChange(
+  effectiveDate: string,
+  hour: string
+): MassageHourChange | undefined {
+  return normalizePlannedHourChange({ effectiveDate, hour });
+}
+
+export function isFuturePlannedHourChange(
+  patient: { plannedHourChange?: MassageHourChange },
+  now = new Date()
+): boolean {
+  const planned = normalizePlannedHourChange(patient.plannedHourChange);
+  if (!planned) return false;
+  return planned.effectiveDate > getTodayIso(now);
+}
+
+export function plannedHourChangeTooltip(
+  patient: { plannedHourChange?: MassageHourChange },
+  now = new Date()
+): string | undefined {
+  const planned = normalizePlannedHourChange(patient.plannedHourChange);
+  if (!planned || !isFuturePlannedHourChange(patient, now)) return undefined;
+  return `Zmiana od ${formatDatePL(planned.effectiveDate)}: ${planned.hour}`;
+}
+
+function applyPlannedHourChangesToPatient<T extends MassagePatient | MassageWaiting>(
+  patient: T,
+  todayIso: string
+): T {
+  const planned = normalizePlannedHourChange(patient.plannedHourChange);
+  if (!planned || planned.effectiveDate > todayIso) return patient;
+  const { plannedHourChange: _removed, ...rest } = patient;
+  return { ...rest, hour: planned.hour } as T;
+}
+
+function applyPlannedHourChanges(data: AppData, now = new Date()): AppData {
+  const todayIso = getTodayIso(now);
+  const active = (data.massages?.active ?? []).map((p) =>
+    applyPlannedHourChangesToPatient(p, todayIso)
+  );
+  const waiting = (data.massages?.waiting ?? []).map((p) =>
+    applyPlannedHourChangesToPatient(p, todayIso)
+  );
+
+  const prevActive = data.massages?.active ?? [];
+  const prevWaiting = data.massages?.waiting ?? [];
+  const unchanged =
+    active.length === prevActive.length &&
+    waiting.length === prevWaiting.length &&
+    active.every(
+      (p, i) =>
+        p.id === prevActive[i]?.id &&
+        p.hour === prevActive[i]?.hour &&
+        p.plannedHourChange?.effectiveDate === prevActive[i]?.plannedHourChange?.effectiveDate &&
+        p.plannedHourChange?.hour === prevActive[i]?.plannedHourChange?.hour
+    ) &&
+    waiting.every(
+      (p, i) =>
+        p.id === prevWaiting[i]?.id &&
+        p.hour === prevWaiting[i]?.hour &&
+        p.plannedHourChange?.effectiveDate === prevWaiting[i]?.plannedHourChange?.effectiveDate &&
+        p.plannedHourChange?.hour === prevWaiting[i]?.plannedHourChange?.hour
+    );
+
+  if (unchanged) return data;
+
+  return {
+    ...data,
+    massages: {
+      ...data.massages,
+      active: sortMassagePatientsByHour(active),
+      waiting,
+    },
+  };
 }
 
 export type FreeMassageDay = { date: string; count: number };

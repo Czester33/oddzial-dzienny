@@ -21,9 +21,16 @@ export function vacationStaff(data: AppData): Physiotherapist[] {
   return [...data.physiotherapists, VACATION_KRZYSZTOF];
 }
 
-/** Active + retired staff for archived vacation display. */
+/** Active + retired + archived profiles for vacation display. */
 export function vacationDisplayStaff(data: AppData): Physiotherapist[] {
-  return [...vacationStaff(data), ...(data.retiredPhysiotherapists ?? [])];
+  const byId = new Map(vacationStaff(data).map((p) => [p.id, p]));
+  for (const physio of [
+    ...(data.retiredPhysiotherapists ?? []),
+    ...(data.archivePhysiotherapistProfiles ?? []),
+  ]) {
+    if (!byId.has(physio.id)) byId.set(physio.id, physio);
+  }
+  return [...byId.values()];
 }
 
 export function resolveVacationPerson(

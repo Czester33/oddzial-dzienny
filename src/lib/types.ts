@@ -25,12 +25,18 @@ export interface Patient {
   ownerPhysiotherapistId?: string;
 }
 
+export interface MassageHourChange {
+  effectiveDate: string;
+  hour: string;
+}
+
 export interface MassagePatient {
   id: string;
   name: string;
   hour: string;
   lastTreatmentDate: string;
   physiotherapistId: string;
+  plannedHourChange?: MassageHourChange;
 }
 
 export interface MassageWaiting {
@@ -40,6 +46,7 @@ export interface MassageWaiting {
   startDate: string;
   lastTreatmentDate: string;
   physiotherapistId: string;
+  plannedHourChange?: MassageHourChange;
 }
 
 export interface MassagesData {
@@ -163,6 +170,8 @@ export interface AppData {
   physiotherapists: Physiotherapist[];
   /** Removed physios kept for archive labels (name, colors). */
   retiredPhysiotherapists?: Physiotherapist[];
+  /** Profiles kept for archive display after permanent removal. */
+  archivePhysiotherapistProfiles?: Physiotherapist[];
   doctors: Doctor[];
   currentPatients: Record<string, Patient[]>;
   massages: MassagesData;

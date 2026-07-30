@@ -5,7 +5,7 @@ import { useData } from "@/context/DataContext";
 import type { AppData, Physiotherapist } from "@/lib/types";
 import { PageHeader, LoadingState, ErrorBanner, Card, Btn, Input } from "@/components/ui";
 import { PhysioColorPicker } from "@/components/PhysioColorPicker";
-import { COLOR_PRESETS, createPhysiotherapist, physioDisplayName, resolvePhysioRowColor, restorePhysiotherapist, retirePhysiotherapist } from "@/lib/physio-utils";
+import { COLOR_PRESETS, createPhysiotherapist, physioDisplayName, resolvePhysioRowColor, restorePhysiotherapist, retirePhysiotherapist, countPhysioPurgeImpact, buildPhysioPurgeConfirmMessage, purgeRetiredPhysiotherapist } from "@/lib/physio-utils";
 import { useTheme } from "@/context/ThemeContext";
 
 function reorderPhysios(
@@ -135,6 +135,18 @@ export default function FizjoterapeuciPage() {
         [physio.id]: data.currentPatients[physio.id] ?? [],
       },
     });
+  };
+
+  const purgePhysio = (id: string) => {
+    const retired = data.retiredPhysiotherapists ?? [];
+    const physio = retired.find((p) => p.id === id);
+    if (!physio) return;
+
+    const label = physioDisplayName(physio.name) || "fizjoterapeutę";
+    const impact = countPhysioPurgeImpact(data, id);
+    if (!confirm(buildPhysioPurgeConfirmMessage(label, impact))) return;
+
+    updateData(purgeRetiredPhysiotherapist(data, id));
   };
 
   const retiredPhysios = data.retiredPhysiotherapists ?? [];
@@ -283,15 +295,29 @@ export default function FizjoterapeuciPage() {
             <summary className="cursor-pointer list-none text-center text-[13px] text-slate-400/70 marker:content-none hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-500 [&::-webkit-details-marker]:hidden">
               Przywróć usuniętego fizjoterapeutę
             </summary>
-            <ul className="mt-2 space-y-1 text-center">
+            <ul className="mt-2 space-y-2 text-center">
               {retiredPhysios.map((physio) => (
-                <li key={physio.id}>
+                <li
+                  key={physio.id}
+                  className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1"
+                >
+                  <span className="text-[13px] text-slate-500 dark:text-slate-400">
+                    {physioDisplayName(physio.name) || "Bez nazwy"}
+                  </span>
                   <button
                     type="button"
                     onClick={() => restorePhysio(physio.id)}
                     className="text-[13px] text-slate-400/80 underline-offset-2 hover:text-slate-600 hover:underline dark:text-slate-600 dark:hover:text-slate-400"
                   >
-                    {physioDisplayName(physio.name) || "Bez nazwy"}
+                    Przywróć
+                  </button>
+                  <span className="text-[12px] text-slate-300 dark:text-slate-600">·</span>
+                  <button
+                    type="button"
+                    onClick={() => purgePhysio(physio.id)}
+                    className="text-[13px] text-red-500/80 underline-offset-2 hover:text-red-600 hover:underline dark:text-red-400/80 dark:hover:text-red-400"
+                  >
+                    Usuń trwale
                   </button>
                 </li>
               ))}

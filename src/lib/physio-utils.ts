@@ -7,13 +7,61 @@ import type {
   ArchivedVacationMonth,
   ColumnWidths,
   Doctor,
+  MassageHourChange,
   Patient,
   Physiotherapist,
 } from "./types";
 import { getPlannedDischargeDate, toDateInputValue } from "./date-utils";
+import { buildPlannedHourChange } from "./massage-schedule";
 import { normalizeAdmissions, migrateFlatArchiveToMonths } from "./admission-utils";
 import { normalizeNavLabels, normalizeNavOrder } from "./nav-utils";
 import { stripHtml, replaceNbspInHtml, stripEmojis } from "./text-format";
+
+function sanitizePlannedHourChange(value: unknown): MassageHourChange | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const raw = value as Record<string, unknown>;
+  return buildPlannedHourChange(String(raw.effectiveDate ?? ""), String(raw.hour ?? ""));
+}
+
+function mapMassageActiveFields(m: {
+  id: string;
+  name?: string;
+  hour?: string;
+  lastTreatmentDate?: string;
+  physiotherapistId?: string;
+  plannedHourChange?: unknown;
+}) {
+  const plannedHourChange = sanitizePlannedHourChange(m.plannedHourChange);
+  return {
+    id: m.id,
+    name: m.name ?? "",
+    hour: m.hour ?? "",
+    lastTreatmentDate: m.lastTreatmentDate ?? "",
+    physiotherapistId: m.physiotherapistId ?? "",
+    ...(plannedHourChange ? { plannedHourChange } : {}),
+  };
+}
+
+function mapMassageWaitingFields(m: {
+  id: string;
+  name?: string;
+  hour?: string;
+  startDate?: string;
+  lastTreatmentDate?: string;
+  physiotherapistId?: string;
+  plannedHourChange?: unknown;
+}) {
+  const plannedHourChange = sanitizePlannedHourChange(m.plannedHourChange);
+  return {
+    id: m.id,
+    name: m.name ?? "",
+    hour: m.hour ?? "",
+    startDate: m.startDate ?? "",
+    lastTreatmentDate: m.lastTreatmentDate ?? "",
+    physiotherapistId: m.physiotherapistId ?? "",
+    ...(plannedHourChange ? { plannedHourChange } : {}),
+  };
+}
 
 export const COLOR_PRESETS = [
   { name: "Różowy", color: "#C2185B", rowColor: "#F48FB1" },
@@ -215,10 +263,115 @@ export function restorePhysiotherapist(physio: Physiotherapist): Physiotherapist
   };
 }
 
+export interface PhysioPurgeImpact {
+  activeVacations: number;
+  archivedVacationEntries: number;
+  archivedAdmissionSlots: number;
+  notepadNotes: number;
+}
+
+export function countPhysioPurgeImpact(data: AppData, id: string): PhysioPurgeImpact {
+  const activeVacations = Object.values(data.vacations ?? {})
+    .flat()
+    .filter((entry) => entry.physiotherapistId === id).length;
+
+  const archivedVacationEntries =
+    (data.vacationArchive ?? []).flatMap((year) => year.entries ?? []).filter(
+      (entry) => entry.physiotherapistId === id
+    ).length +
+    (data.vacationMonthArchive ?? []).flatMap((month) => month.entries ?? []).filter(
+      (entry) => entry.physiotherapistId === id
+    ).length;
+
+  const archivedAdmissionSlots = (data.admissionArchive ?? [])
+    .flatMap((month) => month.sessions ?? [])
+    .flatMap((session) => session.patients ?? [])
+    .filter((slot) => slot.physiotherapistId === id).length;
+
+  const notepadNotes = (data.notepadNotes ?? []).filter(
+    (note) => note.physiotherapistId === id
+  ).length;
+
+  return {
+    activeVacations,
+    archivedVacationEntries,
+    archivedAdmissionSlots,
+    notepadNotes,
+  };
+}
+
+export function buildPhysioPurgeConfirmMessage(
+  name: string,
+  impact: PhysioPurgeImpact
+): string {
+  const lines = [
+    `Trwale usunąć „${name}”?`,
+    "",
+    "Tej operacji nie można cofnąć.",
+    "",
+    "• Osoba zniknie z listy usuniętych — nie da się jej przywrócić",
+  ];
+
+  if (impact.activeVacations > 0) {
+    lines.push(
+      `• ${impact.activeVacations} urlopów zostanie usuniętych z bieżącego kalendarza`
+    );
+  }
+
+  const archiveTotal = impact.archivedVacationEntries + impact.archivedAdmissionSlots;
+  if (archiveTotal > 0) {
+    lines.push(
+      `• ${archiveTotal} wpisów w archiwum urlopów/przyjęć zostanie z zachowanym imieniem i kolorem`
+    );
+  }
+
+  if (impact.notepadNotes > 0) {
+    lines.push(`• ${impact.notepadNotes} notatek straci przypisanie autora`);
+  }
+
+  if (impact.activeVacations === 0 && archiveTotal === 0 && impact.notepadNotes === 0) {
+    lines.push("• Brak powiązanych urlopów, archiwum ani notatek");
+  }
+
+  lines.push("", "Kontynuować?");
+  return lines.join("\n");
+}
+
+/** Permanently remove a retired physiotherapist and drop revivable links. */
+export function purgeRetiredPhysiotherapist(data: AppData, id: string): AppData {
+  const physio = data.retiredPhysiotherapists?.find((p) => p.id === id);
+  const archiveProfiles = [...(data.archivePhysiotherapistProfiles ?? [])];
+  if (physio && !archiveProfiles.some((p) => p.id === id)) {
+    archiveProfiles.push(retirePhysiotherapist(physio));
+  }
+
+  const vacations = Object.fromEntries(
+    Object.entries(data.vacations ?? {})
+      .map(([key, entries]) => [
+        key,
+        entries.filter((entry) => entry.physiotherapistId !== id),
+      ])
+      .filter(([, entries]) => entries.length > 0)
+  );
+
+  return {
+    ...data,
+    retiredPhysiotherapists: (data.retiredPhysiotherapists ?? []).filter((p) => p.id !== id),
+    archivePhysiotherapistProfiles: archiveProfiles,
+    vacations,
+    notepadNotes: (data.notepadNotes ?? []).map((note) => {
+      if (note.physiotherapistId !== id) return note;
+      const { physiotherapistId: _removed, ...rest } = note;
+      return rest;
+    }),
+  };
+}
+
 export function getPhysioById(data: AppData, id: string): Physiotherapist | undefined {
   return (
     data.physiotherapists.find((p) => p.id === id) ??
-    data.retiredPhysiotherapists?.find((p) => p.id === id)
+    data.retiredPhysiotherapists?.find((p) => p.id === id) ??
+    data.archivePhysiotherapistProfiles?.find((p) => p.id === id)
   );
 }
 
@@ -515,16 +668,16 @@ export function sanitizeAppData(data: AppData): AppData {
       color: p.color ?? "#64748b",
       rowColor: p.rowColor ?? "#e2e8f0",
     })),
+    archivePhysiotherapistProfiles: (data.archivePhysiotherapistProfiles ?? []).map((p) => ({
+      id: p.id,
+      name: p.name ?? "",
+      color: p.color ?? "#64748b",
+      rowColor: p.rowColor ?? "#e2e8f0",
+    })),
     currentPatients,
     massages: {
-      active: (data.massages?.active ?? []).map((m) => ({
-        ...m,
-        hour: m.hour ?? "",
-      })),
-      waiting: (data.massages?.waiting ?? []).map((m) => ({
-        ...m,
-        hour: m.hour ?? "",
-      })),
+      active: (data.massages?.active ?? []).map(mapMassageActiveFields),
+      waiting: (data.massages?.waiting ?? []).map(mapMassageWaitingFields),
       scheduleHours: data.massages?.scheduleHours ?? "7:45-13:45",
       headerNote: (() => {
         const cleaned = replaceNbspInHtml(data.massages?.headerNote ?? "").trim();
@@ -683,21 +836,27 @@ export function migrateData(raw: any): AppData {
     doctors: admissionMigration.doctors,
     currentPatients,
     massages: {
-      active: (raw.massages?.active ?? []).map((m: Record<string, string>) => ({
-        id: m.id ?? uuidv4(),
-        name: m.name ?? "",
-        hour: m.hour ?? "",
-        lastTreatmentDate: m.lastTreatmentDate ?? "",
-        physiotherapistId: migratePhysioRef(m.physiotherapistId ?? m.physiotherapist ?? ""),
-      })),
-      waiting: (raw.massages?.waiting ?? []).map((m: Record<string, string>) => ({
-        id: m.id ?? uuidv4(),
-        name: m.name ?? "",
-        hour: m.hour ?? "",
-        startDate: m.startDate ?? "",
-        lastTreatmentDate: m.lastTreatmentDate ?? "",
-        physiotherapistId: migratePhysioRef(m.physiotherapistId ?? m.physiotherapist ?? ""),
-      })),
+      active: (raw.massages?.active ?? []).map((m: Record<string, unknown>) =>
+        mapMassageActiveFields({
+          id: String(m.id ?? uuidv4()),
+          name: String(m.name ?? ""),
+          hour: String(m.hour ?? ""),
+          lastTreatmentDate: String(m.lastTreatmentDate ?? ""),
+          physiotherapistId: migratePhysioRef(String(m.physiotherapistId ?? m.physiotherapist ?? "")),
+          plannedHourChange: m.plannedHourChange,
+        })
+      ),
+      waiting: (raw.massages?.waiting ?? []).map((m: Record<string, unknown>) =>
+        mapMassageWaitingFields({
+          id: String(m.id ?? uuidv4()),
+          name: String(m.name ?? ""),
+          hour: String(m.hour ?? ""),
+          startDate: String(m.startDate ?? ""),
+          lastTreatmentDate: String(m.lastTreatmentDate ?? ""),
+          physiotherapistId: migratePhysioRef(String(m.physiotherapistId ?? m.physiotherapist ?? "")),
+          plannedHourChange: m.plannedHourChange,
+        })
+      ),
       scheduleHours: raw.massages?.scheduleHours ?? "7:45-13:45",
       headerNote: raw.massages?.headerNote ?? "",
     },
@@ -859,6 +1018,7 @@ function createEmptyAppData(): AppData {
   return {
     physiotherapists: [],
     retiredPhysiotherapists: [],
+    archivePhysiotherapistProfiles: [],
     doctors: [],
     currentPatients: {},
     massages: { active: [], waiting: [], scheduleHours: "7:45-13:45", headerNote: "" },

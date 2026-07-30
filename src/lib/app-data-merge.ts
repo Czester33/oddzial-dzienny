@@ -256,6 +256,11 @@ export function mergeAppData(base: AppData, local: AppData, remote: AppData): Ap
       local.retiredPhysiotherapists,
       remote.retiredPhysiotherapists
     ),
+    archivePhysiotherapistProfiles: mergeById(
+      base.archivePhysiotherapistProfiles,
+      local.archivePhysiotherapistProfiles,
+      remote.archivePhysiotherapistProfiles
+    ),
     doctors: mergeById(base.doctors, local.doctors, remote.doctors),
     currentPatients: mergeKeyedRecord(
       base.currentPatients,

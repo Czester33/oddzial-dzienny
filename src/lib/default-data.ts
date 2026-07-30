@@ -5,6 +5,7 @@ export function createDefaultData(): AppData {
   return {
     physiotherapists: [],
     retiredPhysiotherapists: [],
+    archivePhysiotherapistProfiles: [],
     doctors: [],
     currentPatients: {},
     massages: {

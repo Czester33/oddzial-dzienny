@@ -1,25 +1,27 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useData } from "@/context/DataContext";
 import { useTheme } from "@/context/ThemeContext";
 import type { AppData, MassagePatient, MassageWaiting } from "@/lib/types";
-import { LoadingState, ErrorBanner, Input } from "@/components/ui";
+import { LoadingState, ErrorBanner, Input, Btn } from "@/components/ui";
 import { DatePickerCell } from "@/components/DatePickerCell";
 import { TimePickerCell } from "@/components/TimePickerCell";
 import { FormattedEditor } from "@/components/FormattedEditor";
 import { FloatingTodayCalendar } from "@/components/FloatingTodayCalendar";
 import { FitWidthScale } from "@/components/FitWidthScale";
 import { stripHtml, adaptHtmlColorsForTheme } from "@/lib/text-format";
-import { formatDatePL } from "@/lib/date-utils";
+import { formatDatePL, toDateInputValue } from "@/lib/date-utils";
 import { resolvePhysioRowColor, physioShortName } from "@/lib/physio-utils";
 import {
   applyMassageSync,
+  buildPlannedHourChange,
   formatFreePlacesLabel,
   getNearestFreeMassageSlots,
   hasMassageSyncChanges,
   MAX_MASSAGES_PER_DAY,
+  plannedHourChangeTooltip,
   sortMassagePatientsByHour,
 } from "@/lib/massage-schedule";
 import { applyVacationNotes, hasVacationNoteChanges } from "@/lib/vacation-utils";
@@ -49,6 +51,140 @@ const INPUT_CLASS_LIGHT =
 const INPUT_CLASS_DARK =
   `w-full border-0 bg-transparent px-1 py-1 text-center ${MASSAGE_TABLE_TEXT} text-slate-100 focus:bg-slate-800/80`;
 const TIME_INPUT_CLASS = `w-full border-0 bg-transparent px-0.5 py-0.5 text-center ${MASSAGE_TABLE_TEXT} tabular-nums text-inherit focus:bg-black/10 focus:outline-none`;
+const PLANNED_HOUR_GLOW =
+  "rounded shadow-[0_0_10px_3px_rgba(250,204,21,0.85)] ring-2 ring-yellow-400/70";
+
+type HourChangeList = "active" | "waiting";
+
+type HourChangeDialogState = {
+  list: HourChangeList;
+  patientId: string;
+  patientName: string;
+  currentHour: string;
+  effectiveDate: string;
+  newHour: string;
+  hasExistingPlan: boolean;
+};
+
+function MassageHourCell({
+  patient,
+  scheduleHours,
+  hourChangeMode,
+  editable,
+  onPlanClick,
+  onHourChange,
+}: {
+  patient: { hour: string; plannedHourChange?: MassagePatient["plannedHourChange"] };
+  scheduleHours: string;
+  hourChangeMode: boolean;
+  editable: boolean;
+  onPlanClick: () => void;
+  onHourChange: (hour: string) => void;
+}) {
+  const tooltip = plannedHourChangeTooltip(patient);
+  const glowWrap = tooltip ? PLANNED_HOUR_GLOW : "";
+
+  if (hourChangeMode && editable) {
+    return (
+      <button
+        type="button"
+        onClick={onPlanClick}
+        title={tooltip}
+        className={`w-full cursor-pointer tabular-nums ${TIME_INPUT_CLASS} ${glowWrap}`}
+      >
+        {patient.hour || "—"}
+      </button>
+    );
+  }
+
+  return (
+    <div title={tooltip} className={glowWrap}>
+      <TimePickerCell
+        value={patient.hour}
+        onChange={onHourChange}
+        scheduleHours={scheduleHours}
+        className={TIME_INPUT_CLASS}
+      />
+    </div>
+  );
+}
+
+function PlanHourChangeDialog({
+  dialog,
+  onClose,
+  onSave,
+  onRemove,
+}: {
+  dialog: HourChangeDialogState;
+  onClose: () => void;
+  onSave: (effectiveDate: string, newHour: string) => void;
+  onRemove: () => void;
+}) {
+  const [effectiveDate, setEffectiveDate] = useState(dialog.effectiveDate);
+  const [newHour, setNewHour] = useState(dialog.newHour);
+  const canSave = Boolean(buildPlannedHourChange(toDateInputValue(effectiveDate) ?? "", newHour));
+
+  return (
+    <>
+      <button
+        type="button"
+        className="fixed inset-0 z-40 bg-black/25"
+        aria-label="Zamknij"
+        onClick={onClose}
+      />
+      <div
+        className="fixed left-1/2 top-1/2 z-50 w-[min(100vw-2rem,24rem)] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+        role="dialog"
+        aria-label="Zaplanuj zmianę godziny"
+      >
+        <h3 className="mb-1 text-[20px] font-semibold text-slate-800 dark:text-slate-100">
+          Zaplanuj zmianę godziny
+        </h3>
+        <p className="mb-4 text-[16px] text-slate-600 dark:text-slate-400">{dialog.patientName}</p>
+        <p className="mb-3 text-[15px] text-slate-500 dark:text-slate-500">
+          Obecna godzina: <span className="font-medium tabular-nums">{dialog.currentHour || "—"}</span>
+        </p>
+
+        <label className="mb-3 block">
+          <span className="mb-1 block text-[16px] font-medium text-slate-700 dark:text-slate-300">
+            Od dnia
+          </span>
+          <div className="rounded-md border border-slate-300 bg-white px-2 py-1 dark:border-slate-600 dark:bg-slate-800">
+            <DatePickerCell
+              value={effectiveDate}
+              onChange={setEffectiveDate}
+              title="Od dnia"
+              textClassName="text-[19px]"
+            />
+          </div>
+        </label>
+
+        <label className="mb-5 block">
+          <span className="mb-1 block text-[16px] font-medium text-slate-700 dark:text-slate-300">
+            Nowa godzina
+          </span>
+          <div className="rounded-md border border-slate-300 bg-white px-2 py-1 dark:border-slate-600 dark:bg-slate-800">
+            <TimePickerCell value={newHour} onChange={setNewHour} className="text-[19px]" />
+          </div>
+        </label>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Btn onClick={() => onSave(effectiveDate, newHour)} disabled={!canSave}>
+            Zapisz
+          </Btn>
+          <Btn variant="secondary" onClick={onClose}>
+            Anuluj
+          </Btn>
+          {dialog.hasExistingPlan && (
+            <Btn variant="danger" onClick={onRemove} className="ml-auto">
+              Usuń plan
+            </Btn>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
 
 function physioOptions(data: AppData) {
   return data.physiotherapists.map((p) => ({
@@ -209,6 +345,8 @@ function MasazeContent({ data }: { data: AppData }) {
   const dataRef = useRef(data);
   const activeCountRef = useRef(data.massages.active.length);
   dataRef.current = data;
+  const [hourChangeMode, setHourChangeMode] = useState(false);
+  const [hourChangeDialog, setHourChangeDialog] = useState<HourChangeDialogState | null>(null);
 
   // Auto-clear finished actives and promote waiting when a slot frees.
   // Do not depend on waiting[] — editing the reservation form must not trigger promote.
@@ -329,10 +467,71 @@ function MasazeContent({ data }: { data: AppData }) {
       hour: waiting.hour ?? "",
       lastTreatmentDate: waiting.lastTreatmentDate,
       physiotherapistId: waiting.physiotherapistId,
+      ...(waiting.plannedHourChange ? { plannedHourChange: waiting.plannedHourChange } : {}),
     };
     updateMassages({
       active: sortMassagePatientsByHour([...current.massages.active, active]),
       waiting: current.massages.waiting.filter((p) => p.id !== waiting.id),
+    });
+  };
+
+  const openHourChangeDialog = (list: HourChangeList, patient: MassagePatient | MassageWaiting) => {
+    const existing = patient.plannedHourChange;
+    setHourChangeDialog({
+      list,
+      patientId: patient.id,
+      patientName: stripHtml(patient.name).trim() || "Pacjent",
+      currentHour: patient.hour ?? "",
+      effectiveDate: existing?.effectiveDate ?? "",
+      newHour: existing?.hour ?? patient.hour ?? "",
+      hasExistingPlan: Boolean(existing),
+    });
+  };
+
+  const saveHourChangePlan = (effectiveDate: string, newHour: string) => {
+    if (!hourChangeDialog) return;
+    const plannedHourChange = buildPlannedHourChange(
+      toDateInputValue(effectiveDate) ?? "",
+      newHour
+    );
+    if (!plannedHourChange) return;
+
+    const { list, patientId } = hourChangeDialog;
+    if (list === "active") {
+      const patient = dataRef.current.massages.active.find((p) => p.id === patientId);
+      if (!patient) return;
+      updateActivePatient({ ...patient, plannedHourChange }, false);
+    } else {
+      const patient = dataRef.current.massages.waiting.find((p) => p.id === patientId);
+      if (!patient) return;
+      updateWaiting({ ...patient, plannedHourChange });
+    }
+    setHourChangeDialog(null);
+  };
+
+  const removeHourChangePlan = () => {
+    if (!hourChangeDialog) return;
+    const { list, patientId } = hourChangeDialog;
+    if (list === "active") {
+      const patient = dataRef.current.massages.active.find((p) => p.id === patientId);
+      if (!patient) return;
+      const next = { ...patient };
+      delete next.plannedHourChange;
+      updateActivePatient(next, false);
+    } else {
+      const patient = dataRef.current.massages.waiting.find((p) => p.id === patientId);
+      if (!patient) return;
+      const next = { ...patient };
+      delete next.plannedHourChange;
+      updateWaiting(next);
+    }
+    setHourChangeDialog(null);
+  };
+
+  const toggleHourChangeMode = () => {
+    setHourChangeMode((mode) => {
+      if (mode) setHourChangeDialog(null);
+      return !mode;
     });
   };
 
@@ -425,11 +624,13 @@ function MasazeContent({ data }: { data: AppData }) {
                         />
                       </td>
                       <td className={CELL}>
-                        <TimePickerCell
-                          value={p.hour}
-                          onChange={(hour) => updateActivePatient({ ...p, hour }, false)}
+                        <MassageHourCell
+                          patient={p}
                           scheduleHours={scheduleHours}
-                          className={TIME_INPUT_CLASS}
+                          hourChangeMode={hourChangeMode}
+                          editable={isRowFilled(p) && !p.id.startsWith("empty-")}
+                          onPlanClick={() => openHourChangeDialog("active", p)}
+                          onHourChange={(hour) => updateActivePatient({ ...p, hour }, false)}
                         />
                       </td>
                       <td className={CELL}>
@@ -458,7 +659,21 @@ function MasazeContent({ data }: { data: AppData }) {
               </table>
             </div>
           </FitWidthScale>
-          <div className="absolute left-full top-0 ml-4 hidden lg:block">
+          <div className="absolute left-full top-0 ml-4 hidden w-[300px] flex-col gap-3 lg:flex">
+            <div className="flex flex-col gap-2">
+              <Btn
+                variant={hourChangeMode ? "primary" : "secondary"}
+                onClick={toggleHourChangeMode}
+                className="w-full text-[16px]"
+              >
+                {hourChangeMode ? "Anuluj planowanie" : "Zaplanuj zmianę godziny"}
+              </Btn>
+              {hourChangeMode && (
+                <p className="text-center text-[14px] leading-snug text-slate-500 dark:text-slate-400">
+                  Kliknij godzinę pacjenta, aby ustawić zmianę
+                </p>
+              )}
+            </div>
             <FreeMassageSlotsPanel
               active={sortedActive}
               waiting={massages.waiting}
@@ -529,11 +744,13 @@ function MasazeContent({ data }: { data: AppData }) {
                       />
                     </td>
                     <td className={CELL}>
-                      <TimePickerCell
-                        value={p.hour ?? ""}
-                        onChange={(hour) => updateWaiting({ ...p, hour })}
+                      <MassageHourCell
+                        patient={p}
                         scheduleHours={scheduleHours}
-                        className={TIME_INPUT_CLASS}
+                        hourChangeMode={hourChangeMode}
+                        editable={Boolean(stripHtml(p.name).trim() || (p.hour ?? "").trim())}
+                        onPlanClick={() => openHourChangeDialog("waiting", p)}
+                        onHourChange={(hour) => updateWaiting({ ...p, hour })}
                       />
                     </td>
                     <td className={CELL}>
@@ -586,6 +803,15 @@ function MasazeContent({ data }: { data: AppData }) {
           </div>
         </div>
       </FitWidthScale>
+
+      {hourChangeDialog && (
+        <PlanHourChangeDialog
+          dialog={hourChangeDialog}
+          onClose={() => setHourChangeDialog(null)}
+          onSave={saveHourChangePlan}
+          onRemove={removeHourChangePlan}
+        />
+      )}
     </div>
   );
 }
