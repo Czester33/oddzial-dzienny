@@ -49,6 +49,92 @@ function isMobileViewport(width: number): boolean {
   return width <= MOBILE_MAX_WIDTH;
 }
 
+function verticalRangesOverlap(
+  aTop: number,
+  aBottom: number,
+  bTop: number,
+  bBottom: number,
+  margin: number
+): boolean {
+  return aTop < bBottom + margin && aBottom + margin > bTop;
+}
+
+function getCaretClientRect(el: HTMLElement): DOMRect | null {
+  const sel = window.getSelection();
+  if (!sel?.rangeCount) return null;
+  const range = sel.getRangeAt(0);
+  if (!el.contains(range.commonAncestorContainer)) return null;
+  const rect = range.getBoundingClientRect();
+  if (!Number.isFinite(rect.top) || !Number.isFinite(rect.bottom)) return null;
+  return rect;
+}
+
+/** Pick a mobile panel top that avoids covering the editor and caret when possible. */
+function computeIdealMobilePanelTop(
+  viewportTop: number,
+  viewportBottom: number,
+  panelHeight: number,
+  editorRect: DOMRect,
+  caretRect: DOMRect | null,
+  gap: number
+): number {
+  const minTop = viewportTop + gap;
+  const maxTop = viewportBottom - panelHeight - gap;
+  if (maxTop <= minTop) return minTop;
+
+  const anchor = caretRect ?? editorRect;
+  const candidates = new Set<number>([
+    maxTop,
+    minTop,
+    editorRect.top - panelHeight - gap,
+    editorRect.bottom + gap,
+  ]);
+
+  if (caretRect) {
+    candidates.add(caretRect.top - panelHeight - gap);
+    candidates.add(caretRect.bottom + gap);
+  }
+
+  let bestTop = maxTop;
+  let bestScore = Number.POSITIVE_INFINITY;
+
+  for (const rawTop of candidates) {
+    const panelTop = Math.min(maxTop, Math.max(minTop, rawTop));
+    const panelBottom = panelTop + panelHeight;
+
+    const overlapsEditor = verticalRangesOverlap(
+      panelTop,
+      panelBottom,
+      editorRect.top,
+      editorRect.bottom,
+      gap
+    );
+    const overlapsCaret = caretRect
+      ? verticalRangesOverlap(panelTop, panelBottom, caretRect.top, caretRect.bottom, gap)
+      : false;
+
+    const anchorCenter = anchor.top + anchor.height / 2;
+    const coversAnchor =
+      panelTop <= anchorCenter && panelBottom >= anchorCenter;
+
+    const overlapPenalty =
+      (overlapsEditor ? 10_000 : 0) +
+      (overlapsCaret ? 5_000 : 0) +
+      (coversAnchor ? 3_000 : 0);
+
+    const distanceFromAnchor = Math.abs(panelTop + panelHeight / 2 - anchorCenter);
+    const bottomBias = (maxTop - panelTop) * 0.35;
+    const score = overlapPenalty + distanceFromAnchor - bottomBias;
+
+    if (score < bestScore) {
+      bestScore = score;
+      bestTop = panelTop;
+    }
+  }
+
+  return bestTop;
+}
+
 function clampFontSize(size: number): number {
   if (!Number.isFinite(size)) return DEFAULT_FONT_SIZE;
   return Math.min(MAX_FONT_SIZE, Math.max(MIN_FONT_SIZE, Math.round(size)));
@@ -183,6 +269,13 @@ const FormatPanel = forwardRef<
     onAlignRight?: () => void;
     onBulletList?: () => void;
     onNumberedList?: () => void;
+    mobileToolbar?: {
+      minimized: boolean;
+      onToggleMinimize: () => void;
+      verticalOffset: number;
+      maxVerticalOffset: number;
+      onVerticalOffsetChange: (value: number) => void;
+    };
   }
 >(function FormatPanel(
   {
@@ -200,6 +293,7 @@ const FormatPanel = forwardRef<
     onAlignRight,
     onBulletList,
     onNumberedList,
+    mobileToolbar,
   },
   ref
 ) {
@@ -223,6 +317,34 @@ const FormatPanel = forwardRef<
     if (next !== currentSize) onSize(next);
   };
 
+  const handleToolbarPointerDown = (e: React.PointerEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('input[type="range"]')) {
+      e.preventDefault();
+      onPreserveSelection();
+    }
+  };
+
+  if (mobileToolbar?.minimized) {
+    return (
+      <div
+        ref={ref}
+        style={panelStyle}
+        className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-2 text-slate-800 shadow-md dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+      >
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={mobileToolbar.onToggleMinimize}
+          className="text-[14px] font-medium text-slate-700 dark:text-slate-200"
+          title="Pokaż panel formatowania"
+        >
+          Formatowanie ▲
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={ref}
@@ -245,6 +367,35 @@ const FormatPanel = forwardRef<
         onPreserveSelection();
       }}
     >
+      {mobileToolbar ? (
+        <div
+          className="mb-1 flex items-center gap-1.5 border-b border-slate-100 pb-1 dark:border-slate-700"
+          onPointerDown={handleToolbarPointerDown}
+        >
+          <label className="flex min-w-0 flex-1 items-center gap-1.5">
+            <span className="shrink-0 text-[10px] font-medium text-slate-400">Pozycja</span>
+            <input
+              type="range"
+              min={0}
+              max={Math.max(0, mobileToolbar.maxVerticalOffset)}
+              value={Math.min(mobileToolbar.verticalOffset, mobileToolbar.maxVerticalOffset)}
+              onChange={(e) => mobileToolbar.onVerticalOffsetChange(Number(e.target.value))}
+              className="min-w-0 flex-1 accent-blue-600"
+              aria-label="Pozycja panelu formatowania"
+            />
+          </label>
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={mobileToolbar.onToggleMinimize}
+            className="shrink-0 rounded px-1.5 py-0.5 text-[13px] font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+            title="Ukryj panel formatowania"
+            aria-label="Ukryj panel formatowania"
+          >
+            ▼
+          </button>
+        </div>
+      ) : null}
       <button
         type="button"
         onClick={onBold}
@@ -395,6 +546,10 @@ export function FormattedEditor({
   const emitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [focused, setFocused] = useState(false);
   const [panelStyle, setPanelStyle] = useState<CSSProperties>({});
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobilePanelMinimized, setMobilePanelMinimized] = useState(false);
+  const [mobilePanelOffset, setMobilePanelOffset] = useState(0);
+  const [mobilePanelMaxOffset, setMobilePanelMaxOffset] = useState(0);
   const [selectionFontSize, setSelectionFontSize] = useState(fontSize);
   const selectionFontSizeRef = useRef(fontSize);
   selectionFontSizeRef.current = selectionFontSize;
@@ -453,36 +608,80 @@ export function FormattedEditor({
     const panel = panelRef.current;
     const { top, left, width, height } = getVisualViewportBox();
     const mobile = isMobileViewport(width);
-    const panelHeight = panel?.offsetHeight ?? (mobile ? 220 : 280);
-    const panelWidth = panel?.offsetWidth ?? (compact ? 160 : extendedFormatting ? 184 : 176);
+    const minimized = mobile && mobilePanelMinimized;
+    const panelHeight = minimized
+      ? 44
+      : (panel?.offsetHeight ?? (mobile ? 220 : 280));
+    const panelWidth = minimized
+      ? undefined
+      : (panel?.offsetWidth ?? (compact ? 160 : extendedFormatting ? 184 : 176));
     const gap = VIEWPORT_MARGIN;
 
     if (mobile) {
       const maxWidth = width - gap * 2;
-      const resolvedWidth = Math.min(panelWidth, maxWidth);
-      const panelTop = top + height - panelHeight - gap;
+      const resolvedWidth = minimized
+        ? undefined
+        : Math.min(panelWidth ?? 176, maxWidth);
+      const viewportBottom = top + height;
+      const bottomAnchoredTop = viewportBottom - panelHeight - gap;
+
+      let panelTop = bottomAnchoredTop;
+      if (!minimized && el) {
+        const editorRect = el.getBoundingClientRect();
+        const caretRect = getCaretClientRect(el);
+        const minTop = top + gap;
+        const idealTop = computeIdealMobilePanelTop(
+          top,
+          viewportBottom,
+          panelHeight,
+          editorRect,
+          caretRect,
+          gap
+        );
+        const maxManualUp = Math.max(0, Math.round(idealTop - minTop));
+        setMobilePanelMaxOffset(maxManualUp);
+        const manualUp = Math.min(mobilePanelOffset, maxManualUp);
+        panelTop = idealTop - manualUp;
+
+        const panelBottom = panelTop + panelHeight;
+        const clearLine = panelTop - gap;
+        if (editorRect.bottom > clearLine) {
+          window.scrollBy({
+            top: editorRect.bottom - clearLine + gap,
+            behavior: "smooth",
+          });
+        } else if (editorRect.top < top + gap) {
+          window.scrollBy({
+            top: editorRect.top - top - gap,
+            behavior: "smooth",
+          });
+        }
+
+        if (caretRect && caretRect.bottom > clearLine && caretRect.top < panelBottom) {
+          const caretCenter = caretRect.top + caretRect.height / 2;
+          if (caretCenter >= panelTop && caretCenter <= panelBottom) {
+            window.scrollBy({
+              top: caretRect.bottom - clearLine + gap,
+              behavior: "smooth",
+            });
+          }
+        }
+      } else if (minimized) {
+        setMobilePanelMaxOffset(0);
+        panelTop = bottomAnchoredTop;
+      }
 
       setPanelStyle({
         position: "fixed",
         top: panelTop,
-        left: left + (width - resolvedWidth) / 2,
+        left: minimized ? left + width / 2 : left + (width - (resolvedWidth ?? 0)) / 2,
         width: resolvedWidth,
         right: "auto",
-        transform: "none",
+        transform: minimized ? "translateX(-50%)" : "none",
         zIndex: 9999,
-        maxHeight: Math.max(120, height - gap * 3),
-        overflowY: "auto",
+        maxHeight: minimized ? undefined : Math.max(120, height - gap * 3),
+        overflowY: minimized ? "visible" : "auto",
       });
-
-      if (el) {
-        const editorRect = el.getBoundingClientRect();
-        const clearBottom = panelTop - gap;
-        if (editorRect.bottom > clearBottom) {
-          window.scrollBy({ top: editorRect.bottom - clearBottom, behavior: "smooth" });
-        } else if (editorRect.top < top + gap) {
-          window.scrollBy({ top: editorRect.top - top - gap, behavior: "smooth" });
-        }
-      }
       return;
     }
 
@@ -506,7 +705,14 @@ export function FormattedEditor({
       maxHeight: height - gap * 2,
       overflowY: "auto",
     });
-  }, [compact, extendedFormatting]);
+  }, [compact, extendedFormatting, mobilePanelMinimized, mobilePanelOffset]);
+
+  useLayoutEffect(() => {
+    const syncMobile = () => setIsMobile(isMobileViewport(window.innerWidth));
+    syncMobile();
+    window.addEventListener("resize", syncMobile);
+    return () => window.removeEventListener("resize", syncMobile);
+  }, []);
 
   useEffect(() => {
     // Never clobber DOM while the user is editing or applying formats.
@@ -549,7 +755,7 @@ export function FormattedEditor({
       window.removeEventListener("resize", reposition);
       window.removeEventListener("scroll", reposition, true);
     };
-  }, [focused, updatePanelPosition]);
+  }, [focused, updatePanelPosition, mobilePanelMinimized, mobilePanelOffset]);
 
   const emitNow = useCallback(() => {
     const el = ref.current;
@@ -763,9 +969,23 @@ export function FormattedEditor({
     const next = e.relatedTarget as Node | null;
     if (next && (wrapperRef.current?.contains(next) || panelRef.current?.contains(next))) return;
     setFocused(false);
+    setMobilePanelMinimized(false);
+    setMobilePanelOffset(0);
     selectionRangeRef.current = null;
     emit(true);
   };
+
+  const handleMobileOffsetChange = useCallback((value: number) => {
+    setMobilePanelOffset(value);
+    requestAnimationFrame(updatePanelPosition);
+  }, [updatePanelPosition]);
+
+  const toggleMobilePanelMinimized = useCallback(() => {
+    setMobilePanelMinimized((current) => !current);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(updatePanelPosition);
+    });
+  }, [updatePanelPosition]);
 
   const panel =
     focused && typeof document !== "undefined"
@@ -786,6 +1006,17 @@ export function FormattedEditor({
             onAlignRight={() => execBlockCommand("justifyRight")}
             onBulletList={() => execBlockCommand("insertUnorderedList")}
             onNumberedList={() => execBlockCommand("insertOrderedList")}
+            mobileToolbar={
+              isMobile
+                ? {
+                    minimized: mobilePanelMinimized,
+                    onToggleMinimize: toggleMobilePanelMinimized,
+                    verticalOffset: mobilePanelOffset,
+                    maxVerticalOffset: mobilePanelMaxOffset,
+                    onVerticalOffsetChange: handleMobileOffsetChange,
+                  }
+                : undefined
+            }
           />,
           document.body
         )
@@ -829,7 +1060,7 @@ export function FormattedEditor({
           multiline
             ? `min-h-[1.5em] break-words ${extendedFormatting ? "whitespace-normal" : "whitespace-pre-wrap"}`
             : "min-h-[1.25em] overflow-hidden whitespace-nowrap"
-        } ${className}`}
+        } ${focused && isMobile ? "scroll-mb-[14rem]" : ""} ${className}`}
       />
 
       {panel}
