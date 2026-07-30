@@ -11,7 +11,7 @@ import { TimePickerCell } from "@/components/TimePickerCell";
 import { FormattedEditor } from "@/components/FormattedEditor";
 import { FloatingTodayCalendar } from "@/components/FloatingTodayCalendar";
 import { FitWidthScale } from "@/components/FitWidthScale";
-import { stripHtml, adaptHtmlColorsForTheme } from "@/lib/text-format";
+import { stripHtml } from "@/lib/text-format";
 import { formatDatePL, toDateInputValue } from "@/lib/date-utils";
 import { resolvePhysioRowColor, physioShortName } from "@/lib/physio-utils";
 import {
@@ -389,8 +389,6 @@ function MasazeContent({ data }: { data: AppData }) {
   const activeRows = displayActiveRows(sortedActive);
   const scheduleHours = massages.scheduleHours ?? "7:45-13:45";
   const headerNote = massages.headerNote ?? "";
-  const hasHeaderNote = Boolean(stripHtml(headerNote));
-  const headerNoteIsHtml = /<[a-z][\s\S]*>/i.test(headerNote);
 
   const updateMassages = (patch: Partial<typeof massages>) => {
     const current = dataRef.current;
@@ -551,24 +549,17 @@ function MasazeContent({ data }: { data: AppData }) {
           />
           <span aria-hidden="true">💆</span>
         </div>
-        {headerNoteIsHtml ? (
-          <div
-            className="mx-auto mt-1 max-w-2xl text-center text-[19px] font-bold text-red-600 underline decoration-red-600 dark:text-red-400 dark:decoration-red-400"
-            dangerouslySetInnerHTML={{
-              __html: adaptHtmlColorsForTheme(headerNote, theme),
-            }}
-          />
-        ) : (
-          <Input
+        <div className="mx-auto mt-1 max-w-2xl">
+          <FormattedEditor
             value={headerNote}
             onChange={(headerNote) => updateMassages({ headerNote })}
-            className={`mx-auto mt-1 max-w-2xl !border-0 !bg-transparent text-center text-[19px] focus:!ring-0 ${
-              hasHeaderNote
-                ? "font-bold text-red-600 underline decoration-red-600 dark:text-red-400 dark:decoration-red-400"
-                : "text-slate-400"
+            placeholder="Notatka (np. urlop)"
+            fontSize={19}
+            className={`border-0 bg-transparent px-1 py-0.5 text-center text-[19px] focus:outline-none ${
+              isDark ? "text-slate-100" : "text-slate-900"
             }`}
           />
-        )}
+        </div>
       </div>
 
       <div className="relative flex justify-center">
