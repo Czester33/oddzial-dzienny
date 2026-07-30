@@ -18,6 +18,7 @@ import {
   applyMassageSync,
   buildPlannedHourChange,
   formatFreePlacesLabel,
+  formatPlannedHourChangeLabel,
   getNearestFreeMassageSlots,
   hasMassageSyncChanges,
   MAX_MASSAGES_PER_DAY,
@@ -41,10 +42,10 @@ const CELL_DARK = "border border-slate-600 px-2 py-1.5";
 const TH_LIGHT = `${CELL_LIGHT} bg-[#ff8c2a] text-center font-bold text-slate-900 select-none`;
 const TH_DARK = `${CELL_DARK} bg-[#7a4a2e] text-center font-bold text-amber-50 select-none`;
 /** Active: lp + pacjent + godzina + do kiedy + od kogo */
-const ACTIVE_COL_WIDTHS = [48, 520, 144, 144, 160] as const;
+const ACTIVE_COL_WIDTHS = [48, 520, 220, 144, 160] as const;
 const TABLE_WIDTH = ACTIVE_COL_WIDTHS.reduce((sum, w) => sum + w, 0);
 /** Waiting: lp + pacjent + godzina + od kiedy + do kiedy + od kogo + dodaj */
-const WAITING_COL_WIDTHS = [48, 304, 144, 120, 120, 140, 140] as const;
+const WAITING_COL_WIDTHS = [48, 304, 220, 120, 120, 140, 140] as const;
 const WAITING_TABLE_WIDTH = WAITING_COL_WIDTHS.reduce((sum, w) => sum + w, 0);
 const INPUT_CLASS_LIGHT =
   `w-full border-0 bg-transparent px-1 py-1 text-center ${MASSAGE_TABLE_TEXT} focus:bg-white/70`;
@@ -52,7 +53,8 @@ const INPUT_CLASS_DARK =
   `w-full border-0 bg-transparent px-1 py-1 text-center ${MASSAGE_TABLE_TEXT} text-slate-100 focus:bg-slate-800/80`;
 const TIME_INPUT_CLASS = `w-full border-0 bg-transparent px-0.5 py-0.5 text-center ${MASSAGE_TABLE_TEXT} tabular-nums text-inherit focus:bg-black/10 focus:outline-none`;
 const PLANNED_HOUR_GLOW =
-  "rounded shadow-[0_0_10px_3px_rgba(250,204,21,0.85)] ring-2 ring-yellow-400/70";
+  "rounded shadow-[inset_0_0_8px_2px_rgba(250,204,21,0.75)] ring-2 ring-inset ring-yellow-400/70";
+const PLANNED_HOUR_LABEL_CLASS = `${TIME_INPUT_CLASS} whitespace-nowrap px-1 tracking-tight`;
 
 type HourChangeList = "active" | "waiting";
 
@@ -81,8 +83,10 @@ function MassageHourCell({
   onPlanClick: () => void;
   onHourChange: (hour: string) => void;
 }) {
+  const [editingCurrentHour, setEditingCurrentHour] = useState(false);
+  const label = formatPlannedHourChangeLabel(patient);
   const tooltip = plannedHourChangeTooltip(patient);
-  const glowWrap = tooltip ? PLANNED_HOUR_GLOW : "";
+  const glowWrap = label ? PLANNED_HOUR_GLOW : "";
 
   if (hourChangeMode && editable) {
     return (
@@ -90,15 +94,36 @@ function MassageHourCell({
         type="button"
         onClick={onPlanClick}
         title={tooltip}
-        className={`w-full cursor-pointer tabular-nums ${TIME_INPUT_CLASS} ${glowWrap}`}
+        className={`w-full cursor-pointer ${PLANNED_HOUR_LABEL_CLASS} ${glowWrap}`}
       >
-        {patient.hour || "—"}
+        {label ?? (patient.hour || "—")}
+      </button>
+    );
+  }
+
+  if (label && !editingCurrentHour) {
+    return (
+      <button
+        type="button"
+        title={tooltip}
+        onClick={() => setEditingCurrentHour(true)}
+        className={`w-full cursor-text ${PLANNED_HOUR_LABEL_CLASS} ${glowWrap}`}
+      >
+        {label}
       </button>
     );
   }
 
   return (
-    <div title={tooltip} className={glowWrap}>
+    <div
+      title={tooltip}
+      className={glowWrap}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          setEditingCurrentHour(false);
+        }
+      }}
+    >
       <TimePickerCell
         value={patient.hour}
         onChange={onHourChange}

@@ -348,13 +348,23 @@ export function isFuturePlannedHourChange(
   return planned.effectiveDate > getTodayIso(now);
 }
 
-export function plannedHourChangeTooltip(
-  patient: { plannedHourChange?: MassageHourChange },
+export function formatPlannedHourChangeLabel(
+  patient: { hour: string; plannedHourChange?: MassageHourChange },
   now = new Date()
 ): string | undefined {
   const planned = normalizePlannedHourChange(patient.plannedHourChange);
   if (!planned || !isFuturePlannedHourChange(patient, now)) return undefined;
-  return `Zmiana od ${formatDatePL(planned.effectiveDate)}: ${planned.hour}`;
+  const oldHour = (patient.hour ?? "").trim() || "—";
+  return `${oldHour} ➡️ ${planned.hour}`;
+}
+
+export function plannedHourChangeTooltip(
+  patient: { hour: string; plannedHourChange?: MassageHourChange },
+  now = new Date()
+): string | undefined {
+  const planned = normalizePlannedHourChange(patient.plannedHourChange);
+  if (!planned || !isFuturePlannedHourChange(patient, now)) return undefined;
+  return `Od ${formatDatePL(planned.effectiveDate)}: ${planned.hour}`;
 }
 
 function applyPlannedHourChangesToPatient<T extends MassagePatient | MassageWaiting>(
