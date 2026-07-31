@@ -84,9 +84,20 @@ function MassageHourCell({
   onHourChange: (hour: string) => void;
 }) {
   const [editingCurrentHour, setEditingCurrentHour] = useState(false);
+  const cellRef = useRef<HTMLDivElement>(null);
   const label = formatPlannedHourChangeLabel(patient);
   const tooltip = plannedHourChangeTooltip(patient);
   const glowWrap = label ? PLANNED_HOUR_GLOW : "";
+
+  useEffect(() => {
+    if (!editingCurrentHour) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (cellRef.current?.contains(event.target as Node)) return;
+      setEditingCurrentHour(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [editingCurrentHour]);
 
   if (hourChangeMode && editable) {
     return (
@@ -116,6 +127,7 @@ function MassageHourCell({
 
   return (
     <div
+      ref={cellRef}
       title={tooltip}
       className={glowWrap}
       onBlur={(e) => {
@@ -129,6 +141,7 @@ function MassageHourCell({
         onChange={onHourChange}
         scheduleHours={scheduleHours}
         className={TIME_INPUT_CLASS}
+        autoFocus={Boolean(label && editingCurrentHour)}
       />
     </div>
   );

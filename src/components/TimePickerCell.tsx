@@ -99,11 +99,13 @@ export function TimePickerCell({
   value,
   onChange,
   className = INPUT_CLASS,
+  autoFocus = false,
 }: {
   value?: string;
   onChange: (v: string) => void;
   scheduleHours?: string;
   className?: string;
+  autoFocus?: boolean;
 }) {
   const safeValue = value ?? "";
   const [draft, setDraft] = useState(safeValue);
@@ -125,6 +127,7 @@ export function TimePickerCell({
       type="text"
       inputMode="numeric"
       maxLength={5}
+      autoFocus={autoFocus}
       value={focused ? draft : displayValue}
       onFocus={() => {
         setDraft(displayValue);
