@@ -335,8 +335,7 @@ export default function NotatnikPage() {
                     </p>
                     <p className="mb-2 text-[13px] text-slate-400 dark:text-slate-500">
                       Kliknij pole, aby formatować tekst. Enter kontynuuje numerowanie (1. → 2.).
-                      Tab tworzy podpunkt na liście. Po przerwie wpisz 1. i spację — numer się
-                      podpowie.
+                      Po przerwie wpisz 1. — kropka podpowie kolejny numer (np. 3.). Tab = podpunkt z kropką.
                     </p>
                     <FormattedEditor
                       key={`edit-${selectedNote.id}`}

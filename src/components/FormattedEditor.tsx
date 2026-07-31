@@ -172,15 +172,21 @@ function parseFontSizePx(value: string): number | null {
 
 const MANUAL_NUMBER_LINE = /^(\s*)(\d+)\.\s*(.*)$/;
 
+function getPlainTextBeforeRange(root: HTMLElement, endContainer: Node, endOffset: number): string {
+  const pre = document.createRange();
+  pre.selectNodeContents(root);
+  pre.setEnd(endContainer, endOffset);
+  const measure = document.createElement("div");
+  measure.appendChild(pre.cloneContents());
+  return measure.innerText.replace(/\r/g, "");
+}
+
 function getCaretTextOffset(root: HTMLElement): number {
   const sel = window.getSelection();
   if (!sel?.rangeCount) return 0;
   const range = sel.getRangeAt(0);
   if (!root.contains(range.startContainer)) return 0;
-  const pre = range.cloneRange();
-  pre.selectNodeContents(root);
-  pre.setEnd(range.startContainer, range.startOffset);
-  return pre.toString().length;
+  return getPlainTextBeforeRange(root, range.startContainer, range.startOffset).length;
 }
 
 function getLineAtTextOffset(text: string, offset: number) {
@@ -191,13 +197,115 @@ function getLineAtTextOffset(text: string, offset: number) {
   return { lineStart, line };
 }
 
-function findMaxManualNumberBeforeLine(text: string, lineStart: number): number {
+function findMaxOlNumberBeforeCaret(root: HTMLElement): number {
+  const sel = window.getSelection();
+  if (!sel?.rangeCount) return 0;
+  const anchor = sel.anchorNode;
+  if (!anchor || !root.contains(anchor)) return 0;
+
   let max = 0;
-  for (const line of text.slice(0, lineStart).split("\n")) {
-    const match = line.match(/^\s*(\d+)\.\s/);
-    if (match) max = Math.max(max, Number(match[1]));
-  }
+  root.querySelectorAll("ol").forEach((ol) => {
+    if (!root.contains(ol)) return;
+    const items = Array.from(ol.children).filter((c) => c.tagName === "LI");
+    items.forEach((li, idx) => {
+      if (li === anchor || li.contains(anchor)) return;
+      const position = anchor.compareDocumentPosition(li);
+      if (position & Node.DOCUMENT_POSITION_PRECEDING) {
+        max = Math.max(max, idx + 1);
+      }
+    });
+  });
   return max;
+}
+
+function getDirectChildOfRoot(node: Node | null, root: HTMLElement): HTMLElement | null {
+  let el: HTMLElement | null = node instanceof HTMLElement ? node : node?.parentElement ?? null;
+  while (el && el.parentElement && el.parentElement !== root) {
+    el = el.parentElement;
+  }
+  if (el && el.parentElement === root) return el;
+  return null;
+}
+
+function getNodeLineText(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) return (node.textContent ?? "").replace(/\r/g, "");
+  if (node instanceof HTMLElement) return node.innerText.replace(/\r/g, "");
+  return "";
+}
+
+function findLastNumberedLineBlock(root: HTMLElement): HTMLElement | null {
+  const sel = window.getSelection();
+  if (!sel?.rangeCount) return null;
+  const caretNode = sel.anchorNode;
+  if (!caretNode || !root.contains(caretNode)) return null;
+
+  const children = Array.from(root.childNodes);
+  let caretChildIndex = children.findIndex((child) => child.contains(caretNode) || child === caretNode);
+  if (caretChildIndex < 0) caretChildIndex = children.length;
+
+  for (let i = caretChildIndex - 1; i >= 0; i--) {
+    const child = children[i];
+    const text = getNodeLineText(child).split("\n")[0] ?? "";
+    if (/^\s*\d+\.\s/.test(text)) {
+      return child instanceof HTMLElement ? child : child.parentElement;
+    }
+  }
+  return null;
+}
+
+function syncBlockIndentFromReference(root: HTMLElement, reference: HTMLElement) {
+  const sel = window.getSelection();
+  if (!sel?.rangeCount) return;
+  const currentBlock = getDirectChildOfRoot(sel.anchorNode, root);
+  if (!currentBlock || currentBlock === reference) return;
+
+  const refStyle = window.getComputedStyle(reference);
+  currentBlock.style.marginLeft = refStyle.marginLeft;
+  currentBlock.style.paddingLeft = refStyle.paddingLeft;
+  currentBlock.style.textIndent = refStyle.textIndent;
+}
+
+function getCurrentLineIndex(root: HTMLElement, currentLine: string): number {
+  const lines = root.innerText.replace(/\r/g, "").split("\n");
+  if (!currentLine) return lines.length - 1;
+
+  let lastMatch = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i] === currentLine) lastMatch = i;
+  }
+  return lastMatch >= 0 ? lastMatch : lines.length - 1;
+}
+
+function findManualNumberingContext(root: HTMLElement): {
+  maxNumber: number;
+  textIndent: string;
+  referenceBlock: HTMLElement | null;
+} {
+  const fullText = root.innerText.replace(/\r/g, "");
+  const lines = fullText.split("\n");
+  const lineRange = getLineRangeAtCaret(root);
+  const currentLine = lineRange?.toString() ?? "";
+  const currentLineIndex = getCurrentLineIndex(root, currentLine);
+
+  let max = 0;
+  let textIndent = "";
+  for (let i = 0; i < currentLineIndex; i++) {
+    const match = lines[i].match(/^(\s*)(\d+)\.\s*/);
+    if (match) {
+      max = Math.max(max, Number(match[2]));
+      textIndent = match[1];
+    }
+  }
+
+  return {
+    maxNumber: Math.max(max, findMaxOlNumberBeforeCaret(root)),
+    textIndent,
+    referenceBlock: findLastNumberedLineBlock(root),
+  };
+}
+
+function findMaxManualNumberBeforeCurrentLine(root: HTMLElement): number {
+  return findManualNumberingContext(root).maxNumber;
 }
 
 function isInOrderedListItem(node: Node, root: HTMLElement): boolean {
@@ -208,6 +316,151 @@ function isInOrderedListItem(node: Node, root: HTMLElement): boolean {
   }
   return false;
 }
+
+function findListItem(node: Node | null, root: HTMLElement): HTMLLIElement | null {
+  let el: HTMLElement | null = node instanceof HTMLElement ? node : node?.parentElement ?? null;
+  while (el && el !== root) {
+    if (el.tagName === "LI") return el as HTMLLIElement;
+    el = el.parentElement;
+  }
+  return null;
+}
+
+function convertNestedOlToUl(root: HTMLElement) {
+  root.querySelectorAll("ol li ol").forEach((nestedOl) => {
+    const ul = document.createElement("ul");
+    while (nestedOl.firstChild) {
+      ul.appendChild(nestedOl.firstChild);
+    }
+    nestedOl.replaceWith(ul);
+  });
+}
+
+function getLineRangeAtCaret(root: HTMLElement): Range | null {
+  const sel = window.getSelection();
+  if (!sel?.rangeCount || !sel.isCollapsed) return null;
+  const anchor = sel.anchorNode;
+  if (!anchor || !root.contains(anchor)) return null;
+  if (typeof sel.modify !== "function") return null;
+
+  const saved = sel.getRangeAt(0).cloneRange();
+  sel.modify("move", "backward", "lineboundary");
+  const lineStart = sel.getRangeAt(0).cloneRange();
+  sel.modify("move", "forward", "lineboundary");
+  const lineEnd = sel.getRangeAt(0).cloneRange();
+  lineStart.setEnd(lineEnd.startContainer, lineEnd.startOffset);
+  sel.removeAllRanges();
+  sel.addRange(saved);
+  return lineStart;
+}
+
+function getCurrentLineContext(root: HTMLElement): {
+  line: string;
+  lineStart: number;
+  fullText: string;
+} | null {
+  const fullText = root.innerText.replace(/\r/g, "");
+  const lineRange = getLineRangeAtCaret(root);
+  let line = lineRange?.toString() ?? "";
+
+  if (!line) {
+    const nearOffset = getCaretTextOffset(root);
+    const fallback = getLineAtTextOffset(fullText, nearOffset);
+    return { line: fallback.line, lineStart: fallback.lineStart, fullText };
+  }
+
+  const lines = fullText.split("\n");
+  let lineStart = 0;
+  let lastMatch = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i] === line) lastMatch = i;
+  }
+  if (lastMatch >= 0) {
+    lineStart = lastMatch > 0 ? lines.slice(0, lastMatch).join("\n").length + 1 : 0;
+  } else {
+    const nearOffset = getCaretTextOffset(root);
+    const fallback = getLineAtTextOffset(fullText, nearOffset);
+    lineStart = fallback.lineStart;
+    line = fallback.line;
+  }
+
+  return { line, lineStart, fullText };
+}
+
+function continueManualNumberFromOne(
+  root: HTMLElement,
+  currentLineIndent: string,
+  charsToDeleteBeforeCaret: number
+): boolean {
+  const ctx = findManualNumberingContext(root);
+  if (ctx.maxNumber < 1) return false;
+
+  deleteCharsBeforeCaret(charsToDeleteBeforeCaret);
+
+  const textIndent = ctx.textIndent || currentLineIndent;
+  const prefix = textIndent.length > 0 ? `${textIndent}${ctx.maxNumber + 1}. ` : `${ctx.maxNumber + 1}. `;
+  document.execCommand("insertText", false, prefix);
+
+  if (textIndent.length === 0 && ctx.referenceBlock) {
+    syncBlockIndentFromReference(root, ctx.referenceBlock);
+  }
+  return true;
+}
+
+function replaceLinePrefixAtCaret(
+  root: HTMLElement,
+  prefixPattern: RegExp,
+  buildPrefix: (match: RegExpMatchArray) => string
+): boolean {
+  const sel = window.getSelection();
+  if (!sel?.rangeCount || typeof sel.modify !== "function") return false;
+
+  const lineRange = getLineRangeAtCaret(root);
+  if (!lineRange) return false;
+
+  const line = lineRange.toString();
+  const match = line.match(prefixPattern);
+  if (!match || match.index !== 0) return false;
+
+  sel.removeAllRanges();
+  sel.addRange(lineRange);
+  lineRange.collapse(true);
+  sel.removeAllRanges();
+  sel.addRange(lineRange);
+  for (let i = 0; i < match[0].length; i++) {
+    sel.modify("extend", "forward", "character");
+  }
+  document.execCommand("insertText", false, buildPrefix(match));
+  return true;
+}
+
+function nestOlItemAsBulletSublist(root: HTMLElement, li: HTMLLIElement): Range | null {
+  const prevLi = li.previousElementSibling;
+  if (prevLi && prevLi.tagName === "LI") {
+    let subList = prevLi.querySelector(":scope > ul");
+    if (!subList) {
+      subList = document.createElement("ul");
+      prevLi.appendChild(subList);
+    }
+    subList.appendChild(li);
+    const range = document.createRange();
+    range.selectNodeContents(li);
+    range.collapse(false);
+    return range;
+  }
+
+  document.execCommand("indent");
+  convertNestedOlToUl(root);
+  const sel = window.getSelection();
+  const nestedLi = findListItem(sel?.anchorNode ?? null, root);
+  if (!nestedLi) return null;
+  const range = document.createRange();
+  range.selectNodeContents(nestedLi);
+  range.collapse(false);
+  return range;
+}
+
+const LIST_SUB_INDENT = "    ";
 
 function deleteCharsBeforeCaret(count: number): boolean {
   const sel = window.getSelection();
@@ -1269,11 +1522,11 @@ export function FormattedEditor({
       return;
     }
 
-    const text = el.innerText.replace(/\r/g, "");
-    const offset = getCaretTextOffset(el);
-    const { lineStart, line } = getLineAtTextOffset(text, offset);
+    const ctx = getCurrentLineContext(el);
+    if (!ctx) return;
+    const { line } = ctx;
     const current = line.match(MANUAL_NUMBER_LINE);
-    const maxBefore = findMaxManualNumberBeforeLine(text, lineStart);
+    const numCtx = findManualNumberingContext(el);
 
     formattingRef.current = true;
 
@@ -1281,16 +1534,18 @@ export function FormattedEditor({
       const [, indent, numStr, rest] = current;
       const num = Number(numStr);
       const hasContent = rest.trim().length > 0;
-      if (!hasContent && num === 1 && maxBefore >= 1) {
-        deleteCharsBeforeCaret(2);
-        insertManualNumberPrefix(`${indent}${maxBefore + 1}. `);
+      if (!hasContent && num === 1 && numCtx.maxNumber >= 1) {
+        continueManualNumberFromOne(el, indent, 2);
       } else {
         insertManualNumberPrefix(`\n${indent}${num + 1}. `);
       }
     } else {
-      const indent = line.match(/^(\s*)/)?.[1] ?? "";
-      const nextNum = Math.max(maxBefore, 0) + 1;
+      const indent = numCtx.textIndent || (line.match(/^(\s*)/)?.[1] ?? "");
+      const nextNum = numCtx.maxNumber + 1;
       insertManualNumberPrefix(`${line.length > 0 ? "\n" : ""}${indent}${nextNum}. `);
+      if (indent.length === 0 && numCtx.referenceBlock) {
+        syncBlockIndentFromReference(el, numCtx.referenceBlock);
+      }
     }
 
     formattingRef.current = false;
@@ -1306,9 +1561,9 @@ export function FormattedEditor({
       if (!sel?.rangeCount || !sel.isCollapsed) return false;
       if (isInOrderedListItem(sel.anchorNode ?? el, el)) return false;
 
-      const text = el.innerText.replace(/\r/g, "");
-      const offset = getCaretTextOffset(el);
-      const { lineStart, line } = getLineAtTextOffset(text, offset);
+      const ctx = getCurrentLineContext(el);
+      if (!ctx) return false;
+      const { line } = ctx;
 
       if (e.key === "Enter" && !e.shiftKey) {
         const match = line.match(MANUAL_NUMBER_LINE);
@@ -1316,23 +1571,153 @@ export function FormattedEditor({
         e.preventDefault();
         const nextNum = Number(match[2]) + 1;
         insertManualNumberPrefix(`\n${match[1]}${nextNum}. `);
+        if (match[1].length === 0) {
+          const ref = findLastNumberedLineBlock(el);
+          if (ref) {
+            requestAnimationFrame(() => syncBlockIndentFromReference(el, ref));
+          }
+        }
+        return true;
+      }
+
+      if (e.key === ".") {
+        const restart = line.match(/^(\s*)1$/);
+        if (!restart) return false;
+        e.preventDefault();
+        if (continueManualNumberFromOne(el, restart[1], 1)) {
+          emit(true);
+          updateSelectionState();
+          return true;
+        }
+        document.execCommand("insertText", false, ".");
+        emit(true);
+        updateSelectionState();
         return true;
       }
 
       if (e.key === " ") {
         const restart = line.match(/^(\s*)1\.$/);
         if (!restart) return false;
-        const maxBefore = findMaxManualNumberBeforeLine(text, lineStart);
-        if (maxBefore < 1) return false;
         e.preventDefault();
-        deleteCharsBeforeCaret(2);
-        insertManualNumberPrefix(`${restart[1]}${maxBefore + 1}. `);
+        if (continueManualNumberFromOne(el, restart[1], 2)) {
+          emit(true);
+          updateSelectionState();
+          return true;
+        }
+        document.execCommand("insertText", false, " ");
+        emit(true);
+        updateSelectionState();
         return true;
       }
 
       return false;
     },
-    [extendedFormatting, multiline, insertManualNumberPrefix]
+    [extendedFormatting, multiline, insertManualNumberPrefix, emit, updateSelectionState]
+  );
+
+  const tryAutoContinueManualNumbering = useCallback(() => {
+    const el = ref.current;
+    if (!el || !extendedFormatting || !multiline || formattingRef.current) return;
+
+    const sel = window.getSelection();
+    if (!sel?.rangeCount || !sel.isCollapsed) return;
+    if (isInOrderedListItem(sel.anchorNode ?? el, el)) return;
+
+    const lineRange = getLineRangeAtCaret(el);
+    if (!lineRange) return;
+    const line = lineRange.toString();
+    const restart = line.match(/^(\s*)1\.$/);
+    if (!restart) return;
+    if (findMaxManualNumberBeforeCurrentLine(el) < 1) return;
+
+    formattingRef.current = true;
+    if (continueManualNumberFromOne(el, restart[1], 2)) {
+      emit(true);
+      requestAnimationFrame(() => {
+        formattingRef.current = false;
+        updateSelectionState();
+      });
+    } else {
+      formattingRef.current = false;
+    }
+  }, [extendedFormatting, multiline, emit, updateSelectionState]);
+
+  const handleListTabKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (!extendedFormatting || !multiline || e.key !== "Tab") return false;
+      const el = ref.current;
+      if (!el) return false;
+
+      if (e.shiftKey) {
+        e.preventDefault();
+        execBlockCommand("outdent");
+        return true;
+      }
+
+      const sel = window.getSelection();
+      const anchor = sel?.anchorNode;
+      if (!anchor) return false;
+
+      const li = findListItem(anchor, el);
+      const parentList = li?.parentElement;
+
+      if (parentList?.tagName === "OL") {
+        e.preventDefault();
+        formattingRef.current = true;
+        preserveSelection();
+        el.focus();
+        restoreSelection();
+        const nextRange = li ? nestOlItemAsBulletSublist(el, li) : null;
+        emit(true);
+        finishFormatting(nextRange);
+        return true;
+      }
+
+      if (parentList?.tagName === "UL") {
+        e.preventDefault();
+        execBlockCommand("indent");
+        return true;
+      }
+
+      if (
+        replaceLinePrefixAtCaret(el, /^(\s*\d+\.\s*)/, (match) => {
+          const indent = match[1].match(/^(\s*)/)?.[1] ?? "";
+          return `${indent}${LIST_SUB_INDENT}• `;
+        })
+      ) {
+        e.preventDefault();
+        formattingRef.current = true;
+        emit(true);
+        finishFormatting(selectionRangeRef.current);
+        return true;
+      }
+
+      if (
+        replaceLinePrefixAtCaret(el, /^(\s*•\s*)/, (match) => {
+          const indent = match[1].match(/^(\s*)/)?.[1] ?? "";
+          return `${indent}${LIST_SUB_INDENT}• `;
+        })
+      ) {
+        e.preventDefault();
+        formattingRef.current = true;
+        emit(true);
+        finishFormatting(selectionRangeRef.current);
+        return true;
+      }
+
+      e.preventDefault();
+      execBlockCommand("indent");
+      return true;
+    },
+    [
+      extendedFormatting,
+      multiline,
+      execBlockCommand,
+      emit,
+      finishFormatting,
+      preserveSelection,
+      restoreSelection,
+    ]
   );
 
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
@@ -1471,17 +1856,19 @@ export function FormattedEditor({
         }}
         onBlur={handleBlur}
         onPaste={handlePaste}
-        onInput={() => emit()}
+        onInput={() => {
+          tryAutoContinueManualNumbering();
+          emit();
+        }}
         onKeyDown={(e) => {
           if (handleManualNumberKeyDown(e)) return;
-          if (!extendedFormatting || !multiline || e.key !== "Tab") return;
-          e.preventDefault();
-          execBlockCommand(e.shiftKey ? "outdent" : "indent");
+          if (handleListTabKeyDown(e)) return;
         }}
         onMouseUp={() => {
           updateSelectionState();
         }}
         onKeyUp={() => {
+          tryAutoContinueManualNumbering();
           updateSelectionState();
         }}
         data-placeholder={placeholder}
