@@ -22,6 +22,7 @@ import {
 } from "@/lib/date-utils";
 import {
   physioDisplayName,
+  physiosForSelect,
   resolvePhysioColumnHeaderColor,
   resolvePhysioRowColor,
 } from "@/lib/physio-utils";
@@ -160,7 +161,7 @@ function DutyMonthTable({
     "block w-full rounded border px-2 py-1 text-center text-[19px] font-semibold leading-tight";
   const selectText = isDark ? "#f8fafc" : "#0f172a";
   const optionBg = isDark ? "#1e293b" : "#ffffff";
-  const dutyTileLabel = data.physiotherapists.reduce(
+  const dutyTileLabel = physiosForSelect(data).reduce(
     (longest, physio) =>
       physioDisplayName(physio.name).length > longest.length
         ? physioDisplayName(physio.name)
@@ -223,7 +224,7 @@ function DutyMonthTable({
             <option value="" style={{ backgroundColor: optionBg, color: selectText }}>
               —
             </option>
-            {data.physiotherapists.map((p) => (
+            {physiosForSelect(data, duty.physiotherapistId).map((p) => (
               <option
                 key={p.id}
                 value={p.id}

@@ -150,6 +150,7 @@ export default function FizjoterapeuciPage() {
   };
 
   const retiredPhysios = data.retiredPhysiotherapists ?? [];
+  const hiddenCount = data.physiotherapists.filter((p) => p.hidden).length;
 
   return (
     <div>
@@ -166,7 +167,13 @@ export default function FizjoterapeuciPage() {
         <>
           <p className="mb-3 text-[16px] text-slate-500 dark:text-slate-400">
             Przeciągnij za przycisk ⠿ w nagłówku kafelka, aby zmienić kolejność — ta sama kolejność
-            obowiązuje w tabelach „Obecni pacjenci”.
+            obowiązuje w tabelach „Obecni pacjenci”. „Ukryj” chowa kafelek z tabel pacjentów i list
+            wyboru (dane zostają).
+            {hiddenCount > 0 ? (
+              <span className="mt-1 block text-slate-400 dark:text-slate-500">
+                Ukrytych: {hiddenCount}
+              </span>
+            ) : null}
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {data.physiotherapists.map((physio, index) => {
@@ -197,7 +204,9 @@ export default function FizjoterapeuciPage() {
                   }}
                   className={`flex aspect-square flex-col overflow-hidden rounded-lg border shadow-sm ${
                     isDragging ? "opacity-50" : ""
-                  } ${isDropTarget ? "ring-2 ring-blue-400 ring-offset-2" : ""}`}
+                  } ${physio.hidden ? "opacity-60" : ""} ${
+                    isDropTarget ? "ring-2 ring-blue-400 ring-offset-2" : ""
+                  }`}
                   style={{
                     backgroundColor: tileBg,
                     borderColor: physio.color,
@@ -238,6 +247,9 @@ export default function FizjoterapeuciPage() {
                     </span>
                     <span className="truncate text-center text-[17px] font-semibold">
                       {physioDisplayName(physio.name) || `Fizjoterapeuta ${index + 1}`}
+                      {physio.hidden ? (
+                        <span className="ml-1 text-[13px] font-normal text-white/75">(ukryty)</span>
+                      ) : null}
                     </span>
                     <button
                       type="button"
@@ -274,7 +286,14 @@ export default function FizjoterapeuciPage() {
                       />
                     </div>
 
-                    <div className="mt-auto">
+                    <div className="mt-auto space-y-3">
+                      <button
+                        type="button"
+                        onClick={() => updatePhysio({ ...physio, hidden: !physio.hidden })}
+                        className="w-full rounded-md border border-slate-300/80 bg-white/70 px-2 py-1.5 text-[15px] font-medium text-slate-700 hover:bg-white dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-200 dark:hover:bg-slate-900/70"
+                      >
+                        {physio.hidden ? "Pokaż w tabelach" : "Ukryj z tabel"}
+                      </button>
                       <PhysioColorPicker
                         physio={physio}
                         onPickPreset={(i) => applyColorPreset(physio, i)}

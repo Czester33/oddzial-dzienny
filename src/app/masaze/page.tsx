@@ -13,7 +13,7 @@ import { FloatingTodayCalendar } from "@/components/FloatingTodayCalendar";
 import { FitWidthScale } from "@/components/FitWidthScale";
 import { stripHtml } from "@/lib/text-format";
 import { formatDatePL, toDateInputValue } from "@/lib/date-utils";
-import { resolvePhysioRowColor, physioShortName } from "@/lib/physio-utils";
+import { resolvePhysioRowColor, physioShortName, physiosForSelect } from "@/lib/physio-utils";
 import {
   applyMassageSync,
   buildPlannedHourChange,
@@ -224,8 +224,8 @@ function PlanHourChangeDialog({
   );
 }
 
-function physioOptions(data: AppData) {
-  return data.physiotherapists.map((p) => ({
+function physioOptions(data: AppData, selectedId = "") {
+  return physiosForSelect(data, selectedId).map((p) => ({
     value: p.id,
     label: physioShortName(p.name),
     color: p.color,
@@ -679,7 +679,7 @@ function MasazeContent({ data }: { data: AppData }) {
                           onChange={(physiotherapistId) =>
                             updateActivePatient({ ...p, physiotherapistId }, false)
                           }
-                          options={physioOptions(data)}
+                          options={physioOptions(data, p.physiotherapistId)}
                         />
                       </td>
                     </tr>
@@ -802,7 +802,7 @@ function MasazeContent({ data }: { data: AppData }) {
                       <PhysioSelect
                         value={p.physiotherapistId}
                         onChange={(physiotherapistId) => updateWaiting({ ...p, physiotherapistId })}
-                        options={physioOptions(data)}
+                        options={physioOptions(data, p.physiotherapistId)}
                       />
                     </td>
                     <td className={`${CELL} text-center`}>

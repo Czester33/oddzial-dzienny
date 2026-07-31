@@ -11,7 +11,7 @@ import {
   markPhysioAdmissionNotificationsSeen,
   markPhysioAdmissionAnnouncementRead,
 } from "@/lib/admission-announcement-utils";
-import { physioDisplayName, physioShortName } from "@/lib/physio-utils";
+import { physioDisplayName, physioShortName, visiblePhysiotherapists } from "@/lib/physio-utils";
 import { adaptHtmlColorsForTheme } from "@/lib/text-format";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -183,12 +183,13 @@ export function PhysioAdmissionNotificationsRail({
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const physiosWithUnread = data.physiotherapists.filter((physio) =>
+  const physiosWithUnread = visiblePhysiotherapists(data).filter((physio) =>
     hasUnreadPhysioAdmissionAnnouncements(data, physio.id)
   );
 
   const expandedPhysio = expandedId
-    ? data.physiotherapists.find((physio) => physio.id === expandedId)
+    ? visiblePhysiotherapists(data).find((physio) => physio.id === expandedId) ??
+      data.physiotherapists.find((physio) => physio.id === expandedId)
     : undefined;
 
   useEffect(() => {

@@ -22,6 +22,7 @@ export const VACATION_KRZYSZTOF: Physiotherapist = {
 };
 
 /** Physiotherapists + Krzysztof (masaże) for vacation pickers. */
+/** All active physiotherapists + Krzysztof (masaże) for vacation pickers — includes hidden. */
 export function vacationStaff(data: AppData): Physiotherapist[] {
   return [...data.physiotherapists, VACATION_KRZYSZTOF];
 }

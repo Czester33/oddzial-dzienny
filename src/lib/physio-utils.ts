@@ -375,6 +375,23 @@ export function getPhysioById(data: AppData, id: string): Physiotherapist | unde
   );
 }
 
+export function isPhysioVisible(physio: Physiotherapist): boolean {
+  return !physio.hidden;
+}
+
+export function visiblePhysiotherapists(data: AppData): Physiotherapist[] {
+  return data.physiotherapists.filter(isPhysioVisible);
+}
+
+/** Visible physios for pickers; keeps current selection even if hidden. */
+export function physiosForSelect(data: AppData, selectedId = ""): Physiotherapist[] {
+  const visible = visiblePhysiotherapists(data);
+  if (!selectedId) return visible;
+  const selected = data.physiotherapists.find((p) => p.id === selectedId);
+  if (!selected || visible.some((p) => p.id === selectedId)) return visible;
+  return [...visible, selected];
+}
+
 /** Physio name without emoji — use everywhere except Pacjenci column headers. */
 export function physioDisplayName(name: string): string {
   return stripEmojis(name);
@@ -391,7 +408,7 @@ export function getPhysioName(data: AppData, id: string): string {
 }
 
 export function physioNames(data: AppData): string[] {
-  return data.physiotherapists.map((p) => p.name);
+  return visiblePhysiotherapists(data).map((p) => p.name);
 }
 
 export function createEmptyPatient(): Patient {

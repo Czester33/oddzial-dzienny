@@ -11,6 +11,8 @@ export interface Physiotherapist {
   rowColor: string;
   headerNote?: string;
   columnWidths?: ColumnWidths;
+  /** When true, hidden from patient tables and pickers (data kept). */
+  hidden?: boolean;
 }
 
 export interface Patient {

@@ -9,7 +9,7 @@ import { PageHeader, LoadingState, ErrorBanner, Card, Btn } from "@/components/u
 import { PhysioSelect } from "@/components/PhysioSelect";
 import { FormattedEditor } from "@/components/FormattedEditor";
 import { adaptHtmlColorsForTheme, stripHtml } from "@/lib/text-format";
-import { getPhysioById, physioDisplayName, resolvePhysioRowColor } from "@/lib/physio-utils";
+import { getPhysioById, physioDisplayName, physiosForSelect, resolvePhysioRowColor } from "@/lib/physio-utils";
 
 type NoteDraft = {
   title: string;
@@ -277,7 +277,7 @@ export default function NotatnikPage() {
                           }
                           emptyLabel="— nie wybrano —"
                           className="w-full max-w-md cursor-pointer rounded-md border border-slate-300 bg-white px-3 py-2 text-[17px] outline-none focus:border-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:focus:border-blue-400"
-                          options={data.physiotherapists.map((p) => ({
+                          options={physiosForSelect(data, draft.physiotherapistId).map((p) => ({
                             value: p.id,
                             label: physioDisplayName(p.name),
                             color: p.color,

@@ -14,6 +14,7 @@ import {
   returnSubstitutePatient,
   returnSubstitutesToPhysio,
   sortPatientsByDischargeDate,
+  visiblePhysiotherapists,
 } from "@/lib/physio-utils";
 import { applyAutoDischarge, hasAutoDischargeChanges } from "@/lib/discharge-utils";
 import { applyVacationNotes, hasVacationNoteChanges } from "@/lib/vacation-utils";
@@ -123,11 +124,15 @@ function PacjenciContent({ data }: { data: AppData }) {
     });
   };
 
-  if (data.physiotherapists.length === 0) {
+  if (visiblePhysiotherapists(data).length === 0) {
     return (
       <div>
         <div className="rounded-lg border border-slate-200 bg-white px-6 py-12 text-center dark:border-slate-700 dark:bg-slate-900">
-          <p className="mb-4 text-slate-600 dark:text-slate-300">Brak fizjoterapeutów. Dodaj ich w zakładce Fizjoterapeuci.</p>
+          <p className="mb-4 text-slate-600 dark:text-slate-300">
+            {data.physiotherapists.length === 0
+              ? "Brak fizjoterapeutów. Dodaj ich w zakładce Fizjoterapeuci."
+              : "Wszyscy fizjoterapeuci są ukryci. Pokaż ich w zakładce Fizjoterapeuci."}
+          </p>
           <Link
             href="/fizjoterapeuci"
             className="inline-block rounded-md bg-blue-600 px-4 py-2 text-[19px] font-medium text-white hover:bg-blue-700"
@@ -139,6 +144,8 @@ function PacjenciContent({ data }: { data: AppData }) {
     );
   }
 
+  const visiblePhysios = visiblePhysiotherapists(data);
+
   return (
     <>
       <div className="-mt-6">
@@ -146,19 +153,19 @@ function PacjenciContent({ data }: { data: AppData }) {
 
         <div
           className={`grid gap-3 ${
-            data.physiotherapists.length === 1
+            visiblePhysios.length === 1
               ? "grid-cols-1"
-              : data.physiotherapists.length === 2
+              : visiblePhysios.length === 2
                 ? "grid-cols-1 md:grid-cols-2"
                 : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
           }`}
         >
-          {data.physiotherapists.map((physio) => (
+          {visiblePhysios.map((physio) => (
             <PhysiotherapistTable
               key={physio.id}
               physio={physio}
               patients={getPatients(physio.id)}
-              allPhysios={data.physiotherapists}
+              allPhysios={visiblePhysios}
               substitutesAway={countSubstitutesAway(data, physio.id)}
               dutyNote={getActiveDutyNoteForPhysio(data, physio.id, new Date(nowTick))}
               onUpdatePatient={(i, patient) => updatePatient(physio.id, i, patient)}
