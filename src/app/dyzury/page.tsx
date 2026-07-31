@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useData } from "@/context/DataContext";
 import { useTheme } from "@/context/ThemeContext";
 import type { AppData, DutyEntry } from "@/lib/types";
@@ -74,15 +74,30 @@ function nextDutyMonthKey(key: string): string {
   return toMonthKey(next.getFullYear(), next.getMonth());
 }
 
-/** Current or next month that is not in the past (unless restored from archive). */
-function clampDutyMonthKey(key: string, restoredKeys: Set<string> = new Set()): string {
+/** Current or next month that is not in the past or archive (unless restored). */
+function clampDutyMonthKey(
+  key: string,
+  restoredKeys: Set<string> = new Set(),
+  archivedKeys: Set<string> = new Set()
+): string {
   if (restoredKeys.has(key)) return key;
   const today = currentMonthKey();
   let candidate = key < today ? today : key;
-  while (isDutyMonthPast(candidate) && !restoredKeys.has(candidate)) {
+  for (let guard = 0; guard < 48; guard++) {
+    const past = isDutyMonthPast(candidate) && !restoredKeys.has(candidate);
+    const archived = archivedKeys.has(candidate) && !restoredKeys.has(candidate);
+    if (!past && !archived) return candidate;
     candidate = nextDutyMonthKey(candidate);
   }
   return candidate;
+}
+
+function isArchivedDutyMonth(
+  monthKeyValue: string,
+  archivedKeys: Set<string>,
+  restoredKeys: Set<string>
+): boolean {
+  return archivedKeys.has(monthKeyValue) && !restoredKeys.has(monthKeyValue);
 }
 
 function resolveMonthColors(month: number, isDark: boolean) {
@@ -300,8 +315,15 @@ export default function DyzuryPage() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const todayKey = currentMonthKey();
-  const restoredDutyKeys = new Set(data?.autoArchiveSkip?.duties ?? []);
-  const [monthKey, setMonthKey] = useState(() => clampDutyMonthKey(currentMonthKey()));
+  const restoredDutyKeys = useMemo(
+    () => new Set(data?.autoArchiveSkip?.duties ?? []),
+    [data?.autoArchiveSkip?.duties]
+  );
+  const archivedDutyKeys = useMemo(
+    () => new Set((data?.dutyArchive ?? []).map((m) => m.monthKey)),
+    [data?.dutyArchive]
+  );
+  const [monthKey, setMonthKey] = useState(currentMonthKey);
 
   useEffect(() => {
     if (loading || !data) return;
@@ -311,17 +333,29 @@ export default function DyzuryPage() {
     }
   }, [loading, data, save]);
 
-  const visibleMonthKey = clampDutyMonthKey(monthKey, restoredDutyKeys);
+  useEffect(() => {
+    const clamped = clampDutyMonthKey(monthKey, restoredDutyKeys, archivedDutyKeys);
+    if (clamped !== monthKey) setMonthKey(clamped);
+  }, [monthKey, restoredDutyKeys, archivedDutyKeys]);
+
+  const visibleMonthKey = clampDutyMonthKey(monthKey, restoredDutyKeys, archivedDutyKeys);
   const upcomingMonthKey = nextDutyMonthKey(visibleMonthKey);
   const viewingRestoredPast =
     restoredDutyKeys.has(visibleMonthKey) && isDutyMonthPast(visibleMonthKey, todayKey);
 
   const monthOptions = (() => {
     const opts = new Set(
-      getMonthOptions(24, 0).filter((key) => !isDutyMonthPast(key, todayKey))
+      getMonthOptions(24, 0).filter(
+        (key) =>
+          !isDutyMonthPast(key, todayKey) &&
+          !isArchivedDutyMonth(key, archivedDutyKeys, restoredDutyKeys)
+      )
     );
     for (const key of restoredDutyKeys) opts.add(key);
-    if (!isDutyMonthPast(visibleMonthKey, todayKey) || restoredDutyKeys.has(visibleMonthKey)) {
+    if (
+      !isDutyMonthPast(visibleMonthKey, todayKey) ||
+      restoredDutyKeys.has(visibleMonthKey)
+    ) {
       opts.add(visibleMonthKey);
     }
     return Array.from(opts).sort();
@@ -361,15 +395,16 @@ export default function DyzuryPage() {
     if (!restoredDutyKeys.has(visibleMonthKey)) return;
     if (!confirm("Zarchiwizować ponownie ten miesiąc dyżurów?")) return;
     save(archiveDutyMonth(data, visibleMonthKey));
-    setMonthKey(clampDutyMonthKey(currentMonthKey()));
+    setMonthKey(clampDutyMonthKey(currentMonthKey(), restoredDutyKeys, archivedDutyKeys));
   };
 
   const canGoPrev = monthOptions.some((key) => key < visibleMonthKey);
-  const tablesToShow = viewingRestoredPast
+  const tablesToShow = (viewingRestoredPast
     ? [visibleMonthKey]
     : [visibleMonthKey, upcomingMonthKey].filter(
         (key) => !isDutyMonthPast(key, todayKey) || restoredDutyKeys.has(key)
-      );
+      )
+  ).filter((key) => !isArchivedDutyMonth(key, archivedDutyKeys, restoredDutyKeys));
 
   return (
     <div>
@@ -384,7 +419,7 @@ export default function DyzuryPage() {
         </Btn>
         <MonthSelector
           value={visibleMonthKey}
-          onChange={(key) => setMonthKey(clampDutyMonthKey(key, restoredDutyKeys))}
+          onChange={(key) => setMonthKey(clampDutyMonthKey(key, restoredDutyKeys, archivedDutyKeys))}
           options={monthOptions}
         />
         <Btn variant="secondary" onClick={() => shiftMonth(1)}>

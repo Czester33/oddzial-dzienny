@@ -2,12 +2,17 @@ import type { AppData, ArchivedDutyMonth, DutyEntry } from "./types";
 import {
   getFacilityClosingMinutesForDate,
   getFacilityClosingTimeForDate,
-  getLastWorkingDayOfMonth,
+  isoFromParts,
   parseMonthKey,
   todayIsoDate,
   toDateInputValue,
 } from "./date-utils";
 import { stripHtml } from "./text-format";
+
+function archiveFromFirstDayOfNextMonth(monthKeyValue: string): string {
+  const { year, month } = parseMonthKey(monthKeyValue);
+  return isoFromParts(year, month + 1, 1);
+}
 
 export const DUTY_NOTE_START_MINUTES = 7 * 60;
 
@@ -25,7 +30,7 @@ function dutyMonthHasData(entries: DutyEntry[]): boolean {
 }
 
 /**
- * Archive on/after the last working day of that month.
+ * Archive from the first day of the next calendar month.
  * Empty / unassigned months are skipped.
  */
 export function shouldAutoArchiveDutyMonth(
@@ -34,9 +39,7 @@ export function shouldAutoArchiveDutyMonth(
   todayIso: string = todayIsoDate()
 ): boolean {
   if (!dutyMonthHasData(entries)) return false;
-  const { year, month } = parseMonthKey(monthKeyValue);
-  const lastWorkingDay = getLastWorkingDayOfMonth(year, month);
-  return todayIso >= lastWorkingDay;
+  return todayIso >= archiveFromFirstDayOfNextMonth(monthKeyValue);
 }
 
 export function archiveDutyMonth(

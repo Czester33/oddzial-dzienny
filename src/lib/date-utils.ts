@@ -90,6 +90,21 @@ export function isoFromParts(year: number, month: number, day: number): string {
   return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
+/** ISO date (YYYY-MM-DD) of the first day of the month after `monthKeyValue` (YYYY-MM). */
+export function firstDayOfNextMonthIso(monthKeyValue: string): string {
+  const { year, month } = parseMonthKey(monthKeyValue);
+  return isoFromParts(year, month + 1, 1);
+}
+
+/** ISO date of the calendar day after `iso` (YYYY-MM-DD or DD.MM). */
+export function dayAfterIso(iso: string): string {
+  const normalized = toDateInputValue(iso);
+  if (!normalized) return "";
+  const date = new Date(`${normalized}T12:00:00`);
+  date.setDate(date.getDate() + 1);
+  return isoFromParts(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
 export function todayIsoDate(): string {
   const now = new Date();
   return isoFromParts(now.getFullYear(), now.getMonth(), now.getDate());

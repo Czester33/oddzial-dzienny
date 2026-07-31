@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { getPlannedDischargeDate, getLastWorkingDayOfMonth, monthKey, parseMonthKey, toDateInputValue, todayIsoDate } from "@/lib/date-utils";
+import { getPlannedDischargeDate, isoFromParts, monthKey, parseMonthKey, toDateInputValue, todayIsoDate } from "@/lib/date-utils";
 import { isCompleteTime, timeToMinutes } from "@/lib/massage-schedule";
 import { stripHtml } from "@/lib/text-format";
 import type {
@@ -231,9 +231,27 @@ export function getLastAdmissionDateInMonth(sessions: AdmissionSession[]): strin
   return latest;
 }
 
+function dayAfterPlannedDischarge(iso: string): string {
+  const normalized = toDateInputValue(iso);
+  if (!normalized) return "";
+  const date = new Date(`${normalized}T12:00:00`);
+  date.setDate(date.getDate() + 1);
+  return isoFromParts(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function latestPlannedDischargeInMonth(sessions: AdmissionSession[]): string {
+  let latest = "";
+  for (const session of sessions) {
+    const discharge = toDateInputValue(resolveSessionPlannedDischarge(session));
+    if (!discharge) continue;
+    if (!latest || discharge > latest) latest = discharge;
+  }
+  return latest;
+}
+
 /**
- * Archive on/after the last working day of that month.
- * Empty months are skipped.
+ * Archive from the day after the latest planned discharge in that month.
+ * Empty months or months without a discharge date are skipped.
  */
 export function shouldAutoArchiveAdmissionMonth(
   monthKeyValue: string,
@@ -241,9 +259,11 @@ export function shouldAutoArchiveAdmissionMonth(
   todayIso: string = todayIsoDate()
 ): boolean {
   if (!sessions.length) return false;
-  const { year, month } = parseMonthKey(monthKeyValue);
-  const lastWorkingDay = getLastWorkingDayOfMonth(year, month);
-  return todayIso >= lastWorkingDay;
+  const lastDischarge = latestPlannedDischargeInMonth(sessions);
+  if (!lastDischarge) return false;
+  const archiveFrom = dayAfterPlannedDischarge(lastDischarge);
+  if (!archiveFrom) return false;
+  return todayIso >= archiveFrom;
 }
 
 export function archiveAdmissionMonth(

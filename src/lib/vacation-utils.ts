@@ -1,9 +1,14 @@
 import type { AppData, ArchivedVacationMonth, ArchivedVacationYear, Physiotherapist, VacationEntry } from "./types";
-import { getLastWorkingDayOfMonth, isoFromParts, isWorkingDay, parseMonthKey, todayIsoDate, toDateInputValue } from "./date-utils";
+import { isoFromParts, isWorkingDay, parseMonthKey, todayIsoDate, toDateInputValue } from "./date-utils";
 import { getPhysioById } from "./physio-utils";
 import { stripHtml } from "./text-format";
 
-/** Set true when vacation auto-archive should run (monthly, last working day). */
+function archiveFromFirstDayOfNextMonth(monthKeyValue: string): string {
+  const { year, month } = parseMonthKey(monthKeyValue);
+  return isoFromParts(year, month + 1, 1);
+}
+
+/** Set true when vacation auto-archive should run (monthly, from 1st of next month). */
 export const VACATION_AUTO_ARCHIVE_ENABLED = true;
 
 /** Fixed vacation person for massage therapist (not in physiotherapists list). */
@@ -69,16 +74,12 @@ function collectVacationYearsToArchive(data: AppData, now: Date): string[] {
   return [...years].sort();
 }
 
-/**
- * Archive on/after the last working day of that month (including empty months).
- */
+/** Archive from the first day of the next calendar month (including empty months). */
 export function shouldAutoArchiveVacationMonth(
   monthKeyValue: string,
   todayIso: string = todayIsoDate()
 ): boolean {
-  const { year, month } = parseMonthKey(monthKeyValue);
-  const lastWorkingDay = getLastWorkingDayOfMonth(year, month);
-  return todayIso >= lastWorkingDay;
+  return todayIso >= archiveFromFirstDayOfNextMonth(monthKeyValue);
 }
 
 export function archiveVacationMonth(
@@ -155,7 +156,7 @@ export function restoreVacationMonthFromArchive(
 
 /**
  * Manual full-year archive (remaining entries). Auto-archive uses months instead.
- * Archive on/after the last working day of December for that year.
+ * Archive from 1 January of the following year.
  */
 export function shouldAutoArchiveVacationYear(
   yearKey: string,
@@ -165,8 +166,7 @@ export function shouldAutoArchiveVacationYear(
   if (!entries.length) return false;
   const year = Number(yearKey);
   if (!Number.isFinite(year)) return false;
-  const lastWorkingDay = getLastWorkingDayOfMonth(year, 11);
-  return todayIso >= lastWorkingDay;
+  return todayIso >= `${year + 1}-01-01`;
 }
 
 export function archiveVacationYear(

@@ -10,7 +10,6 @@ import {
   ErrorBanner,
   Card,
   Btn,
-  Input,
 } from "@/components/ui";
 import { DatePickerCell } from "@/components/DatePickerCell";
 import { TimePickerCell } from "@/components/TimePickerCell";
@@ -179,9 +178,16 @@ function PrzyjeciaPageContent() {
 
   const monthOptions = useMemo(() => {
     const base = admissionMonthOptions(todayTick, 14);
-    const restored = data?.autoArchiveSkip?.admissions ?? [];
-    return [...new Set([...restored, ...base])].sort();
-  }, [todayTick, data?.autoArchiveSkip?.admissions]);
+    const restored = new Set(data?.autoArchiveSkip?.admissions ?? []);
+    const archived = new Set((data?.admissionArchive ?? []).map((m) => m.monthKey));
+    const keys = new Set<string>();
+    for (const key of base) {
+      if (archived.has(key) && !restored.has(key)) continue;
+      keys.add(key);
+    }
+    for (const key of restored) keys.add(key);
+    return [...keys].sort();
+  }, [todayTick, data?.autoArchiveSkip?.admissions, data?.admissionArchive]);
 
   const selectMonth = (key: string) => {
     userPickedMonthRef.current = true;
@@ -215,6 +221,19 @@ function PrzyjeciaPageContent() {
     }, 60_000);
     return () => window.clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    if (loading || !data) return;
+    const archived = new Set((data.admissionArchive ?? []).map((m) => m.monthKey));
+    const restored = new Set(data.autoArchiveSkip?.admissions ?? []);
+    if (archived.has(monthKeyValue) && !restored.has(monthKeyValue)) {
+      const fallback =
+        monthOptions.find((key) => key >= todayTick.slice(0, 7)) ??
+        monthOptions[monthOptions.length - 1] ??
+        currentMonthKey();
+      setMonthKeyValue(fallback);
+    }
+  }, [loading, data, monthKeyValue, monthOptions, todayTick]);
 
   useEffect(() => {
     if (loading || !data || userPickedMonthRef.current) return;
@@ -887,12 +906,12 @@ function DoctorsPanel({
                 key={doctor.id}
                 className="rounded-lg border border-slate-200 p-3 dark:border-slate-700"
               >
-                <Input
-                  value={doctor.name}
-                  onChange={(name) => onUpdate({ ...doctor, name })}
+                <input
+                  type="text"
+                  value={stripHtml(doctor.name)}
+                  onChange={(e) => onUpdate({ ...doctor, name: e.target.value })}
                   placeholder="Imię i nazwisko lekarza"
-                  fontSize={ADMISSION_FONT_PX}
-                  className={ADMISSION_TEXT}
+                  className={`w-full ${FIELD_SELECT}`}
                 />
                 <div className="mt-3 flex items-center justify-between gap-2">
                   <span
@@ -1028,7 +1047,7 @@ function AdmissionSessionTable({
               <option value="">— wybierz lekarza —</option>
               {data.doctors.map((d) => (
                 <option key={d.id} value={d.id}>
-                  {d.name || "Bez nazwy"}
+                  {stripHtml(d.name).trim() || "Bez nazwy"}
                 </option>
               ))}
             </select>

@@ -531,9 +531,14 @@ export default function UrlopyPage() {
   const clinicClosedDays = data.clinicClosedDays ?? [];
   const { upcoming: upcomingMonths, past: pastMonthsAll } = splitMonthIndexes(yearNum);
   const archivedMonthKeys = new Set((data.vacationMonthArchive ?? []).map((m) => m.monthKey));
-  const pastMonths = pastMonthsAll.filter(
-    (month) => !archivedMonthKeys.has(vacationMonthKey(yearNum, month))
-  );
+  const restoredVacationKeys = new Set(data.autoArchiveSkip?.vacations ?? []);
+  const isVisibleVacationMonth = (month: number) => {
+    const key = vacationMonthKey(yearNum, month);
+    if (restoredVacationKeys.has(key)) return true;
+    return !archivedMonthKeys.has(key);
+  };
+  const visibleUpcomingMonths = upcomingMonths.filter(isVisibleVacationMonth);
+  const pastMonths = pastMonthsAll.filter(isVisibleVacationMonth);
 
   const archiveCurrentYear = () => {
     if (!yearRestoredFromArchive) return;
@@ -809,7 +814,7 @@ export default function UrlopyPage() {
 
       {!yearArchived ? (
       <div className="space-y-6">
-        {upcomingMonths.map((month) => (
+        {visibleUpcomingMonths.map((month) => (
           <VacationMonthTable
             key={`${yearNum}-${month}`}
             yearNum={yearNum}

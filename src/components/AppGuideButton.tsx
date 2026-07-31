@@ -40,7 +40,8 @@ const GUIDE_SECTIONS: GuideSection[] = [
       "W masażach skończone osoby znikają same. Ktoś z kolejki może wejść na wolne miejsce.",
       "Zaplanowana zmiana godziny masażu wchodzi w życie sama — od wskazanego dnia godzina się aktualizuje.",
       "Stare przyjęcia (już po terminie) spadają na dół listy.",
-      "Stare miesiące przyjęć, dyżurów i urlopów same idą do Archiwum (w ostatni dzień roboczy miesiąca).",
+      "Stare miesiące przyjęć same idą do Archiwum następnego dnia po ostatnim planowanym wypisie w danym miesiącu.",
+      "Stare miesiące dyżurów i urlopów same idą do Archiwum pierwszego dnia następnego miesiąca (np. lipiec — 1 sierpnia).",
     ],
   },
   {
@@ -78,9 +79,12 @@ const GUIDE_SECTIONS: GuideSection[] = [
     items: [
       "Górna tabela = osoby, które już mają termin (godzina, imię, daty).",
       "Dolna tabela = kolejka (czekają na wolne miejsce).",
+      "Pod nagłówkiem „Masaż Krzysztof” możesz wpisać notatkę (np. urlop). Gdy aplikacja sama wstawi informację o urlopie Krzysztofa, nadal możesz dopisywać własną treść.",
       "Możesz ręcznie wziąć kogoś z kolejki do grafiku. Aplikacja też może to zrobić sama, gdy zwolni się miejsce.",
       "Po prawej (nad „Najbliższe wolne miejsca”): „Zaplanuj zmianę godziny”. Włącz tryb → kliknij godzinę pacjenta → wybierz od którego dnia i wpisz nową godzinę.",
-      "Zaplanowana zmiana ma żółtą poświatę wokół godziny. Najedź kursorem — zobaczysz, od kiedy obowiązuje nowa godzina.",
+      "Zaplanowana zmiana ma żółtą poświatę. W polu godziny widać starą i nową godzinę ze strzałką, np. 10:00 ➡️ 12:15.",
+      "Najedź kursorem na taką godzinę — zobaczysz od kiedy obowiązuje zmiana i samą nową godzinę (np. Od 03.08.2026: 12:15).",
+      "Kliknij zaplanowaną godzinę, żeby edytować bieżącą godzinę przed dniem zmiany.",
       "W oknie planowania: „Usuń plan” kasuje zaplanowaną zmianę. „Anuluj planowanie” wyłącza tryb bez zapisywania.",
       "Obok widać najbliższe wolne terminy. Jeśli danego dnia było 12 masaży i ktoś skończy wcześniej, wolne miejsce pojawi się w tym panelu dopiero od jutra.",
     ],
