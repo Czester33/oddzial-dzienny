@@ -77,7 +77,7 @@ export const TEXT_COLORS = [
   { label: "Magenta", value: "#ff00bf" },
 ] as const;
 
-export type InlineFormatProperty = "fontSize" | "color" | "fontWeight";
+export type InlineFormatProperty = "fontSize" | "color" | "fontWeight" | "textDecoration";
 
 export function parseCssColorToRgb(
   value: string
@@ -196,6 +196,10 @@ export function stripInlineStylesInSubtree(root: Node, properties: readonly Inli
       if (prop === "fontSize") element.style.fontSize = "";
       if (prop === "color") element.style.color = "";
       if (prop === "fontWeight") element.style.fontWeight = "";
+      if (prop === "textDecoration") {
+        element.style.textDecoration = "";
+        element.style.textDecorationLine = "";
+      }
     }
     if (element.style.length === 0) {
       element.removeAttribute("style");
@@ -238,6 +242,36 @@ export function unwrapBoldTagsInSubtree(root: Node) {
   boldElements.sort((a, b) => (a.contains(b) ? 1 : b.contains(a) ? -1 : 0));
 
   for (const el of boldElements) {
+    const parent = el.parentNode;
+    if (!parent) continue;
+    while (el.firstChild) {
+      parent.insertBefore(el.firstChild, el);
+    }
+    parent.removeChild(el);
+  }
+}
+
+/** Unwrap <u> inside a fragment so underline can be turned off. */
+export function unwrapUnderlineTagsInSubtree(root: Node) {
+  const underlineElements: HTMLElement[] = [];
+
+  const maybeCollect = (node: Node) => {
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    const el = node as HTMLElement;
+    if (el.tagName === "U") underlineElements.push(el);
+  };
+
+  maybeCollect(root);
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+  let node = walker.nextNode();
+  while (node) {
+    maybeCollect(node);
+    node = walker.nextNode();
+  }
+
+  underlineElements.sort((a, b) => (a.contains(b) ? 1 : b.contains(a) ? -1 : 0));
+
+  for (const el of underlineElements) {
     const parent = el.parentNode;
     if (!parent) continue;
     while (el.firstChild) {

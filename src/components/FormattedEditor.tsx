@@ -8,6 +8,7 @@ import {
   useCallback,
   forwardRef,
   type CSSProperties,
+  type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -19,6 +20,7 @@ import {
   isBoldFontWeight,
   stripInlineStylesInSubtree,
   unwrapBoldTagsInSubtree,
+  unwrapUnderlineTagsInSubtree,
   type InlineFormatProperty,
 } from "@/lib/text-format";
 import { useTheme } from "@/context/ThemeContext";
@@ -168,6 +170,59 @@ function parseFontSizePx(value: string): number | null {
   return clampFontSize(Number(match[1]));
 }
 
+const MANUAL_NUMBER_LINE = /^(\s*)(\d+)\.\s*(.*)$/;
+
+function getCaretTextOffset(root: HTMLElement): number {
+  const sel = window.getSelection();
+  if (!sel?.rangeCount) return 0;
+  const range = sel.getRangeAt(0);
+  if (!root.contains(range.startContainer)) return 0;
+  const pre = range.cloneRange();
+  pre.selectNodeContents(root);
+  pre.setEnd(range.startContainer, range.startOffset);
+  return pre.toString().length;
+}
+
+function getLineAtTextOffset(text: string, offset: number) {
+  const before = text.slice(0, offset);
+  const lineStart = before.lastIndexOf("\n") + 1;
+  const lineEnd = text.indexOf("\n", offset);
+  const line = text.slice(lineStart, lineEnd === -1 ? text.length : lineEnd);
+  return { lineStart, line };
+}
+
+function findMaxManualNumberBeforeLine(text: string, lineStart: number): number {
+  let max = 0;
+  for (const line of text.slice(0, lineStart).split("\n")) {
+    const match = line.match(/^\s*(\d+)\.\s/);
+    if (match) max = Math.max(max, Number(match[1]));
+  }
+  return max;
+}
+
+function isInOrderedListItem(node: Node, root: HTMLElement): boolean {
+  let el: HTMLElement | null = node instanceof HTMLElement ? node : node.parentElement;
+  while (el && el !== root) {
+    if (el.tagName === "LI" && el.closest("ol")) return true;
+    el = el.parentElement;
+  }
+  return false;
+}
+
+function deleteCharsBeforeCaret(count: number): boolean {
+  const sel = window.getSelection();
+  if (!sel?.rangeCount) return false;
+  const range = sel.getRangeAt(0);
+  sel.removeAllRanges();
+  sel.addRange(range);
+  sel.collapseToEnd();
+  for (let i = 0; i < count; i++) {
+    sel.modify("extend", "backward", "character");
+  }
+  if (!sel.isCollapsed) sel.deleteFromDocument();
+  return true;
+}
+
 function resolveRange(
   el: HTMLElement,
   savedRange?: Range | null
@@ -223,6 +278,42 @@ function isRangeBold(el: HTMLElement, range: Range): boolean {
   return isBoldFontWeight(window.getComputedStyle(probe).fontWeight);
 }
 
+function isRangeUnderlined(el: HTMLElement, range: Range): boolean {
+  const probe = getBoldProbeElement(el, range);
+  if (!probe) return false;
+  const style = window.getComputedStyle(probe);
+  return style.textDecorationLine.includes("underline") || style.textDecoration.includes("underline");
+}
+
+function FormatToggleButton({
+  active,
+  title,
+  onClick,
+  children,
+  className = "",
+}: {
+  active: boolean;
+  title: string;
+  onClick?: () => void;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={`flex h-8 flex-1 items-center justify-center rounded-md text-[15px] font-medium transition-colors ${className} ${
+        active
+          ? "bg-[#e6f0ff] text-[#001f3f] dark:bg-blue-950/60 dark:text-slate-100"
+          : "bg-slate-100 text-[#4a4a4a] hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 /** Apply style to selection, or at caret so following typed text uses the style. */
 function applyInlineFormat(
   el: HTMLElement,
@@ -240,6 +331,9 @@ function applyInlineFormat(
     }
     if (normalize.includes("fontWeight")) {
       unwrapBoldTagsInSubtree(fragment);
+    }
+    if (normalize.includes("textDecoration")) {
+      unwrapUnderlineTagsInSubtree(fragment);
     }
   };
 
@@ -274,6 +368,60 @@ function applyInlineFormat(
   return newRange.cloneRange();
 }
 
+type TextAlign = "left" | "center" | "right";
+
+function readSelectionAlign(): TextAlign {
+  if (document.queryCommandState("justifyCenter")) return "center";
+  if (document.queryCommandState("justifyRight")) return "right";
+  return "left";
+}
+
+function AlignLinesIcon({ variant }: { variant: TextAlign }) {
+  const shortClass =
+    variant === "left"
+      ? "self-start"
+      : variant === "center"
+        ? "self-center"
+        : "self-end";
+
+  return (
+    <div className="flex h-[14px] w-[18px] flex-col justify-between py-[1px]" aria-hidden>
+      <span className="block h-[1.5px] w-full rounded-full bg-current" />
+      <span className={`block h-[1.5px] w-[65%] rounded-full bg-current ${shortClass}`} />
+      <span className="block h-[1.5px] w-full rounded-full bg-current" />
+      <span className={`block h-[1.5px] w-[65%] rounded-full bg-current ${shortClass}`} />
+      <span className="block h-[1.5px] w-full rounded-full bg-current" />
+    </div>
+  );
+}
+
+function AlignButton({
+  variant,
+  active,
+  title,
+  onClick,
+}: {
+  variant: TextAlign;
+  active: boolean;
+  title: string;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={`flex h-8 flex-1 items-center justify-center rounded-md transition-colors ${
+        active
+          ? "bg-[#e6f0ff] text-[#001f3f] dark:bg-blue-950/60 dark:text-slate-100"
+          : "bg-slate-100 text-[#4a4a4a] hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
+      }`}
+    >
+      <AlignLinesIcon variant={variant} />
+    </button>
+  );
+}
+
 const FormatPanel = forwardRef<
   HTMLDivElement,
   {
@@ -283,14 +431,19 @@ const FormatPanel = forwardRef<
     currentSize: number;
     onPreserveSelection: () => void;
     onBold: () => void;
+    onUnderline?: () => void;
+    boldActive?: boolean;
+    underlineActive?: boolean;
     onSize: (size: number) => void;
     onNudgeSize: (delta: number) => void;
     onColor: (color: string) => void;
     onAlignLeft?: () => void;
     onAlignCenter?: () => void;
     onAlignRight?: () => void;
+    textAlign?: TextAlign;
     onBulletList?: () => void;
     onNumberedList?: () => void;
+    onContinueNumbering?: () => void;
     mobileToolbar?: {
       minimized: boolean;
       onToggleMinimize: () => void;
@@ -305,14 +458,19 @@ const FormatPanel = forwardRef<
     currentSize,
     onPreserveSelection,
     onBold,
+    onUnderline,
+    boldActive = false,
+    underlineActive = false,
     onSize,
     onNudgeSize,
     onColor,
     onAlignLeft,
     onAlignCenter,
     onAlignRight,
+    textAlign = "left",
     onBulletList,
     onNumberedList,
+    onContinueNumbering,
     mobileToolbar,
   },
   ref
@@ -416,35 +574,57 @@ const FormatPanel = forwardRef<
           </button>
         </div>
       ) : null}
-      <button
-        type="button"
-        onClick={onBold}
-        className={`${btnClass} mb-1 w-full font-bold`}
-        title="Pogrubienie"
-      >
-        B
-      </button>
+      <div className="mb-1 grid grid-cols-2 gap-1">
+        <FormatToggleButton active={boldActive} onClick={onBold} title="Pogrubienie" className="font-bold">
+          B
+        </FormatToggleButton>
+        <FormatToggleButton
+          active={underlineActive}
+          onClick={onUnderline}
+          title="Podkreślenie"
+          className="underline"
+        >
+          U
+        </FormatToggleButton>
+      </div>
 
       {extendedFormatting && (
         <div className="mb-1 border-t border-slate-100 pt-1 dark:border-slate-700">
           <p className="mb-0.5 text-center text-[10px] font-medium text-slate-400">Wyrównanie</p>
-          <div className="grid grid-cols-3 gap-0.5">
-            <button type="button" onClick={onAlignLeft} className={`${btnClass} text-left`} title="Do lewej">
-              L
-            </button>
-            <button type="button" onClick={onAlignCenter} className={`${btnClass} text-center`} title="Wyśrodkuj">
-              Ś
-            </button>
-            <button type="button" onClick={onAlignRight} className={`${btnClass} text-right`} title="Do prawej">
-              P
-            </button>
+          <div className="grid grid-cols-3 gap-1">
+            <AlignButton
+              variant="left"
+              active={textAlign === "left"}
+              onClick={onAlignLeft}
+              title="Do lewej"
+            />
+            <AlignButton
+              variant="center"
+              active={textAlign === "center"}
+              onClick={onAlignCenter}
+              title="Wyśrodkuj"
+            />
+            <AlignButton
+              variant="right"
+              active={textAlign === "right"}
+              onClick={onAlignRight}
+              title="Do prawej"
+            />
           </div>
-          <div className="mt-1 grid grid-cols-2 gap-0.5">
+          <div className="mt-1 grid grid-cols-3 gap-0.5">
             <button type="button" onClick={onBulletList} className={btnClass} title="Lista punktowana">
               •
             </button>
             <button type="button" onClick={onNumberedList} className={btnClass} title="Lista numerowana">
               1.
+            </button>
+            <button
+              type="button"
+              onClick={onContinueNumbering}
+              className={btnClass}
+              title="Kontynuuj numerowanie"
+            >
+              1→
             </button>
           </div>
         </div>
@@ -578,6 +758,9 @@ export function FormattedEditor({
     panelLeft: number;
   } | null>(null);
   const [selectionFontSize, setSelectionFontSize] = useState(fontSize);
+  const [selectionAlign, setSelectionAlign] = useState<TextAlign>("left");
+  const [selectionBold, setSelectionBold] = useState(false);
+  const [selectionUnderline, setSelectionUnderline] = useState(false);
   const selectionFontSizeRef = useRef(fontSize);
   selectionFontSizeRef.current = selectionFontSize;
 
@@ -610,6 +793,9 @@ export function FormattedEditor({
         ? parseFontSizePx(window.getComputedStyle(probe).fontSize)
         : null;
       setSelectionFontSize(parsed ?? fontSize);
+      setSelectionAlign(readSelectionAlign());
+      setSelectionBold(isRangeBold(el, range));
+      setSelectionUnderline(isRangeUnderlined(el, range));
     }
     // Keep last caret/selection when focus moves to the format panel
   }, [fontSize]);
@@ -930,6 +1116,37 @@ export function FormattedEditor({
     finishFormatting(nextRange);
   };
 
+  const execUnderline = () => {
+    const el = ref.current;
+    if (!el) return;
+    formattingRef.current = true;
+    preserveSelection();
+    el.focus();
+    restoreSelection();
+
+    const resolved = resolveRange(el, selectionRangeRef.current);
+    if (!resolved) {
+      formattingRef.current = false;
+      return;
+    }
+
+    const turnOff = isRangeUnderlined(el, resolved.range);
+    const nextRange = applyInlineFormat(
+      el,
+      (span) => {
+        span.style.textDecoration = turnOff ? "none" : "underline";
+      },
+      selectionRangeRef.current,
+      ["textDecoration"]
+    );
+    if (!nextRange) {
+      formattingRef.current = false;
+      return;
+    }
+    emit(true);
+    finishFormatting(nextRange);
+  };
+
   const applySize = (size: number) => {
     const el = ref.current;
     if (!el) return;
@@ -1032,6 +1249,92 @@ export function FormattedEditor({
     [emit, finishFormatting, preserveSelection, restoreSelection]
   );
 
+  const insertManualNumberPrefix = useCallback(
+    (prefix: string) => {
+      document.execCommand("insertText", false, prefix);
+      emit(true);
+      updateSelectionState();
+    },
+    [emit, updateSelectionState]
+  );
+
+  const execContinueManualNumbering = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.focus();
+
+    const sel = window.getSelection();
+    if (sel?.anchorNode && isInOrderedListItem(sel.anchorNode, el)) {
+      execBlockCommand("insertOrderedList");
+      return;
+    }
+
+    const text = el.innerText.replace(/\r/g, "");
+    const offset = getCaretTextOffset(el);
+    const { lineStart, line } = getLineAtTextOffset(text, offset);
+    const current = line.match(MANUAL_NUMBER_LINE);
+    const maxBefore = findMaxManualNumberBeforeLine(text, lineStart);
+
+    formattingRef.current = true;
+
+    if (current) {
+      const [, indent, numStr, rest] = current;
+      const num = Number(numStr);
+      const hasContent = rest.trim().length > 0;
+      if (!hasContent && num === 1 && maxBefore >= 1) {
+        deleteCharsBeforeCaret(2);
+        insertManualNumberPrefix(`${indent}${maxBefore + 1}. `);
+      } else {
+        insertManualNumberPrefix(`\n${indent}${num + 1}. `);
+      }
+    } else {
+      const indent = line.match(/^(\s*)/)?.[1] ?? "";
+      const nextNum = Math.max(maxBefore, 0) + 1;
+      insertManualNumberPrefix(`${line.length > 0 ? "\n" : ""}${indent}${nextNum}. `);
+    }
+
+    formattingRef.current = false;
+  }, [execBlockCommand, insertManualNumberPrefix]);
+
+  const handleManualNumberKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (!extendedFormatting || !multiline) return false;
+      const el = ref.current;
+      if (!el) return false;
+
+      const sel = window.getSelection();
+      if (!sel?.rangeCount || !sel.isCollapsed) return false;
+      if (isInOrderedListItem(sel.anchorNode ?? el, el)) return false;
+
+      const text = el.innerText.replace(/\r/g, "");
+      const offset = getCaretTextOffset(el);
+      const { lineStart, line } = getLineAtTextOffset(text, offset);
+
+      if (e.key === "Enter" && !e.shiftKey) {
+        const match = line.match(MANUAL_NUMBER_LINE);
+        if (!match || !match[3].trim()) return false;
+        e.preventDefault();
+        const nextNum = Number(match[2]) + 1;
+        insertManualNumberPrefix(`\n${match[1]}${nextNum}. `);
+        return true;
+      }
+
+      if (e.key === " ") {
+        const restart = line.match(/^(\s*)1\.$/);
+        if (!restart) return false;
+        const maxBefore = findMaxManualNumberBeforeLine(text, lineStart);
+        if (maxBefore < 1) return false;
+        e.preventDefault();
+        deleteCharsBeforeCaret(2);
+        insertManualNumberPrefix(`${restart[1]}${maxBefore + 1}. `);
+        return true;
+      }
+
+      return false;
+    },
+    [extendedFormatting, multiline, insertManualNumberPrefix]
+  );
+
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
     e.preventDefault();
     const raw = e.clipboardData.getData("text/plain");
@@ -1122,14 +1425,19 @@ export function FormattedEditor({
             currentSize={selectionFontSize}
             onPreserveSelection={preserveSelection}
             onBold={execBold}
+            onUnderline={execUnderline}
+            boldActive={selectionBold}
+            underlineActive={selectionUnderline}
             onSize={applySize}
             onNudgeSize={nudgeFontSize}
             onColor={applyColor}
             onAlignLeft={() => execBlockCommand("justifyLeft")}
             onAlignCenter={() => execBlockCommand("justifyCenter")}
             onAlignRight={() => execBlockCommand("justifyRight")}
+            textAlign={selectionAlign}
             onBulletList={() => execBlockCommand("insertUnorderedList")}
             onNumberedList={() => execBlockCommand("insertOrderedList")}
+            onContinueNumbering={execContinueManualNumbering}
             mobileToolbar={
               isMobile
                 ? {
@@ -1165,6 +1473,7 @@ export function FormattedEditor({
         onPaste={handlePaste}
         onInput={() => emit()}
         onKeyDown={(e) => {
+          if (handleManualNumberKeyDown(e)) return;
           if (!extendedFormatting || !multiline || e.key !== "Tab") return;
           e.preventDefault();
           execBlockCommand(e.shiftKey ? "outdent" : "indent");
