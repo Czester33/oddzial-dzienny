@@ -279,7 +279,8 @@ export default function ArchiwumPage() {
     <div>
       <PageHeader title="Archiwum" />
       <p className="-mt-4 mb-6 text-[16px] text-slate-500 dark:text-slate-400">
-        Przyjęcia, dyżury i urlopy archiwizują się w ostatni dzień roboczy miesiąca.
+        Przyjęcia trafiają tu następnego dnia po ostatnim planowanym wypisie w danym miesiącu.
+        Dyżury i urlopy — od pierwszego dnia następnego miesiąca (np. lipiec → 1 sierpnia).
       </p>
       {error && <ErrorBanner message={error} />}
 
