@@ -1,7 +1,7 @@
 import type { AppData, ArchivedVacationMonth, ArchivedVacationYear, Physiotherapist, VacationEntry } from "./types";
 import { isoFromParts, isWorkingDay, parseMonthKey, todayIsoDate, toDateInputValue } from "./date-utils";
 import { getPhysioById } from "./physio-utils";
-import { stripHtml } from "./text-format";
+import { isHtmlContent, stripHtml } from "./text-format";
 
 function archiveFromFirstDayOfNextMonth(monthKeyValue: string): string {
   const { year, month } = parseMonthKey(monthKeyValue);
@@ -340,11 +340,24 @@ function stripKrzysztofVacationNote(text: string): string {
   while (cur !== prev) {
     prev = cur;
     cur = cur
-      .replace(KRZYSZTOF_VACATION_HTML_RE, " ")
-      .replace(KRZYSZTOF_VACATION_PLAIN_RE, " ")
+      .replace(KRZYSZTOF_VACATION_HTML_RE, "")
+      .replace(KRZYSZTOF_VACATION_PLAIN_RE, "")
       .replace(VACATION_NOTE_RE, " ");
   }
-  return stripHtml(cur.replace(/\s+/g, " "));
+  cur = cur.trim();
+  if (!isHtmlContent(cur)) {
+    return stripHtml(cur.replace(/\s+/g, " ")).trim();
+  }
+  return cur
+    .replace(/<div[^>]*>\s*<\/div>/gi, "")
+    .replace(/<p[^>]*>\s*<\/p>/gi, "")
+    .replace(/(<br\s*\/?>\s*){2,}/gi, "<br>")
+    .trim();
+}
+
+function extractKrzysztofVacationLabel(vacationHtml: string): string | null {
+  const match = vacationHtml.match(/\d{2}\.\d{2}(?:-\d{2}\.\d{2})?-Urlop Krzysztofa/i);
+  return match ? match[0] : null;
 }
 
 /** Krzysztof massage note appears 14 days before vacation start. */
@@ -388,9 +401,23 @@ function findActiveKrzysztofVacationNote(
 }
 
 function mergeKrzysztofVacationNote(existing: string, vacationHtml: string | null): string {
+  if (!vacationHtml) {
+    return stripKrzysztofVacationNote(existing);
+  }
+
+  const label = extractKrzysztofVacationLabel(vacationHtml);
+  if (label && existing.includes(label)) {
+    return existing;
+  }
+
   const base = stripKrzysztofVacationNote(existing);
-  if (!vacationHtml) return base;
-  return base ? `${vacationHtml} ${base}` : vacationHtml;
+  if (!base) return vacationHtml;
+
+  if (isHtmlContent(base) || isHtmlContent(vacationHtml)) {
+    const separator = base.trimStart().startsWith("<") ? "" : "<br>";
+    return `${vacationHtml}${separator}${base}`;
+  }
+  return `${vacationHtml} ${base}`;
 }
 
 function canBridgeVacationGap(
