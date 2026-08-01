@@ -272,6 +272,56 @@ export function ArchivedVacationMonthPanel({
   );
 }
 
+export function ArchivedVacationMonthsYearPanel({
+  yearKey,
+  entries,
+  data,
+}: {
+  yearKey: string;
+  entries: ArchivedVacationMonth[];
+  data: AppData;
+}) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const yearNum = Number(yearKey);
+  const clinicClosedDays = data.clinicClosedDays ?? [];
+  const physioById = useMemo(
+    () => Object.fromEntries(vacationDisplayStaff(data).map((p) => [p.id, p])),
+    [data]
+  );
+
+  const monthsInYear = entries
+    .filter((entry) => parseMonthKey(entry.monthKey).year === yearNum)
+    .sort((a, b) => a.monthKey.localeCompare(b.monthKey));
+
+  if (monthsInYear.length === 0) {
+    return (
+      <p className="text-center text-[19px] text-slate-500 dark:text-slate-400">
+        Brak zarchiwizowanych urlopów w tym roku.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {monthsInYear.map((entry) => {
+        const { month } = parseMonthKey(entry.monthKey);
+        return (
+          <ArchivedVacationMonthTable
+            key={entry.monthKey}
+            yearNum={yearNum}
+            month={month}
+            vacations={entry.entries}
+            clinicClosedDays={clinicClosedDays}
+            physioById={physioById}
+            isDark={isDark}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 export function ArchivedVacationYearPanel({
   entry,
   data,

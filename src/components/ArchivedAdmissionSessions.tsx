@@ -1,13 +1,17 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { AdmissionSession, AppData, ArchivedAdmissionMonth } from "@/lib/types";
 import {
   formatDatePL,
   formatMonthLabel,
   parseMonthKey,
 } from "@/lib/date-utils";
-import { getDoctorName, resolveSessionPlannedDischarge } from "@/lib/admission-utils";
+import {
+  getDoctorName,
+  resolveSessionPlannedDischarge,
+  searchArchivedAdmissionPatients,
+} from "@/lib/admission-utils";
 import { getPhysioName } from "@/lib/physio-utils";
 import {
   resolveAdmissionTheme,
@@ -17,6 +21,7 @@ import { adaptHtmlColorsForTheme, stripHtml } from "@/lib/text-format";
 import { useTheme } from "@/context/ThemeContext";
 import { sortAdmissionSlotsByHour } from "@/lib/admission-utils";
 import { FitWidthScale, tableRemPx } from "@/components/FitWidthScale";
+import { Btn } from "@/components/ui";
 
 const ADMISSION_TEXT = "text-[25px]";
 const CELL_BORDER = "border border-black dark:border-slate-600";
@@ -249,4 +254,99 @@ function orderSessions(sessions: AdmissionSession[]): AdmissionSession[] {
     if (!da && db) return 1;
     return 0;
   });
+}
+
+const SEARCH_INPUT_CLASS =
+  "w-full max-w-md rounded-md border border-slate-300 bg-white px-3 py-2 text-[19px] text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500";
+
+export function ArchivedAdmissionPatientSearch({
+  archive,
+  data,
+  onShowMonth,
+}: {
+  archive: ArchivedAdmissionMonth[];
+  data: AppData;
+  onShowMonth: (monthKey: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const hits = useMemo(
+    () => searchArchivedAdmissionPatients(archive, query),
+    [archive, query]
+  );
+  const trimmedQuery = query.trim();
+
+  return (
+    <div className="space-y-4">
+      <label className="block space-y-2">
+        <span className="text-[19px] text-slate-700 dark:text-slate-300">
+          Imię i nazwisko
+        </span>
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="np. Kowalski Jan"
+          className={SEARCH_INPUT_CLASS}
+          autoComplete="off"
+          spellCheck={false}
+        />
+      </label>
+
+      {trimmedQuery.length === 0 ? (
+        <p className="text-[17px] text-slate-500 dark:text-slate-400">
+          Wpisz imię, nazwisko lub oba — przeszukamy całe archiwum przyjęć.
+        </p>
+      ) : hits.length === 0 ? (
+        <p className="rounded-lg border border-slate-200 bg-white px-4 py-6 text-center text-[19px] text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+          Brak wyników dla „{trimmedQuery}”.
+        </p>
+      ) : (
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+          <p className="border-b border-slate-200 px-4 py-2 text-[17px] text-slate-500 dark:border-slate-700 dark:text-slate-400">
+            {hits.length} {hits.length === 1 ? "wynik" : hits.length < 5 ? "wyniki" : "wyników"}
+          </p>
+          <ul className="divide-y divide-slate-200 dark:divide-slate-700">
+            {hits.map((hit) => {
+              const patientName = stripHtml(hit.slot.patientName).trim();
+              const disqualified = hit.slot.admissionStatus === "disqualified";
+              return (
+                <li
+                  key={`${hit.monthKey}-${hit.session.id}-${hit.slot.id}`}
+                  className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                >
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <p
+                      className={`text-[19px] font-semibold text-slate-900 dark:text-slate-100 ${
+                        disqualified ? "line-through opacity-60" : ""
+                      }`}
+                    >
+                      {patientName}
+                      {disqualified ? (
+                        <span className="ml-2 text-[15px] font-medium text-slate-500 dark:text-slate-400">
+                          (dyskwalifikacja)
+                        </span>
+                      ) : null}
+                    </p>
+                    <p className="text-[17px] text-slate-600 dark:text-slate-400">
+                      {formatMonthLabel(hit.monthKey)} · przyjęcie{" "}
+                      {formatDatePL(hit.session.admissionDate) || "—"}
+                      {hit.slot.admissionHour ? ` · ${hit.slot.admissionHour}` : ""}
+                    </p>
+                    <p className="text-[16px] text-slate-500 dark:text-slate-500">
+                      {getDoctorName(data, hit.session.doctorId) || "—"}
+                      {" · "}
+                      {getPhysioName(data, hit.slot.physiotherapistId) || "—"}
+                    </p>
+                  </div>
+                  <Btn variant="secondary" onClick={() => onShowMonth(hit.monthKey)}>
+                    Pokaż miesiąc
+                  </Btn>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
 }

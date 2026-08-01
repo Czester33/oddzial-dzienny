@@ -172,3 +172,34 @@ export function ArchivedDutyMonthPanel({
     </FitWidthScale>
   );
 }
+
+export function ArchivedDutyYearPanel({
+  yearKey,
+  entries,
+  data,
+}: {
+  yearKey: string;
+  entries: ArchivedDutyMonth[];
+  data: AppData;
+}) {
+  const yearNum = Number(yearKey);
+  const monthsInYear = entries
+    .filter((entry) => parseMonthKey(entry.monthKey).year === yearNum)
+    .sort((a, b) => a.monthKey.localeCompare(b.monthKey));
+
+  if (monthsInYear.length === 0) {
+    return (
+      <p className="text-center text-[19px] text-slate-500 dark:text-slate-400">
+        Brak zarchiwizowanych dyżurów w tym roku.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      {monthsInYear.map((entry) => (
+        <ArchivedDutyMonthPanel key={entry.monthKey} entry={entry} data={data} />
+      ))}
+    </div>
+  );
+}

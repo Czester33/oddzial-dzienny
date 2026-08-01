@@ -142,8 +142,10 @@ const GUIDE_SECTIONS: GuideSection[] = [
     href: "/archiwum",
     intro: "Stare miesiące i lata — poza bieżącą pracą, ale dostępne do wglądu.",
     items: [
-      "Tu trafiają zarchiwizowane miesiące przyjęć i dyżurów oraz lata urlopów.",
-      "Kliknij wpis — zobaczysz te same tabele co kiedyś (do odczytu).",
+      "U góry wybierz kategorię: Przyjęcia, Dyżury lub Urlopy.",
+      "Przyjęcia: „Szukaj pacjenta” — imię/nazwisko w całym archiwum; „Pokaż miesiąc” otwiera tabelę.",
+      "Dyżury i urlopy: „Miesiące” albo „Cały rok” (wszystkie miesiące naraz).",
+      "Przywracanie z archiwum — w widoku „Miesiące”; rok urlopów zarchiwizowany ręcznie — też z „Cały rok”.",
       "„Cofnij z archiwum” — wraca do Przyjęć / Dyżurów / Urlopów; możesz poprawić.",
       "Po poprawkach: „Archiwizuj” — znowu ląduje w Archiwum.",
     ],

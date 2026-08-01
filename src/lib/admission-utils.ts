@@ -624,3 +624,56 @@ export function getUpcomingAdmissionThisWeek(
 
   return { days, total };
 }
+
+export interface ArchivedAdmissionPatientHit {
+  monthKey: string;
+  session: AdmissionSession;
+  slot: AdmissionSlot;
+}
+
+function normalizePatientSearchText(value: string): string {
+  return stripHtml(value)
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+export function matchesArchivedPatientName(patientName: string, query: string): boolean {
+  const name = normalizePatientSearchText(patientName);
+  const q = normalizePatientSearchText(query);
+  if (!q || !name) return false;
+  if (name.includes(q)) return true;
+  return q.split(" ").every((word) => name.includes(word));
+}
+
+export function searchArchivedAdmissionPatients(
+  archive: readonly ArchivedAdmissionMonth[],
+  query: string
+): ArchivedAdmissionPatientHit[] {
+  const q = query.trim();
+  if (!q) return [];
+
+  const hits: ArchivedAdmissionPatientHit[] = [];
+
+  for (const entry of archive) {
+    for (const session of entry.sessions) {
+      for (const slot of session.patients) {
+        if (!stripHtml(slot.patientName).trim()) continue;
+        if (!matchesArchivedPatientName(slot.patientName, q)) continue;
+        hits.push({ monthKey: entry.monthKey, session, slot });
+      }
+    }
+  }
+
+  hits.sort((a, b) => {
+    const byMonth = b.monthKey.localeCompare(a.monthKey);
+    if (byMonth !== 0) return byMonth;
+    const byDate = (b.session.admissionDate || "").localeCompare(a.session.admissionDate || "");
+    if (byDate !== 0) return byDate;
+    return stripHtml(a.slot.patientName)
+      .trim()
+      .localeCompare(stripHtml(b.slot.patientName).trim(), "pl");
+  });
+
+  return hits;
+}
