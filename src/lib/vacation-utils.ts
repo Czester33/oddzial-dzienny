@@ -123,6 +123,11 @@ export function archiveVacationMonth(
 }
 
 /** Move an archived vacation month back into active vacations. */
+export function hasActiveVacationMonth(data: AppData, monthKeyValue: string): boolean {
+  const yearKey = monthKeyValue.slice(0, 4);
+  return vacationEntriesInMonth(data.vacations[yearKey] ?? [], monthKeyValue).length > 0;
+}
+
 export function restoreVacationMonthFromArchive(
   data: AppData,
   monthKeyValue: string
@@ -215,6 +220,10 @@ function withVacationAutoArchiveSkip(
 }
 
 /** Move an archived vacation year back into active vacations. */
+export function hasActiveVacationYear(data: AppData, yearKey: string): boolean {
+  return (data.vacations[yearKey] ?? []).length > 0;
+}
+
 export function restoreVacationYearFromArchive(
   data: AppData,
   yearKey: string

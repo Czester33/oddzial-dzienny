@@ -105,8 +105,14 @@ function NavTab({
 
 export function Navigation() {
   const pathname = usePathname();
-  const { data, saving, save, canUndo, canRedo, undo, redo, refresh } = useData();
+  const { data, saving, save, canUndo, canRedo, undo, redo, refresh, lastSyncedAt } = useData();
   const silentRefresh = useCallback(() => refresh({ silent: true }), [refresh]);
+  const syncedLabel = lastSyncedAt
+    ? new Date(lastSyncedAt).toLocaleTimeString("pl-PL", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
   const dragIndexRef = useRef<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
@@ -181,7 +187,13 @@ export function Navigation() {
             <p className="text-[15px] text-amber-700 dark:text-amber-400">{APP_BETA_NOTICE}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            {saving && <span className="text-[19px] text-blue-600 dark:text-blue-400">Zapisywanie...</span>}
+            {saving ? (
+              <span className="text-[19px] text-blue-600 dark:text-blue-400">Zapisywanie...</span>
+            ) : syncedLabel ? (
+              <span className="text-[15px] text-slate-500 dark:text-slate-400">
+                Zsynchronizowano o {syncedLabel}
+              </span>
+            ) : null}
             <button
               type="button"
               onClick={() => void undo()}

@@ -377,6 +377,76 @@ function FreeMassageSlotsPanel({
   );
 }
 
+function ActiveMassageToolsPanel({
+  hourChangeMode,
+  onToggleHourChangeMode,
+  active,
+  waiting,
+  todaySlotPeak,
+  maxPerDay,
+  onMaxPerDayChange,
+}: {
+  hourChangeMode: boolean;
+  onToggleHourChangeMode: () => void;
+  active: MassagePatient[];
+  waiting: MassageWaiting[];
+  todaySlotPeak?: { date: string; count: number };
+  maxPerDay: number;
+  onMaxPerDayChange: (maxPerDay: number) => void;
+}) {
+  return (
+    <>
+      <div className="flex flex-col gap-2">
+        <Btn
+          variant={hourChangeMode ? "primary" : "secondary"}
+          onClick={onToggleHourChangeMode}
+          className="w-full text-[16px]"
+        >
+          {hourChangeMode ? "Anuluj planowanie" : "Zaplanuj zmianę godziny"}
+        </Btn>
+        {hourChangeMode && (
+          <p className="text-center text-[14px] leading-snug text-slate-500 dark:text-slate-400">
+            Kliknij godzinę pacjenta, aby ustawić zmianę
+          </p>
+        )}
+      </div>
+      <FreeMassageSlotsPanel
+        active={active}
+        waiting={waiting}
+        todaySlotPeak={todaySlotPeak}
+        maxPerDay={maxPerDay}
+      />
+      <div className="flex justify-center px-2 opacity-60 transition-opacity hover:opacity-100">
+        <div
+          className="flex items-center gap-1.5 text-[12px] text-slate-400 dark:text-slate-500"
+          title="Maksymalna liczba aktywnych masaży dziennie"
+        >
+          <span>Miejsc/dzień</span>
+          <button
+            type="button"
+            onClick={() => onMaxPerDayChange(clampMaxMassagesPerDay(maxPerDay - 1))}
+            disabled={maxPerDay <= MIN_MAX_MASSAGES_PER_DAY}
+            className="min-w-[1.25rem] rounded px-1 py-0.5 disabled:opacity-30"
+            aria-label="Mniej miejsc dziennie"
+          >
+            −
+          </button>
+          <span className="min-w-[1rem] text-center tabular-nums">{maxPerDay}</span>
+          <button
+            type="button"
+            onClick={() => onMaxPerDayChange(clampMaxMassagesPerDay(maxPerDay + 1))}
+            disabled={maxPerDay >= MAX_MAX_MASSAGES_PER_DAY}
+            className="min-w-[1.25rem] rounded px-1 py-0.5 disabled:opacity-30"
+            aria-label="Więcej miejsc dziennie"
+          >
+            +
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 function MasazeContent({ data }: { data: AppData }) {
   const { error, save } = useData();
   const { theme } = useTheme();
@@ -696,61 +766,26 @@ function MasazeContent({ data }: { data: AppData }) {
             </div>
           </FitWidthScale>
           <div className="absolute left-full top-0 ml-4 hidden w-[300px] flex-col gap-3 lg:flex">
-            <div className="flex flex-col gap-2">
-              <Btn
-                variant={hourChangeMode ? "primary" : "secondary"}
-                onClick={toggleHourChangeMode}
-                className="w-full text-[16px]"
-              >
-                {hourChangeMode ? "Anuluj planowanie" : "Zaplanuj zmianę godziny"}
-              </Btn>
-              {hourChangeMode && (
-                <p className="text-center text-[14px] leading-snug text-slate-500 dark:text-slate-400">
-                  Kliknij godzinę pacjenta, aby ustawić zmianę
-                </p>
-              )}
-            </div>
-            <FreeMassageSlotsPanel
+            <ActiveMassageToolsPanel
+              hourChangeMode={hourChangeMode}
+              onToggleHourChangeMode={toggleHourChangeMode}
               active={sortedActive}
               waiting={massages.waiting}
               todaySlotPeak={massages.todaySlotPeak}
               maxPerDay={maxPerDay}
+              onMaxPerDayChange={(value) => updateMassages({ maxPerDay: value })}
             />
-            <div className="flex justify-center px-2 opacity-60 transition-opacity hover:opacity-100">
-              <div
-                className="flex items-center gap-1.5 text-[12px] text-slate-400 dark:text-slate-500"
-                title="Maksymalna liczba aktywnych masaży dziennie"
-              >
-                <span>Miejsc/dzień</span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    updateMassages({
-                      maxPerDay: clampMaxMassagesPerDay(maxPerDay - 1),
-                    })
-                  }
-                  disabled={maxPerDay <= MIN_MAX_MASSAGES_PER_DAY}
-                  className="min-w-[1.25rem] rounded px-1 py-0.5 disabled:opacity-30"
-                  aria-label="Mniej miejsc dziennie"
-                >
-                  −
-                </button>
-                <span className="min-w-[1rem] text-center tabular-nums">{maxPerDay}</span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    updateMassages({
-                      maxPerDay: clampMaxMassagesPerDay(maxPerDay + 1),
-                    })
-                  }
-                  disabled={maxPerDay >= MAX_MAX_MASSAGES_PER_DAY}
-                  className="min-w-[1.25rem] rounded px-1 py-0.5 disabled:opacity-30"
-                  aria-label="Więcej miejsc dziennie"
-                >
-                  +
-                </button>
-              </div>
-            </div>
+          </div>
+          <div className="mx-auto mt-4 flex w-full max-w-[300px] flex-col gap-3 lg:hidden">
+            <ActiveMassageToolsPanel
+              hourChangeMode={hourChangeMode}
+              onToggleHourChangeMode={toggleHourChangeMode}
+              active={sortedActive}
+              waiting={massages.waiting}
+              todaySlotPeak={massages.todaySlotPeak}
+              maxPerDay={maxPerDay}
+              onMaxPerDayChange={(value) => updateMassages({ maxPerDay: value })}
+            />
           </div>
         </div>
       </div>

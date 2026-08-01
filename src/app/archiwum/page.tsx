@@ -4,9 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useData } from "@/context/DataContext";
 import { PageHeader, LoadingState, ErrorBanner, Btn, MonthSelector } from "@/components/ui";
 import { parseMonthKey } from "@/lib/date-utils";
-import { restoreAdmissionMonthFromArchive } from "@/lib/admission-utils";
-import { restoreDutyMonthFromArchive } from "@/lib/duty-utils";
-import { restoreVacationYearFromArchive, restoreVacationMonthFromArchive } from "@/lib/vacation-utils";
+import { restoreAdmissionMonthFromArchive, hasActiveAdmissionMonth } from "@/lib/admission-utils";
+import { restoreDutyMonthFromArchive, hasActiveDutyMonth } from "@/lib/duty-utils";
+import {
+  restoreVacationYearFromArchive,
+  restoreVacationMonthFromArchive,
+  hasActiveVacationMonth,
+  hasActiveVacationYear,
+} from "@/lib/vacation-utils";
 import { ArchivedAdmissionMonthPanel, ArchivedAdmissionPatientSearch } from "@/components/ArchivedAdmissionSessions";
 import {
   ArchivedVacationMonthPanel,
@@ -87,6 +92,9 @@ export default function ArchiwumPage() {
   const [dutyYearKey, setDutyYearKey] = useState<string | null>(null);
   const [vacationMonthKey, setVacationMonthKey] = useState<string | null>(null);
   const [vacationYearKey, setVacationYearKey] = useState<string | null>(null);
+  const [highlightAdmissionSlotId, setHighlightAdmissionSlotId] = useState<string | null>(
+    null
+  );
 
   const admissionMonths = useMemo(() => {
     if (!data) return [] as ArchivedAdmissionMonth[];
@@ -173,27 +181,54 @@ export default function ArchiwumPage() {
     (entry) => entry.yearKey === effectiveVacationYearKey
   );
 
+  async function confirmRestore(message: string, overwriteWarning?: string): Promise<boolean> {
+    if (!overwriteWarning) return confirm(message);
+    return confirm(
+      `${message}\n\n${overwriteWarning}\n\nAktywne dane zostaną nadpisane. Kontynuować?`
+    );
+  }
+
   async function restoreAdmission(monthKey: string) {
     if (!data) return;
-    if (!confirm("Przywrócić ten miesiąc przyjęć z archiwum?")) return;
+    const overwrite = hasActiveAdmissionMonth(data, monthKey)
+      ? "Ten miesiąc ma już aktywne przyjęcia."
+      : undefined;
+    if (!(await confirmRestore("Przywrócić ten miesiąc przyjęć z archiwum?", overwrite))) {
+      return;
+    }
     await save(restoreAdmissionMonthFromArchive(data, monthKey));
   }
 
   async function restoreDuty(monthKey: string) {
     if (!data) return;
-    if (!confirm("Przywrócić ten miesiąc dyżurów z archiwum?")) return;
+    const overwrite = hasActiveDutyMonth(data, monthKey)
+      ? "Ten miesiąc ma już aktywne dyżury."
+      : undefined;
+    if (!(await confirmRestore("Przywrócić ten miesiąc dyżurów z archiwum?", overwrite))) {
+      return;
+    }
     await save(restoreDutyMonthFromArchive(data, monthKey));
   }
 
   async function restoreVacationMonth(monthKey: string) {
     if (!data) return;
-    if (!confirm("Przywrócić ten miesiąc urlopów z archiwum?")) return;
+    const overwrite = hasActiveVacationMonth(data, monthKey)
+      ? "Ten miesiąc ma już aktywne urlopy."
+      : undefined;
+    if (!(await confirmRestore("Przywrócić ten miesiąc urlopów z archiwum?", overwrite))) {
+      return;
+    }
     await save(restoreVacationMonthFromArchive(data, monthKey));
   }
 
   async function restoreVacation(yearKey: string) {
     if (!data) return;
-    if (!confirm("Przywrócić ten rok urlopów z archiwum?")) return;
+    const overwrite = hasActiveVacationYear(data, yearKey)
+      ? "Ten rok ma już aktywne urlopy."
+      : undefined;
+    if (!(await confirmRestore("Przywrócić ten rok urlopów z archiwum?", overwrite))) {
+      return;
+    }
     await save(restoreVacationYearFromArchive(data, yearKey));
   }
 
@@ -321,7 +356,10 @@ export default function ArchiwumPage() {
                       <span>Miesiąc:</span>
                       <MonthSelector
                         value={effectiveAdmissionKey}
-                        onChange={setAdmissionKey}
+                        onChange={(key) => {
+                          setAdmissionKey(key);
+                          setHighlightAdmissionSlotId(null);
+                        }}
                         options={admissionKeys}
                       />
                     </label>
@@ -338,6 +376,7 @@ export default function ArchiwumPage() {
                     data={data}
                     open
                     onToggle={() => {}}
+                    highlightSlotId={highlightAdmissionSlotId}
                   />
                 </>
               ) : null}
@@ -346,8 +385,9 @@ export default function ArchiwumPage() {
                 <ArchivedAdmissionPatientSearch
                   archive={admissionMonths}
                   data={data}
-                  onShowMonth={(monthKey) => {
+                  onShowPatient={(monthKey, _sessionId, slotId) => {
                     setAdmissionKey(monthKey);
+                    setHighlightAdmissionSlotId(slotId);
                     setAdmissionViewMode("months");
                   }}
                 />

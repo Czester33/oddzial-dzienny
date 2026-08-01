@@ -87,6 +87,10 @@ function withDutyAutoArchiveSkip(
 }
 
 /** Move an archived duty month back into active duties. */
+export function hasActiveDutyMonth(data: AppData, monthKeyValue: string): boolean {
+  return dutyMonthHasData(data.duties[monthKeyValue] ?? []);
+}
+
 export function restoreDutyMonthFromArchive(
   data: AppData,
   monthKeyValue: string

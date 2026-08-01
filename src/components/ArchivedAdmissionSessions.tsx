@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { AdmissionSession, AppData, ArchivedAdmissionMonth } from "@/lib/types";
 import {
   formatDatePL,
@@ -33,11 +33,13 @@ function ArchivedSessionTable({
   data,
   themeId,
   monthKeyValue,
+  highlightSlotId,
 }: {
   session: AdmissionSession;
   data: AppData;
   themeId?: string;
   monthKeyValue: string;
+  highlightSlotId?: string | null;
 }) {
   const { theme: colorMode } = useTheme();
   const { month } = parseMonthKey(monthKeyValue);
@@ -49,6 +51,19 @@ function ArchivedSessionTable({
     () => sortAdmissionSlotsByHour(session.patients),
     [session.patients]
   );
+  const highlightRef = useRef<HTMLTableRowElement>(null);
+
+  useEffect(() => {
+    if (!highlightSlotId || !patients.some((slot) => slot.id === highlightSlotId)) return;
+    highlightRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [highlightSlotId, patients]);
+
+  function rowBackground(index: number, slotId: string): string {
+    if (slotId === highlightSlotId) {
+      return colorMode === "dark" ? "#1e3a8a" : "#bfdbfe";
+    }
+    return index % 2 === 0 ? colors.rowEven : colors.zebra;
+  }
 
   return (
     <FitWidthScale contentWidthPx={tableRemPx(58)}>
@@ -105,13 +120,18 @@ function ArchivedSessionTable({
           </thead>
           <tbody>
             {patients.map((slot, index) => {
-              const bg = index % 2 === 0 ? colors.rowEven : colors.zebra;
+              const bg = rowBackground(index, slot.id);
               const name = stripHtml(slot.patientName).trim();
               const admitted = slot.admissionStatus === "admitted";
               const disqualified = slot.admissionStatus === "disqualified";
+              const isHighlighted = slot.id === highlightSlotId;
 
               return (
-                <tr key={slot.id}>
+                <tr
+                  key={slot.id}
+                  ref={isHighlighted ? highlightRef : undefined}
+                  className={isHighlighted ? "ring-2 ring-inset ring-blue-500" : undefined}
+                >
                   {index === 0 && (
                     <td
                       rowSpan={patients.length}
@@ -200,11 +220,13 @@ export function ArchivedAdmissionMonthPanel({
   data,
   open,
   onToggle,
+  highlightSlotId,
 }: {
   entry: ArchivedAdmissionMonth;
   data: AppData;
   open: boolean;
   onToggle: () => void;
+  highlightSlotId?: string | null;
 }) {
   const sessions = orderSessions(entry.sessions);
 
@@ -236,6 +258,7 @@ export function ArchivedAdmissionMonthPanel({
                 data={data}
                 themeId={entry.themeId}
                 monthKeyValue={entry.monthKey}
+                highlightSlotId={highlightSlotId}
               />
             ))
           )}
@@ -262,11 +285,11 @@ const SEARCH_INPUT_CLASS =
 export function ArchivedAdmissionPatientSearch({
   archive,
   data,
-  onShowMonth,
+  onShowPatient,
 }: {
   archive: ArchivedAdmissionMonth[];
   data: AppData;
-  onShowMonth: (monthKey: string) => void;
+  onShowPatient: (monthKey: string, sessionId: string, slotId: string) => void;
 }) {
   const [query, setQuery] = useState("");
   const hits = useMemo(
@@ -338,7 +361,12 @@ export function ArchivedAdmissionPatientSearch({
                       {getPhysioName(data, hit.slot.physiotherapistId) || "—"}
                     </p>
                   </div>
-                  <Btn variant="secondary" onClick={() => onShowMonth(hit.monthKey)}>
+                  <Btn
+                    variant="secondary"
+                    onClick={() =>
+                      onShowPatient(hit.monthKey, hit.session.id, hit.slot.id)
+                    }
+                  >
                     Pokaż miesiąc
                   </Btn>
                 </li>

@@ -319,6 +319,10 @@ function withAdmissionAutoArchiveSkip(
 }
 
 /** Move an archived month back into active admissions. */
+export function hasActiveAdmissionMonth(data: AppData, monthKeyValue: string): boolean {
+  return (data.admissions[monthKeyValue] ?? []).length > 0;
+}
+
 export function restoreAdmissionMonthFromArchive(
   data: AppData,
   monthKeyValue: string

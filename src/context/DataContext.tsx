@@ -16,6 +16,7 @@ const MAX_UNDO_HISTORY = 50;
 const REMOTE_POLL_MS = 8_000;
 /** Ignore silent remote refresh briefly after local edits so the UI does not jump. */
 const LOCAL_EDIT_QUIET_MS = 12_000;
+const PENDING_SAVE_RETRY_MS = 15_000;
 
 type UndoEntry = {
   /** Snapshot before this client's edit. */
@@ -34,6 +35,8 @@ type PersistResult =
   | { ok: false; conflict?: false }
   | { ok: false; conflict: true; data: AppData; updatedAt: string };
 
+export type SaveIssue = "network" | "conflict" | null;
+
 interface DataContextValue {
   data: AppData | null;
   loading: boolean;
@@ -41,13 +44,29 @@ interface DataContextValue {
   error: string | null;
   canUndo: boolean;
   canRedo: boolean;
+  isOnline: boolean;
+  lastSyncedAt: string | null;
+  remoteUpdateAvailable: boolean;
+  hasPendingSave: boolean;
+  saveIssue: SaveIssue;
   save: (data: AppData) => Promise<void>;
   undo: () => Promise<void>;
   redo: () => Promise<void>;
   refresh: (options?: { silent?: boolean }) => Promise<void>;
+  applyRemoteUpdate: () => Promise<void>;
+  retrySave: () => Promise<void>;
 }
 
 const DataContext = createContext<DataContextValue | null>(null);
+
+function isNetworkError(error: unknown): boolean {
+  if (typeof navigator !== "undefined" && !navigator.onLine) return true;
+  return error instanceof TypeError;
+}
+
+function markSyncedNow(): string {
+  return new Date().toISOString();
+}
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<AppData | null>(null);
@@ -56,6 +75,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
+  const [remoteUpdateAvailable, setRemoteUpdateAvailable] = useState(false);
+  const [hasPendingSave, setHasPendingSave] = useState(false);
+  const [saveIssue, setSaveIssue] = useState<SaveIssue>(null);
 
   const dataRef = useRef<AppData | null>(null);
   const historyRef = useRef<UndoEntry[]>([]);
@@ -68,6 +92,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   /** AppData matching serverUpdatedAtRef (common ancestor for merges). */
   const syncedDataRef = useRef<AppData | null>(null);
   const lastLocalEditAtRef = useRef(0);
+  const remotePendingRef = useRef<ApiDataResponse | null>(null);
+  const flushSaveQueueRef = useRef<() => Promise<void>>(async () => {});
+
+  const syncPendingFlag = useCallback(() => {
+    setHasPendingSave(Boolean(pendingSaveRef.current));
+  }, []);
 
   const clearHistory = useCallback(() => {
     historyRef.current = [];
@@ -81,6 +111,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     serverUpdatedAtRef.current = updatedAt;
     dataRef.current = next;
     setData(next);
+    setLastSyncedAt(markSyncedNow());
+    setRemoteUpdateAvailable(false);
+    remotePendingRef.current = null;
   }, []);
 
   const refresh = useCallback(
@@ -103,13 +136,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
           if (saveInFlightRef.current || pendingSaveRef.current) return;
           if (Date.now() - lastLocalEditAtRef.current < LOCAL_EDIT_QUIET_MS) return;
           if (payload.updatedAt === serverUpdatedAtRef.current) return;
-          // Another client changed data — only adopt if our UI matches last sync
-          // (no unsaved local drift beyond quiet window).
           if (
             syncedDataRef.current &&
             dataRef.current &&
             !deepEqual(dataRef.current, syncedDataRef.current)
           ) {
+            remotePendingRef.current = payload;
+            setRemoteUpdateAvailable(true);
             return;
           }
         }
@@ -118,9 +151,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (!options?.silent) {
           clearHistory();
         }
-      } catch {
+      } catch (err) {
         if (!options?.silent) {
-          setError("Nie udało się wczytać danych");
+          setError(isNetworkError(err) ? "Brak połączenia z serwerem" : "Nie udało się wczytać danych");
         }
       } finally {
         if (!options?.silent) {
@@ -152,6 +185,34 @@ export function DataProvider({ children }: { children: ReactNode }) {
     };
   }, [refresh]);
 
+  useEffect(() => {
+    const updateOnline = () => setIsOnline(navigator.onLine);
+
+    const handleOnline = () => {
+      updateOnline();
+      setSaveIssue((issue) => (issue === "network" ? null : issue));
+      if (pendingSaveRef.current) {
+        void flushSaveQueueRef.current();
+      }
+    };
+
+    const handleOffline = () => {
+      updateOnline();
+      if (pendingSaveRef.current) {
+        setSaveIssue("network");
+        setError("Brak połączenia — zmiany nie zostały zapisane.");
+      }
+    };
+
+    updateOnline();
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
   /** Network write only — never overwrite newer optimistic UI. */
   const persist = useCallback(async (newData: AppData): Promise<PersistResult> => {
     setError(null);
@@ -161,13 +222,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
       let baseData = syncedDataRef.current;
 
       for (let attempt = 0; attempt < 5; attempt++) {
-        // Fold any newer clicks that arrived while we waited into this write.
         if (pendingSaveRef.current && baseData) {
           attemptData = mergeAppData(baseData, pendingSaveRef.current, attemptData);
           pendingSaveRef.current = null;
+          syncPendingFlag();
         } else if (pendingSaveRef.current) {
           attemptData = pendingSaveRef.current;
           pendingSaveRef.current = null;
+          syncPendingFlag();
         }
 
         const res = await fetch("/api/data", {
@@ -209,9 +271,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const body = (await res.json()) as { ok: true; updatedAt: string };
         syncedDataRef.current = attemptData;
         serverUpdatedAtRef.current = body.updatedAt;
+        setLastSyncedAt(markSyncedNow());
+        setSaveIssue(null);
+        setRemoteUpdateAvailable(false);
+        remotePendingRef.current = null;
 
-        // Keep showing the newest optimistic state; only sync UI if it still
-        // matches what we just wrote (no newer clicks waiting).
         if (!pendingSaveRef.current) {
           const ui = dataRef.current;
           if (!ui || deepEqual(ui, newData) || deepEqual(ui, attemptData)) {
@@ -223,19 +287,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
         return { ok: true, updatedAt: body.updatedAt, data: attemptData };
       }
 
+      setSaveIssue("conflict");
       setError("Konflikt zapisu — odśwież stronę i spróbuj ponownie");
       return { ok: false };
-    } catch {
-      setError("Nie udało się zapisać danych");
+    } catch (err) {
+      if (isNetworkError(err)) {
+        setSaveIssue("network");
+        setError("Brak połączenia — zmiany nie zostały zapisane.");
+      } else {
+        setSaveIssue(null);
+        setError("Nie udało się zapisać danych");
+      }
       return { ok: false };
     }
-  }, []);
+  }, [syncPendingFlag]);
 
   const recordUndoEntry = useCallback((before: AppData, after: AppData) => {
     if (deepEqual(before, after)) return;
     const hist = historyRef.current;
     const last = hist[hist.length - 1];
-    // Coalesce rapid edits that share the same baseline into one undo step.
     if (last && deepEqual(last.before, before)) {
       hist[hist.length - 1] = { before, after };
     } else {
@@ -243,7 +313,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
     historyRef.current = hist.slice(-MAX_UNDO_HISTORY);
     setCanUndo(historyRef.current.length > 0);
-    // A new edit invalidates the redo chain.
     redoHistoryRef.current = [];
     setCanRedo(false);
   }, []);
@@ -257,11 +326,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       while (pendingSaveRef.current) {
         const next = pendingSaveRef.current;
         pendingSaveRef.current = null;
+        syncPendingFlag();
 
         const result = await persist(next);
         if (!result.ok) {
           if (result.conflict) {
-            // Only hard-replace UI when we have nothing newer queued.
+            setSaveIssue("conflict");
             if (!pendingSaveRef.current) {
               dataRef.current = result.data;
               setData(result.data);
@@ -272,11 +342,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
           }
           if (!pendingSaveRef.current) {
             pendingSaveRef.current = next;
+            syncPendingFlag();
           }
           break;
         }
 
-        // Keep optimistic undo entry in sync with what was actually persisted.
         const baseline = undoBaselineRef.current;
         if (baseline) {
           recordUndoEntry(baseline, result.data);
@@ -289,28 +359,40 @@ export function DataProvider({ children }: { children: ReactNode }) {
     } finally {
       saveInFlightRef.current = false;
       setSaving(false);
+      syncPendingFlag();
       if (pendingSaveRef.current) {
-        void flushSaveQueue();
+        void flushSaveQueueRef.current();
       }
     }
-  }, [clearHistory, persist, recordUndoEntry]);
+  }, [clearHistory, persist, recordUndoEntry, syncPendingFlag]);
+
+  flushSaveQueueRef.current = flushSaveQueue;
+
+  useEffect(() => {
+    if (!hasPendingSave || !isOnline || saving) return;
+    const interval = setInterval(() => {
+      if (pendingSaveRef.current && !saveInFlightRef.current) {
+        void flushSaveQueue();
+      }
+    }, PENDING_SAVE_RETRY_MS);
+    return () => clearInterval(interval);
+  }, [flushSaveQueue, hasPendingSave, isOnline, saving]);
 
   const save = useCallback(
     async (newData: AppData) => {
       const current = dataRef.current;
       lastLocalEditAtRef.current = Date.now();
 
-      // Optimistic UI — always immediate, never waits for network.
       dataRef.current = newData;
       setData(newData);
 
       if (!current) {
         pendingSaveRef.current = newData;
+        syncPendingFlag();
         void flushSaveQueue();
         return;
       }
 
-      // Fresh edit burst when idle; keep baseline when coalescing onto an in-flight save.
       if (!saveInFlightRef.current && !pendingSaveRef.current) {
         undoBaselineRef.current = current;
       } else if (!undoBaselineRef.current) {
@@ -321,12 +403,34 @@ export function DataProvider({ children }: { children: ReactNode }) {
       recordUndoEntry(baseline, newData);
 
       pendingSaveRef.current = newData;
-
-      // Do not await the full network round-trip on every click.
+      syncPendingFlag();
       void flushSaveQueue();
     },
-    [flushSaveQueue, recordUndoEntry]
+    [flushSaveQueue, recordUndoEntry, syncPendingFlag]
   );
+
+  const applyRemoteUpdate = useCallback(async () => {
+    const remote = remotePendingRef.current;
+    const base = syncedDataRef.current;
+    const local = dataRef.current;
+
+    if (!remote || !base || !local) {
+      await refresh();
+      return;
+    }
+
+    const merged = mergeAppData(base, local, remote.data);
+    setRemoteUpdateAvailable(false);
+    remotePendingRef.current = null;
+    await save(merged);
+  }, [refresh, save]);
+
+  const retrySave = useCallback(async () => {
+    if (!pendingSaveRef.current) return;
+    setSaveIssue(null);
+    setError(null);
+    await flushSaveQueue();
+  }, [flushSaveQueue]);
 
   const undo = useCallback(async () => {
     const entry = historyRef.current.pop();
@@ -337,11 +441,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setCanRedo(true);
 
     pendingSaveRef.current = null;
+    syncPendingFlag();
     undoBaselineRef.current = null;
     lastLocalEditAtRef.current = Date.now();
 
-    // Restore the pre-edit snapshot directly so added vacations/ranges fully revert.
-    // Merge only when the server moved past the edited revision.
     const remote = syncedDataRef.current;
     const restored =
       remote && !deepEqual(remote, entry.after) && !deepEqual(remote, entry.before)
@@ -351,8 +454,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     dataRef.current = restored;
     setData(restored);
     pendingSaveRef.current = restored;
+    syncPendingFlag();
     void flushSaveQueue();
-  }, [flushSaveQueue]);
+  }, [flushSaveQueue, syncPendingFlag]);
 
   const redo = useCallback(async () => {
     const entry = redoHistoryRef.current.pop();
@@ -363,6 +467,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setCanUndo(true);
 
     pendingSaveRef.current = null;
+    syncPendingFlag();
     undoBaselineRef.current = null;
     lastLocalEditAtRef.current = Date.now();
 
@@ -375,12 +480,31 @@ export function DataProvider({ children }: { children: ReactNode }) {
     dataRef.current = restored;
     setData(restored);
     pendingSaveRef.current = restored;
+    syncPendingFlag();
     void flushSaveQueue();
-  }, [flushSaveQueue]);
+  }, [flushSaveQueue, syncPendingFlag]);
 
   return (
     <DataContext.Provider
-      value={{ data, loading, saving, error, canUndo, canRedo, save, undo, redo, refresh }}
+      value={{
+        data,
+        loading,
+        saving,
+        error,
+        canUndo,
+        canRedo,
+        isOnline,
+        lastSyncedAt,
+        remoteUpdateAvailable,
+        hasPendingSave,
+        saveIssue,
+        save,
+        undo,
+        redo,
+        refresh,
+        applyRemoteUpdate,
+        retrySave,
+      }}
     >
       {children}
     </DataContext.Provider>
