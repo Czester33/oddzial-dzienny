@@ -12,7 +12,7 @@ import type {
   Physiotherapist,
 } from "./types";
 import { getPlannedDischargeDate, toDateInputValue } from "./date-utils";
-import { buildPlannedHourChange } from "./massage-schedule";
+import { buildPlannedHourChange, clampMaxMassagesPerDay, DEFAULT_MAX_MASSAGES_PER_DAY } from "./massage-schedule";
 import { normalizeAdmissions, migrateFlatArchiveToMonths } from "./admission-utils";
 import { normalizeNavLabels, normalizeNavOrder } from "./nav-utils";
 import { stripHtml, replaceNbspInHtml, stripEmojis } from "./text-format";
@@ -60,6 +60,21 @@ function mapMassageWaitingFields(m: {
     lastTreatmentDate: m.lastTreatmentDate ?? "",
     physiotherapistId: m.physiotherapistId ?? "",
     ...(plannedHourChange ? { plannedHourChange } : {}),
+  };
+}
+
+function mapMassagesFields(data: AppData["massages"]) {
+  const maxPerDay = clampMaxMassagesPerDay(data?.maxPerDay);
+  return {
+    active: (data?.active ?? []).map(mapMassageActiveFields),
+    waiting: (data?.waiting ?? []).map(mapMassageWaitingFields),
+    scheduleHours: data?.scheduleHours ?? "7:45-13:45",
+    headerNote: (() => {
+      const cleaned = replaceNbspInHtml(data?.headerNote ?? "").trim();
+      return stripHtml(cleaned) ? cleaned : "";
+    })(),
+    ...(maxPerDay !== DEFAULT_MAX_MASSAGES_PER_DAY ? { maxPerDay } : {}),
+    ...(data?.todaySlotPeak ? { todaySlotPeak: data.todaySlotPeak } : {}),
   };
 }
 
@@ -692,15 +707,7 @@ export function sanitizeAppData(data: AppData): AppData {
       rowColor: p.rowColor ?? "#e2e8f0",
     })),
     currentPatients,
-    massages: {
-      active: (data.massages?.active ?? []).map(mapMassageActiveFields),
-      waiting: (data.massages?.waiting ?? []).map(mapMassageWaitingFields),
-      scheduleHours: data.massages?.scheduleHours ?? "7:45-13:45",
-      headerNote: (() => {
-        const cleaned = replaceNbspInHtml(data.massages?.headerNote ?? "").trim();
-        return stripHtml(cleaned) ? cleaned : "";
-      })(),
-    },
+    massages: mapMassagesFields(data.massages),
     announcements: data.announcements ?? [],
     announcementsSeenAt: data.announcementsSeenAt ?? "",
     announcementsReadIds: Array.isArray(data.announcementsReadIds)
@@ -852,7 +859,7 @@ export function migrateData(raw: any): AppData {
     physiotherapists,
     doctors: admissionMigration.doctors,
     currentPatients,
-    massages: {
+    massages: mapMassagesFields({
       active: (raw.massages?.active ?? []).map((m: Record<string, unknown>) =>
         mapMassageActiveFields({
           id: String(m.id ?? uuidv4()),
@@ -876,7 +883,10 @@ export function migrateData(raw: any): AppData {
       ),
       scheduleHours: raw.massages?.scheduleHours ?? "7:45-13:45",
       headerNote: raw.massages?.headerNote ?? "",
-    },
+      maxPerDay:
+        typeof raw.massages?.maxPerDay === "number" ? raw.massages.maxPerDay : undefined,
+      todaySlotPeak: raw.massages?.todaySlotPeak as AppData["massages"]["todaySlotPeak"],
+    }),
     duties: Object.fromEntries(
       Object.entries(raw.duties ?? {}).map(([key, entries]) => [
         key,

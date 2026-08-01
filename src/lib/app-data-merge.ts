@@ -281,6 +281,11 @@ export function mergeAppData(base: AppData, local: AppData, remote: AppData): Ap
         massagesLocal?.headerNote,
         massagesRemote?.headerNote
       ),
+      maxPerDay: mergeValue(
+        massagesBase?.maxPerDay,
+        massagesLocal?.maxPerDay,
+        massagesRemote?.maxPerDay
+      ),
     },
     duties: mergeKeyedRecord(base.duties, local.duties, remote.duties, (b, l, r) =>
       mergeDutyEntries(b, l, r)

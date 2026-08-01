@@ -56,6 +56,8 @@ export interface MassagesData {
   waiting: MassageWaiting[];
   scheduleHours?: string;
   headerNote?: string;
+  /** Max active massage slots per day (default 12). */
+  maxPerDay?: number;
   /** Max occupancy reached today — same-day freed slots stay hidden until tomorrow. */
   todaySlotPeak?: { date: string; count: number };
 }

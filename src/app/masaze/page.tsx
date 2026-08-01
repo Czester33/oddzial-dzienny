@@ -17,11 +17,14 @@ import { resolvePhysioRowColor, physioShortName, physiosForSelect } from "@/lib/
 import {
   applyMassageSync,
   buildPlannedHourChange,
+  clampMaxMassagesPerDay,
   formatFreePlacesLabel,
   formatPlannedHourChangeLabel,
   getNearestFreeMassageSlots,
   hasMassageSyncChanges,
-  MAX_MASSAGES_PER_DAY,
+  MAX_MAX_MASSAGES_PER_DAY,
+  MIN_MAX_MASSAGES_PER_DAY,
+  resolveMaxMassagesPerDay,
   plannedHourChangeTooltip,
   sortMassagePatientsByHour,
 } from "@/lib/massage-schedule";
@@ -29,7 +32,6 @@ import { applyVacationNotes, hasVacationNoteChanges } from "@/lib/vacation-utils
 import { applyDutyNotes, hasDutyNoteChanges } from "@/lib/duty-utils";
 import { DEFAULT_FONT_SIZE } from "@/lib/text-format";
 
-const MAX_ACTIVE = MAX_MASSAGES_PER_DAY;
 /** Two font-size steps above app default (19 → 23 px). */
 const MASSAGE_TABLE_FONT_PX = DEFAULT_FONT_SIZE + 4;
 const MASSAGE_TABLE_TEXT = "text-[23px]";
@@ -281,11 +283,12 @@ function PhysioSelect({
   );
 }
 
-function displayActiveRows(active: MassagePatient[]): MassagePatient[] {
-  if (active.length >= MAX_ACTIVE) return active.slice(0, MAX_ACTIVE);
+function displayActiveRows(active: MassagePatient[], maxActive: number): MassagePatient[] {
+  const targetRows = Math.max(maxActive, active.length);
+  if (active.length >= targetRows) return active.slice(0, targetRows);
   return [
     ...active,
-    ...Array.from({ length: MAX_ACTIVE - active.length }, (_, i) => ({
+    ...Array.from({ length: targetRows - active.length }, (_, i) => ({
       id: `empty-${i}`,
       name: "",
       hour: "",
@@ -332,16 +335,18 @@ function FreeMassageSlotsPanel({
   active,
   waiting,
   todaySlotPeak,
+  maxPerDay,
 }: {
   active: MassagePatient[];
   waiting: MassageWaiting[];
   todaySlotPeak?: { date: string; count: number };
+  maxPerDay: number;
 }) {
   const slots = getNearestFreeMassageSlots(
     active,
     waiting,
     new Date(),
-    MAX_MASSAGES_PER_DAY,
+    maxPerDay,
     8,
     todaySlotPeak
   );
@@ -424,9 +429,10 @@ function MasazeContent({ data }: { data: AppData }) {
 
   const { massages } = data;
   const sortedActive = sortMassagePatientsByHour(massages.active);
-  const activeRows = displayActiveRows(sortedActive);
   const scheduleHours = massages.scheduleHours ?? "7:45-13:45";
   const headerNote = massages.headerNote ?? "";
+  const maxPerDay = resolveMaxMassagesPerDay(massages);
+  const activeRows = displayActiveRows(sortedActive, maxPerDay);
 
   const updateMassages = (patch: Partial<typeof massages>) => {
     const current = dataRef.current;
@@ -496,7 +502,8 @@ function MasazeContent({ data }: { data: AppData }) {
 
   const moveToActive = (waiting: MassageWaiting) => {
     const current = dataRef.current;
-    if (current.massages.active.length >= MAX_ACTIVE) return;
+    const limit = resolveMaxMassagesPerDay(current.massages);
+    if (current.massages.active.length >= limit) return;
     const active: MassagePatient = {
       id: uuidv4(),
       name: waiting.name,
@@ -707,7 +714,43 @@ function MasazeContent({ data }: { data: AppData }) {
               active={sortedActive}
               waiting={massages.waiting}
               todaySlotPeak={massages.todaySlotPeak}
+              maxPerDay={maxPerDay}
             />
+            <div className="flex justify-center px-2 opacity-60 transition-opacity hover:opacity-100">
+              <div
+                className="flex items-center gap-1.5 text-[12px] text-slate-400 dark:text-slate-500"
+                title="Maksymalna liczba aktywnych masaży dziennie"
+              >
+                <span>Miejsc/dzień</span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateMassages({
+                      maxPerDay: clampMaxMassagesPerDay(maxPerDay - 1),
+                    })
+                  }
+                  disabled={maxPerDay <= MIN_MAX_MASSAGES_PER_DAY}
+                  className="min-w-[1.25rem] rounded px-1 py-0.5 disabled:opacity-30"
+                  aria-label="Mniej miejsc dziennie"
+                >
+                  −
+                </button>
+                <span className="min-w-[1rem] text-center tabular-nums">{maxPerDay}</span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateMassages({
+                      maxPerDay: clampMaxMassagesPerDay(maxPerDay + 1),
+                    })
+                  }
+                  disabled={maxPerDay >= MAX_MAX_MASSAGES_PER_DAY}
+                  className="min-w-[1.25rem] rounded px-1 py-0.5 disabled:opacity-30"
+                  aria-label="Więcej miejsc dziennie"
+                >
+                  +
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -809,7 +852,7 @@ function MasazeContent({ data }: { data: AppData }) {
                       <button
                         type="button"
                         onClick={() => moveToActive(p)}
-                        disabled={massages.active.length >= MAX_ACTIVE}
+                        disabled={massages.active.length >= maxPerDay}
                         className={`${MASSAGE_TABLE_TEXT} font-bold text-blue-700 hover:underline disabled:text-slate-400 dark:text-blue-400 dark:disabled:text-slate-500`}
                         title="Dodaj do aktywnych"
                       >

@@ -1,7 +1,21 @@
-import type { AppData, MassageHourChange, MassagePatient, MassageWaiting } from "@/lib/types";
+import type { AppData, MassageHourChange, MassagePatient, MassageWaiting, MassagesData } from "@/lib/types";
 import { formatDatePL, isoFromParts, isWeekend, toDateInputValue } from "@/lib/date-utils";
 
-export const MAX_MASSAGES_PER_DAY = 12;
+export const DEFAULT_MAX_MASSAGES_PER_DAY = 12;
+export const MIN_MAX_MASSAGES_PER_DAY = 12;
+export const MAX_MAX_MASSAGES_PER_DAY = 16;
+/** @deprecated Use DEFAULT_MAX_MASSAGES_PER_DAY or resolveMaxMassagesPerDay */
+export const MAX_MASSAGES_PER_DAY = DEFAULT_MAX_MASSAGES_PER_DAY;
+
+export function clampMaxMassagesPerDay(value: number | undefined | null): number {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return DEFAULT_MAX_MASSAGES_PER_DAY;
+  return Math.min(MAX_MAX_MASSAGES_PER_DAY, Math.max(MIN_MAX_MASSAGES_PER_DAY, Math.round(n)));
+}
+
+export function resolveMaxMassagesPerDay(massages?: Pick<MassagesData, "maxPerDay"> | null): number {
+  return clampMaxMassagesPerDay(massages?.maxPerDay);
+}
 
 export function parseTimeLabel(value: string | undefined | null): { hours: number; minutes: number } | null {
   const match = (value ?? "").trim().match(/^(\d{1,2}):(\d{2})$/);
@@ -177,8 +191,9 @@ export function promoteWaitingToActive(data: AppData, now = new Date()): AppData
   const todayIso = getTodayIso(now);
   const active = [...(data.massages?.active ?? [])];
   const waiting = [...(data.massages?.waiting ?? [])];
+  const maxPerDay = resolveMaxMassagesPerDay(data.massages);
 
-  if (active.length >= MAX_MASSAGES_PER_DAY) return data;
+  if (active.length >= maxPerDay) return data;
 
   const ready = waiting
     .map((patient, index) => ({ patient, index }))
@@ -194,7 +209,7 @@ export function promoteWaitingToActive(data: AppData, now = new Date()): AppData
 
   const promotedIds = new Set<string>();
   for (const { patient } of ready) {
-    if (active.length >= MAX_MASSAGES_PER_DAY) break;
+    if (active.length >= maxPerDay) break;
     active.push({
       id: patient.id,
       name: patient.name,
@@ -451,7 +466,7 @@ export function getNearestFreeMassageSlots(
   active: MassagePatient[],
   waiting: MassageWaiting[] = [],
   now = new Date(),
-  maxPerDay = MAX_MASSAGES_PER_DAY,
+  maxPerDay = DEFAULT_MAX_MASSAGES_PER_DAY,
   maxDaysToShow = 8,
   todaySlotPeak?: { date: string; count: number }
 ): FreeMassageDay[] {
