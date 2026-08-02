@@ -159,6 +159,7 @@ function PrzyjeciaPageContent() {
   const dataRef = useRef(data);
   dataRef.current = data;
   const deepLinkHandledRef = useRef<string | null>(null);
+  const scrollToSessionIdRef = useRef<string | null>(null);
 
   const commitSave = useCallback(
     (next: AppData) => {
@@ -288,6 +289,20 @@ function PrzyjeciaPageContent() {
 
     return () => window.clearTimeout(timer);
   }, [loading, data, searchParams, monthKeyValue, sessions]);
+
+  useEffect(() => {
+    const sessionId = scrollToSessionIdRef.current;
+    if (!sessionId || !sessions.some((s) => s.id === sessionId)) return;
+
+    const timer = window.setTimeout(() => {
+      const el = document.getElementById(`admission-session-${sessionId}`);
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      scrollToSessionIdRef.current = null;
+    }, 120);
+
+    return () => window.clearTimeout(timer);
+  }, [sessions]);
 
   useEffect(() => {
     if (loading || !data) return;
@@ -448,6 +463,7 @@ function PrzyjeciaPageContent() {
   };
 
   const removeSession = (sessionId: string) => {
+    if (!confirm("Usunąć całe przyjęcie wraz z listą pacjentów?")) return;
     saveMonthSessions(rawSessions.filter((s) => s.id !== sessionId));
   };
 
@@ -459,10 +475,9 @@ function PrzyjeciaPageContent() {
   };
 
   const addSession = () => {
-    saveMonthSessions([...rawSessions, createAdmissionSession()]);
-    requestAnimationFrame(() => {
-      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
-    });
+    const session = createAdmissionSession();
+    scrollToSessionIdRef.current = session.id;
+    saveMonthSessions([...rawSessions, session]);
   };
 
   const addDoctor = () => {
