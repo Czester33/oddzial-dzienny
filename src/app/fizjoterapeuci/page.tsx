@@ -312,7 +312,7 @@ export default function FizjoterapeuciPage() {
                         onClick={() => updatePhysio({ ...physio, hidden: !physio.hidden })}
                         className="w-full rounded-md border border-slate-300/80 bg-white/70 px-2 py-1.5 text-[15px] font-medium text-slate-700 hover:bg-white dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-200 dark:hover:bg-slate-900/70"
                       >
-                        {physio.hidden ? "Pokaż w tabelach" : "Ukryj z tabel"}
+                        {physio.hidden ? "Pokaż na liście pacjentów" : "Ukryj z listy pacjentów"}
                       </button>
                       <PhysioColorPicker
                         physio={physio}

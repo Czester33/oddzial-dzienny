@@ -31,7 +31,8 @@ import {
 import {
   resolvePhysioColumnHeaderColor,
   resolvePhysioRowColor,
-  physioShortName,
+  physioPlanningDisplayLabel,
+  physioPlanningOptionLabel,
 } from "@/lib/physio-utils";
 import {
   applyAutoArchiveVacations,
@@ -65,8 +66,12 @@ const MONTH_COLORS = [
   { header: "#5a9a6a", zebra: "#e4f0e7" },
 ];
 
-function shortPhysioName(name: string): string {
-  return physioShortName(name) || "—";
+function vacationPhysioLabel(physio: Physiotherapist): string {
+  return physioPlanningDisplayLabel(physio, true) || "—";
+}
+
+function vacationPhysioOptionLabel(physio: Physiotherapist): string {
+  return physioPlanningOptionLabel(physio, true) || "—";
 }
 
 function entryCertainty(entry: VacationEntry): Certainty {
@@ -267,7 +272,7 @@ function VacationAddMenu({
                     borderColor: p.color,
                   }}
                 >
-                  {shortPhysioName(p.name)}
+                  {vacationPhysioOptionLabel(p)}
                 </button>
               );
             })}
@@ -422,7 +427,7 @@ function VacationMonthTable({
                                     aria-hidden
                                   />
                                   <span className="min-w-0 flex-1 truncate font-semibold">
-                                    {shortPhysioName(physio?.name ?? "?")}
+                                    {physio ? vacationPhysioLabel(physio) : "?"}
                                   </span>
                                   <button
                                     type="button"
@@ -825,7 +830,7 @@ export default function UrlopyPage() {
                         borderColor: p.color,
                       }}
                     >
-                      {shortPhysioName(p.name)}
+                      {vacationPhysioLabel(p)}
                     </button>
                   );
                 })}

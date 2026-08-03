@@ -407,8 +407,8 @@ export function physiosForSelect(data: AppData, selectedId = ""): Physiotherapis
   return [...visible, selected];
 }
 
-/** Active physios for admission pickers — includes hidden (visible first). */
-export function physiosForAdmissionSelect(data: AppData): Physiotherapist[] {
+/** Active physios for planning (admissions, duties, vacations, …) — includes hidden, visible first. */
+export function physiosForPlanningSelect(data: AppData): Physiotherapist[] {
   const visible: Physiotherapist[] = [];
   const hidden: Physiotherapist[] = [];
   for (const physio of data.physiotherapists) {
@@ -416,6 +416,28 @@ export function physiosForAdmissionSelect(data: AppData): Physiotherapist[] {
     else visible.push(physio);
   }
   return [...visible, ...hidden];
+}
+
+/** @deprecated Use physiosForPlanningSelect */
+export function physiosForAdmissionSelect(data: AppData): Physiotherapist[] {
+  return physiosForPlanningSelect(data);
+}
+
+/** Plain name on tiles / selected values in planning views. */
+export function physioPlanningDisplayLabel(physio: Physiotherapist, short = false): string {
+  return short ? physioShortName(physio.name) : physioDisplayName(physio.name);
+}
+
+/** Dropdown option label; marks hidden staff. */
+export function physioPlanningOptionLabel(physio: Physiotherapist, short = false): string {
+  const base = physioPlanningDisplayLabel(physio, short);
+  if (!base) return physio.hidden ? "(ukryty)" : "";
+  return physio.hidden ? `${base} (ukryty)` : base;
+}
+
+/** @deprecated Use physioPlanningDisplayLabel or physioPlanningOptionLabel */
+export function physioPickerLabel(physio: Physiotherapist, short = false): string {
+  return physioPlanningDisplayLabel(physio, short);
 }
 
 /** Physio name without emoji — use everywhere except Pacjenci column headers. */

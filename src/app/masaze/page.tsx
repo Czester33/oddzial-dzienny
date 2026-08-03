@@ -14,7 +14,7 @@ import { FloatingTodayCalendar } from "@/components/FloatingTodayCalendar";
 import { FitWidthScale } from "@/components/FitWidthScale";
 import { stripHtml } from "@/lib/text-format";
 import { formatDatePL, toDateInputValue } from "@/lib/date-utils";
-import { resolvePhysioRowColor, physioShortName, physiosForSelect } from "@/lib/physio-utils";
+import { resolvePhysioRowColor, physioPlanningDisplayLabel, physioPlanningOptionLabel, physiosForPlanningSelect } from "@/lib/physio-utils";
 import {
   applyMassageSync,
   buildPlannedHourChange,
@@ -227,10 +227,11 @@ function PlanHourChangeDialog({
   );
 }
 
-function physioOptions(data: AppData, selectedId = "") {
-  return physiosForSelect(data, selectedId).map((p) => ({
+function physioOptions(data: AppData) {
+  return physiosForPlanningSelect(data).map((p) => ({
     value: p.id,
-    label: physioShortName(p.name),
+    label: physioPlanningOptionLabel(p, true),
+    displayLabel: physioPlanningDisplayLabel(p, true),
     color: p.color,
     rowColor: p.rowColor,
   }));
@@ -243,7 +244,13 @@ function PhysioSelect({
 }: {
   value: string;
   onChange: (v: string) => void;
-  options: { value: string; label: string; color: string; rowColor: string }[];
+  options: {
+    value: string;
+    label: string;
+    displayLabel?: string;
+    color: string;
+    rowColor: string;
+  }[];
 }) {
   const { theme } = useTheme();
   const selected = options.find((o) => o.value === value);
@@ -251,12 +258,13 @@ function PhysioSelect({
   const bg = selected
     ? resolvePhysioRowColor(selected.color, selected.rowColor, theme)
     : undefined;
+  const closedLabel = selected
+    ? (selected.displayLabel ?? selected.label.replace(/ \(ukryty\)$/, ""))
+    : "—";
 
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className={`${inputClass} cursor-pointer tabular-nums`}
+    <div
+      className={`relative ${inputClass}`}
       style={
         selected
           ? {
@@ -267,20 +275,38 @@ function PhysioSelect({
           : undefined
       }
     >
-      <option value="">—</option>
-      {options.map((opt) => (
-        <option
-          key={opt.value}
-          value={opt.value}
-          style={{
-            backgroundColor: resolvePhysioRowColor(opt.color, opt.rowColor, theme),
-            color: theme === "dark" ? "#e2e8f0" : "#0f172a",
-          }}
-        >
-          {opt.label}
-        </option>
-      ))}
-    </select>
+      <span
+        className="pointer-events-none block truncate pr-5 text-center font-bold tabular-nums"
+        aria-hidden="true"
+      >
+        {closedLabel}
+      </span>
+      <span
+        className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] opacity-60"
+        aria-hidden="true"
+      >
+        ▼
+      </span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+      >
+        <option value="">—</option>
+        {options.map((opt) => (
+          <option
+            key={opt.value}
+            value={opt.value}
+            style={{
+              backgroundColor: resolvePhysioRowColor(opt.color, opt.rowColor, theme),
+              color: theme === "dark" ? "#e2e8f0" : "#0f172a",
+            }}
+          >
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }
 
@@ -785,7 +811,7 @@ function MasazeContent({ data }: { data: AppData }) {
                           onChange={(physiotherapistId) =>
                             updateActivePatient({ ...p, physiotherapistId }, false)
                           }
-                          options={physioOptions(data, p.physiotherapistId)}
+                          options={physioOptions(data)}
                         />
                       </td>
                     </tr>
@@ -909,7 +935,7 @@ function MasazeContent({ data }: { data: AppData }) {
                       <PhysioSelect
                         value={p.physiotherapistId}
                         onChange={(physiotherapistId) => updateWaiting({ ...p, physiotherapistId })}
-                        options={physioOptions(data, p.physiotherapistId)}
+                        options={physioOptions(data)}
                       />
                     </td>
                     <td className={`${CELL} text-center`}>

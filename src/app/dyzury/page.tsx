@@ -23,7 +23,9 @@ import {
 } from "@/lib/date-utils";
 import {
   physioDisplayName,
-  physiosForSelect,
+  physioPlanningDisplayLabel,
+  physioPlanningOptionLabel,
+  physiosForPlanningSelect,
   resolvePhysioColumnHeaderColor,
   resolvePhysioRowColor,
 } from "@/lib/physio-utils";
@@ -162,11 +164,11 @@ function DutyMonthTable({
     "block w-full rounded border px-2 py-1 text-center text-[19px] font-semibold leading-tight";
   const selectText = isDark ? "#f8fafc" : "#0f172a";
   const optionBg = isDark ? "#1e293b" : "#ffffff";
-  const dutyTileLabel = physiosForSelect(data).reduce(
-    (longest, physio) =>
-      physioDisplayName(physio.name).length > longest.length
-        ? physioDisplayName(physio.name)
-        : longest,
+  const dutyTileLabel = physiosForPlanningSelect(data).reduce(
+    (longest, physio) => {
+      const label = physioPlanningOptionLabel(physio);
+      return label.length > longest.length ? label : longest;
+    },
     "—"
   );
   const dutyTileWidth = `${dutyTileLabel.length + 2}ch`;
@@ -225,7 +227,7 @@ function DutyMonthTable({
             <option value="" style={{ backgroundColor: optionBg, color: selectText }}>
               —
             </option>
-            {physiosForSelect(data, duty.physiotherapistId).map((p) => (
+            {physiosForPlanningSelect(data).map((p) => (
               <option
                 key={p.id}
                 value={p.id}
@@ -234,7 +236,7 @@ function DutyMonthTable({
                   color: physioTileText(isDark),
                 }}
               >
-                {physioDisplayName(p.name)}
+                {physioPlanningOptionLabel(p)}
               </option>
             ))}
           </select>

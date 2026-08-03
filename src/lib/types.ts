@@ -11,7 +11,7 @@ export interface Physiotherapist {
   rowColor: string;
   headerNote?: string;
   columnWidths?: ColumnWidths;
-  /** When true, hidden from patient tables and pickers (data kept). */
+  /** When true, hidden from Pacjenci tables; still available in planning pickers. */
   hidden?: boolean;
 }
 
