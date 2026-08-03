@@ -586,16 +586,7 @@ export default function UrlopyPage() {
     saveVacations([...without, { date, physiotherapistId, certainty }]);
   };
 
-  const removeEntry = async (date: string, physiotherapistId: string) => {
-    if (
-      !(await askConfirm({
-        title: "Usunąć urlop?",
-        message: "Wpis urlopu zostanie usunięty z kalendarza.",
-        variant: "danger",
-      }))
-    ) {
-      return;
-    }
+  const removeEntry = (date: string, physiotherapistId: string) => {
     saveVacations(
       vacations.filter((v) => !(v.date === date && v.physiotherapistId === physiotherapistId))
     );
