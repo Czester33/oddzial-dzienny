@@ -407,6 +407,17 @@ export function physiosForSelect(data: AppData, selectedId = ""): Physiotherapis
   return [...visible, selected];
 }
 
+/** Active physios for admission pickers — includes hidden (visible first). */
+export function physiosForAdmissionSelect(data: AppData): Physiotherapist[] {
+  const visible: Physiotherapist[] = [];
+  const hidden: Physiotherapist[] = [];
+  for (const physio of data.physiotherapists) {
+    if (physio.hidden) hidden.push(physio);
+    else visible.push(physio);
+  }
+  return [...visible, ...hidden];
+}
+
 /** Physio name without emoji — use everywhere except Pacjenci column headers. */
 export function physioDisplayName(name: string): string {
   return stripEmojis(name);

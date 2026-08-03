@@ -38,7 +38,7 @@ import {
   resolveSessionPlannedDischarge,
   moveAdmissionSessionToMonth,
 } from "@/lib/admission-utils";
-import { placePatientInFreeSlot, clearPatientSlot, physioShortName, physiosForSelect } from "@/lib/physio-utils";
+import { placePatientInFreeSlot, clearPatientSlot, physioShortName, physiosForAdmissionSelect } from "@/lib/physio-utils";
 import { stripHtml } from "@/lib/text-format";
 import {
   ADMISSION_TABLE_THEMES,
@@ -1279,9 +1279,9 @@ function AdmissionSessionTable({
                         updateSlot(slot.id, { physiotherapistId })
                       }
                       className={`w-full cursor-pointer rounded-md border border-black/15 bg-white/90 px-2 py-1.5 ${ADMISSION_TEXT} outline-none focus:border-blue-500 dark:border-slate-600 dark:bg-slate-800/90 dark:focus:border-blue-400`}
-                      options={physiosForSelect(data, slot.physiotherapistId).map((p) => ({
+                      options={physiosForAdmissionSelect(data).map((p) => ({
                         value: p.id,
-                        label: shortName(p.name),
+                        label: p.hidden ? `${shortName(p.name)} (ukryty)` : shortName(p.name),
                         color: p.color,
                         rowColor: p.rowColor,
                       }))}
