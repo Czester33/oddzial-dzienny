@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useData } from "@/context/DataContext";
+import { useConfirm } from "@/context/ConfirmContext";
 import type { AppData, Physiotherapist } from "@/lib/types";
 import { PageHeader, LoadingState, ErrorBanner, Card, Btn, Input } from "@/components/ui";
 import { PhysioColorPicker } from "@/components/PhysioColorPicker";
@@ -30,6 +31,7 @@ function reorderPhysios(
 
 export default function FizjoterapeuciPage() {
   const { data, loading, error, save } = useData();
+  const askConfirm = useConfirm();
   const { theme } = useTheme();
   const dragIndexRef = useRef<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -66,8 +68,16 @@ export default function FizjoterapeuciPage() {
     });
   };
 
-  const deletePhysio = (id: string) => {
-    if (!confirm("Usunąć fizjoterapeutę wraz z przypisanymi pacjentami?")) return;
+  const deletePhysio = async (id: string) => {
+    if (
+      !(await askConfirm({
+        title: "Usunąć fizjoterapeutę?",
+        message: "Fizjoterapeuta wraz z przypisanymi pacjentami zostanie przeniesiony do archiwum.",
+        variant: "danger",
+      }))
+    ) {
+      return;
+    }
 
     const physio = data.physiotherapists.find((p) => p.id === id);
     const restPatients = { ...data.currentPatients };
@@ -112,16 +122,18 @@ export default function FizjoterapeuciPage() {
     updatePhysio({ ...physio, color, rowColor });
   };
 
-  const restorePhysio = (id: string) => {
+  const restorePhysio = async (id: string) => {
     const retired = data.retiredPhysiotherapists ?? [];
     const physio = retired.find((p) => p.id === id);
     if (!physio) return;
 
     const label = physioDisplayName(physio.name) || "fizjoterapeutę";
     if (
-      !confirm(
-        `Przywrócić ${label}? Urlopy i archiwum pozostaną przypisane do tej samej osoby.`
-      )
+      !(await askConfirm({
+        title: "Przywrócić fizjoterapeutę?",
+        message: `Przywrócić ${label}? Urlopy i archiwum pozostaną przypisane do tej samej osoby.`,
+        confirmLabel: "Przywróć",
+      }))
     ) {
       return;
     }
@@ -137,14 +149,22 @@ export default function FizjoterapeuciPage() {
     });
   };
 
-  const purgePhysio = (id: string) => {
+  const purgePhysio = async (id: string) => {
     const retired = data.retiredPhysiotherapists ?? [];
     const physio = retired.find((p) => p.id === id);
     if (!physio) return;
 
     const label = physioDisplayName(physio.name) || "fizjoterapeutę";
     const impact = countPhysioPurgeImpact(data, id);
-    if (!confirm(buildPhysioPurgeConfirmMessage(label, impact))) return;
+    if (
+      !(await askConfirm({
+        title: "Usunąć trwale?",
+        message: buildPhysioPurgeConfirmMessage(label, impact),
+        variant: "danger",
+      }))
+    ) {
+      return;
+    }
 
     updateData(purgeRetiredPhysiotherapist(data, id));
   };
@@ -253,7 +273,7 @@ export default function FizjoterapeuciPage() {
                     </span>
                     <button
                       type="button"
-                      onClick={() => deletePhysio(physio.id)}
+                      onClick={() => void deletePhysio(physio.id)}
                       className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-1.5 py-0.5 text-[18px] leading-none text-white/90 hover:bg-black/20"
                       title="Usuń"
                       aria-label="Usuń fizjoterapeutę"
@@ -325,7 +345,7 @@ export default function FizjoterapeuciPage() {
                   </span>
                   <button
                     type="button"
-                    onClick={() => restorePhysio(physio.id)}
+                    onClick={() => void restorePhysio(physio.id)}
                     className="text-[13px] text-slate-400/80 underline-offset-2 hover:text-slate-600 hover:underline dark:text-slate-600 dark:hover:text-slate-400"
                   >
                     Przywróć
@@ -333,7 +353,7 @@ export default function FizjoterapeuciPage() {
                   <span className="text-[12px] text-slate-300 dark:text-slate-600">·</span>
                   <button
                     type="button"
-                    onClick={() => purgePhysio(physio.id)}
+                    onClick={() => void purgePhysio(physio.id)}
                     className="text-[13px] text-red-500/80 underline-offset-2 hover:text-red-600 hover:underline dark:text-red-400/80 dark:hover:text-red-400"
                   >
                     Usuń trwale

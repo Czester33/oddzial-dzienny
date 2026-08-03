@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useData } from "@/context/DataContext";
+import { useConfirm } from "@/context/ConfirmContext";
 import { PageHeader, LoadingState, ErrorBanner, Btn, MonthSelector } from "@/components/ui";
 import { parseMonthKey } from "@/lib/date-utils";
 import { restoreAdmissionMonthFromArchive, hasActiveAdmissionMonth } from "@/lib/admission-utils";
@@ -83,6 +84,7 @@ function ArchiveYearSelector({
 
 export default function ArchiwumPage() {
   const { data, loading, error, save, saving } = useData();
+  const askConfirm = useConfirm();
   const [category, setCategory] = useState<ArchiveCategory>("admissions");
   const [admissionViewMode, setAdmissionViewMode] = useState<AdmissionViewMode>("months");
   const [dutyViewMode, setDutyViewMode] = useState<PeriodViewMode>("months");
@@ -182,10 +184,14 @@ export default function ArchiwumPage() {
   );
 
   async function confirmRestore(message: string, overwriteWarning?: string): Promise<boolean> {
-    if (!overwriteWarning) return confirm(message);
-    return confirm(
-      `${message}\n\n${overwriteWarning}\n\nAktywne dane zostaną nadpisane. Kontynuować?`
-    );
+    const fullMessage = overwriteWarning
+      ? `${message}\n\n${overwriteWarning}\n\nAktywne dane zostaną nadpisane. Kontynuować?`
+      : message;
+    return askConfirm({
+      title: "Przywrócić z archiwum?",
+      message: fullMessage,
+      confirmLabel: "Przywróć",
+    });
   }
 
   async function restoreAdmission(monthKey: string) {

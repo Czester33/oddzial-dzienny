@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useData } from "@/context/DataContext";
+import { useConfirm } from "@/context/ConfirmContext";
 import { useTheme } from "@/context/ThemeContext";
 import type { AppData, NotepadNote, Physiotherapist } from "@/lib/types";
 import { PageHeader, LoadingState, ErrorBanner, Card, Btn } from "@/components/ui";
@@ -76,6 +77,7 @@ function noteTileStyle(
 
 export default function NotatnikPage() {
   const { data, loading, error, save } = useData();
+  const askConfirm = useConfirm();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -155,7 +157,16 @@ export default function NotatnikPage() {
     setDraft(draftFromNote(note));
   };
 
-  const deleteNote = (id: string) => {
+  const deleteNote = async (id: string) => {
+    if (
+      !(await askConfirm({
+        title: "Usunąć notatkę?",
+        message: "Notatka zostanie trwale usunięta.",
+        variant: "danger",
+      }))
+    ) {
+      return;
+    }
     const nextNotes = (data.notepadNotes ?? []).filter((note) => note.id !== id);
     saveNotes(nextNotes);
     if (selectedId === id) {
@@ -321,7 +332,7 @@ export default function NotatnikPage() {
                       Edytuj
                     </Btn>
                   )}
-                  <Btn variant="danger" onClick={() => deleteNote(selectedNote.id)}>
+                  <Btn variant="danger" onClick={() => void deleteNote(selectedNote.id)}>
                     Usuń
                   </Btn>
                 </div>

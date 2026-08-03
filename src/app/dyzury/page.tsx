@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useData } from "@/context/DataContext";
+import { useConfirm } from "@/context/ConfirmContext";
 import { useTheme } from "@/context/ThemeContext";
 import type { AppData, DutyEntry } from "@/lib/types";
 import {
@@ -313,6 +314,7 @@ function DutyMonthTable({
 
 export default function DyzuryPage() {
   const { data, loading, error, save } = useData();
+  const askConfirm = useConfirm();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const todayKey = currentMonthKey();
@@ -392,9 +394,17 @@ export default function DyzuryPage() {
     );
   };
 
-  const archiveCurrentMonth = () => {
+  const archiveCurrentMonth = async () => {
     if (!restoredDutyKeys.has(visibleMonthKey)) return;
-    if (!confirm("Zarchiwizować ponownie ten miesiąc dyżurów?")) return;
+    if (
+      !(await askConfirm({
+        title: "Zarchiwizować ponownie?",
+        message: "Ten miesiąc dyżurów zostanie przeniesiony z powrotem do archiwum.",
+        confirmLabel: "Archiwizuj",
+      }))
+    ) {
+      return;
+    }
     save(archiveDutyMonth(data, visibleMonthKey));
     setMonthKey(clampDutyMonthKey(currentMonthKey(), restoredDutyKeys, archivedDutyKeys));
   };

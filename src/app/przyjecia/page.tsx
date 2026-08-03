@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState, useMemo, useRef, useLayoutEffect, useCal
 import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
 import { useData } from "@/context/DataContext";
+import { useConfirm } from "@/context/ConfirmContext";
 import type { AdmissionSession, AdmissionSlot, AppData, Doctor } from "@/lib/types";
 import {
   LoadingState,
@@ -155,6 +156,7 @@ export default function PrzyjeciaPage() {
 
 function PrzyjeciaPageContent() {
   const { data, loading, error, save } = useData();
+  const askConfirm = useConfirm();
   const searchParams = useSearchParams();
   const dataRef = useRef(data);
   dataRef.current = data;
@@ -462,8 +464,16 @@ function PrzyjeciaPageContent() {
     });
   };
 
-  const removeSession = (sessionId: string) => {
-    if (!confirm("Usunąć całe przyjęcie wraz z listą pacjentów?")) return;
+  const removeSession = async (sessionId: string) => {
+    if (
+      !(await askConfirm({
+        title: "Usunąć przyjęcie?",
+        message: "Całe przyjęcie wraz z listą pacjentów zostanie usunięte.",
+        variant: "danger",
+      }))
+    ) {
+      return;
+    }
     saveMonthSessions(rawSessions.filter((s) => s.id !== sessionId));
   };
 
@@ -494,8 +504,16 @@ function PrzyjeciaPageContent() {
     });
   };
 
-  const deleteDoctor = (id: string) => {
-    if (!confirm("Usunąć lekarza? Przypisane przyjęcia stracą powiązanie.")) return;
+  const deleteDoctor = async (id: string) => {
+    if (
+      !(await askConfirm({
+        title: "Usunąć lekarza?",
+        message: "Przypisane przyjęcia stracą powiązanie z tym lekarzem.",
+        variant: "danger",
+      }))
+    ) {
+      return;
+    }
     commitSave({
       ...data,
       doctors: data.doctors.filter((d) => d.id !== id),
@@ -523,9 +541,17 @@ function PrzyjeciaPageContent() {
     monthKeyValue
   );
 
-  const archiveCurrentMonth = () => {
+  const archiveCurrentMonth = async () => {
     if (!monthRestoredFromArchive) return;
-    if (!confirm("Zarchiwizować ponownie ten miesiąc przyjęć?")) return;
+    if (
+      !(await askConfirm({
+        title: "Zarchiwizować ponownie?",
+        message: "Ten miesiąc przyjęć zostanie przeniesiony z powrotem do archiwum.",
+        confirmLabel: "Archiwizuj",
+      }))
+    ) {
+      return;
+    }
     commitSave(archiveAdmissionMonth(data, monthKeyValue));
     const nextMonth = monthOptions.find((key) => key !== monthKeyValue) ?? currentMonthKey();
     selectMonth(nextMonth);
@@ -619,7 +645,7 @@ function PrzyjeciaPageContent() {
                     onChange={replaceSession}
                     onAdmitSlot={(slotId) => admitSlot(session, slotId)}
                     onDisqualifySlot={(slotId) => disqualifySlot(session, slotId)}
-                    onDelete={() => removeSession(session.id)}
+                    onDelete={() => void removeSession(session.id)}
                     onDoctorThemeChange={(doctorId, themeId) => {
                       const doctor = data.doctors.find((d) => d.id === doctorId);
                       if (doctor) updateDoctor({ ...doctor, themeId });
@@ -897,7 +923,7 @@ function DoctorsPanel({
   monthIndex: number;
   onAdd: () => void;
   onUpdate: (doctor: Doctor) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => void | Promise<void>;
 }) {
   return (
     <div className="space-y-4">
@@ -943,7 +969,7 @@ function DoctorsPanel({
                 </div>
                 <button
                   type="button"
-                  onClick={() => onDelete(doctor.id)}
+                  onClick={() => void onDelete(doctor.id)}
                   className={`mt-3 ${ADMISSION_TEXT} text-red-600 hover:underline dark:text-red-400`}
                 >
                   Usuń
@@ -977,10 +1003,11 @@ function AdmissionSessionTable({
   onChange: (session: AdmissionSession) => void;
   onAdmitSlot: (slotId: string) => void;
   onDisqualifySlot: (slotId: string) => void;
-  onDelete: () => void;
+  onDelete: () => void | Promise<void>;
   onDoctorThemeChange: (doctorId: string, themeId: string) => void;
 }) {
   const { theme: colorMode } = useTheme();
+  const askConfirm = useConfirm();
   const colors = resolveAdmissionThemeColors(theme, colorMode);
   const dischargeDate = resolveSessionPlannedDischarge(session);
   const doctor = data.doctors.find((d) => d.id === session.doctorId);
@@ -1034,8 +1061,17 @@ function AdmissionSessionTable({
     updateSession({ patients: [...session.patients, createAdmissionSlot()] });
   };
 
-  const removeSlot = (slotId: string) => {
+  const removeSlot = async (slotId: string) => {
     if (session.patients.length <= 1) return;
+    if (
+      !(await askConfirm({
+        title: "Usunąć pacjenta z listy?",
+        message: "Wiersz zostanie usunięty z tego przyjęcia.",
+        variant: "danger",
+      }))
+    ) {
+      return;
+    }
     updateSession({ patients: session.patients.filter((p) => p.id !== slotId) });
   };
 
@@ -1085,7 +1121,7 @@ function AdmissionSessionTable({
             </Btn>
             <button
               type="button"
-              onClick={onDelete}
+              onClick={() => void onDelete()}
               className={`${ADMISSION_TEXT} text-red-700 hover:underline dark:text-red-400`}
             >
               Usuń przyjęcie
@@ -1293,7 +1329,7 @@ function AdmissionSessionTable({
                   >
                     <button
                       type="button"
-                      onClick={() => removeSlot(slot.id)}
+                      onClick={() => void removeSlot(slot.id)}
                       disabled={patients.length <= 1}
                       className={`${ADMISSION_TEXT} text-red-700 hover:underline disabled:opacity-30 dark:text-red-400`}
                     >

@@ -13,6 +13,7 @@ import {
 import { FormattedEditor } from "@/components/FormattedEditor";
 import { adaptHtmlColorsForTheme } from "@/lib/text-format";
 import { useTheme } from "@/context/ThemeContext";
+import { useConfirm } from "@/context/ConfirmContext";
 
 function BellIcon({ className }: { className?: string }) {
   return (
@@ -49,6 +50,7 @@ export function AnnouncementsButton({
   onRefresh?: () => void;
 }) {
   const { theme } = useTheme();
+  const askConfirm = useConfirm();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
@@ -100,7 +102,16 @@ export function AnnouncementsButton({
     setDraft("");
   };
 
-  const deleteAnnouncement = (id: string) => {
+  const deleteAnnouncement = async (id: string) => {
+    if (
+      !(await askConfirm({
+        title: "Usunąć ogłoszenie?",
+        message: "Ogłoszenie zostanie trwale usunięte.",
+        variant: "danger",
+      }))
+    ) {
+      return;
+    }
     onSave({
       ...data,
       announcements: (data.announcements ?? []).filter((a) => a.id !== id),
@@ -169,7 +180,7 @@ export function AnnouncementsButton({
                         </span>
                         <button
                           type="button"
-                          onClick={() => deleteAnnouncement(a.id)}
+                          onClick={() => void deleteAnnouncement(a.id)}
                           className="shrink-0 text-[19px] text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                           title="Usuń"
                         >

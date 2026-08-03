@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { useData } from "@/context/DataContext";
+import { useConfirm } from "@/context/ConfirmContext";
 import { useTheme } from "@/context/ThemeContext";
 import type { AppData, Physiotherapist, VacationEntry } from "@/lib/types";
 import {
@@ -479,6 +480,7 @@ function VacationMonthTable({
 
 export default function UrlopyPage() {
   const { data, loading, error, save } = useData();
+  const askConfirm = useConfirm();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const [year, setYear] = useState(currentYearKey());
@@ -540,16 +542,32 @@ export default function UrlopyPage() {
   const visibleUpcomingMonths = upcomingMonths.filter(isVisibleVacationMonth);
   const pastMonths = pastMonthsAll.filter(isVisibleVacationMonth);
 
-  const archiveCurrentYear = () => {
+  const archiveCurrentYear = async () => {
     if (!yearRestoredFromArchive) return;
-    if (!confirm("Zarchiwizować ponownie ten rok urlopów?")) return;
+    if (
+      !(await askConfirm({
+        title: "Zarchiwizować ponownie?",
+        message: "Ten rok urlopów zostanie przeniesiony z powrotem do archiwum.",
+        confirmLabel: "Archiwizuj",
+      }))
+    ) {
+      return;
+    }
     save(archiveVacationYear(data, year));
     setYear(currentYearKey());
   };
 
-  const archivePastMonth = (month: number) => {
+  const archivePastMonth = async (month: number) => {
     const monthKeyValue = vacationMonthKey(yearNum, month);
-    if (!confirm(`Zarchiwizować urlopy — ${MONTH_NAMES[month]} ${yearNum}?`)) return;
+    if (
+      !(await askConfirm({
+        title: "Zarchiwizować miesiąc?",
+        message: `Urlopy — ${MONTH_NAMES[month]} ${yearNum} zostaną przeniesione do archiwum.`,
+        confirmLabel: "Archiwizuj",
+      }))
+    ) {
+      return;
+    }
     save(archiveVacationMonth(data, year, monthKeyValue));
   };
 
@@ -568,7 +586,16 @@ export default function UrlopyPage() {
     saveVacations([...without, { date, physiotherapistId, certainty }]);
   };
 
-  const removeEntry = (date: string, physiotherapistId: string) => {
+  const removeEntry = async (date: string, physiotherapistId: string) => {
+    if (
+      !(await askConfirm({
+        title: "Usunąć urlop?",
+        message: "Wpis urlopu zostanie usunięty z kalendarza.",
+        variant: "danger",
+      }))
+    ) {
+      return;
+    }
     saveVacations(
       vacations.filter((v) => !(v.date === date && v.physiotherapistId === physiotherapistId))
     );
@@ -664,7 +691,16 @@ export default function UrlopyPage() {
     setClosedDraft("");
   };
 
-  const removeClinicClosedDay = (iso: string) => {
+  const removeClinicClosedDay = async (iso: string) => {
+    if (
+      !(await askConfirm({
+        title: "Usunąć dzień nieczynny?",
+        message: `${formatDatePL(iso)} zostanie usunięty z listy dni zamknięcia placówki.`,
+        variant: "danger",
+      }))
+    ) {
+      return;
+    }
     save({
       ...data,
       clinicClosedDays: clinicClosedDays.filter((d) => d !== iso),

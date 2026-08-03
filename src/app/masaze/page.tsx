@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useData } from "@/context/DataContext";
+import { useConfirm } from "@/context/ConfirmContext";
 import { useTheme } from "@/context/ThemeContext";
 import type { AppData, MassagePatient, MassageWaiting } from "@/lib/types";
 import { LoadingState, ErrorBanner, Input, Btn } from "@/components/ui";
@@ -449,6 +450,7 @@ function ActiveMassageToolsPanel({
 
 function MasazeContent({ data }: { data: AppData }) {
   const { error, save } = useData();
+  const askConfirm = useConfirm();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const ROW_BG = isDark ? ROW_BG_DARK : ROW_BG_LIGHT;
@@ -543,8 +545,17 @@ function MasazeContent({ data }: { data: AppData }) {
     persistActive(dataRef.current.massages.active, true);
   };
 
-  const deleteActivePatient = (id: string) => {
+  const deleteActivePatient = async (id: string) => {
     if (id.startsWith("empty-")) return;
+    if (
+      !(await askConfirm({
+        title: "Usunąć wiersz?",
+        message: "Pacjent zostanie usunięty z listy aktywnych masaży.",
+        variant: "danger",
+      }))
+    ) {
+      return;
+    }
     persistActive(dataRef.current.massages.active.filter((p) => p.id !== id), true);
   };
 
@@ -566,7 +577,16 @@ function MasazeContent({ data }: { data: AppData }) {
     });
   };
 
-  const deleteWaiting = (id: string) => {
+  const deleteWaiting = async (id: string) => {
+    if (
+      !(await askConfirm({
+        title: "Usunąć z rezerwacji?",
+        message: "Pacjent zostanie usunięty z listy oczekujących.",
+        variant: "danger",
+      }))
+    ) {
+      return;
+    }
     updateMassages({ waiting: dataRef.current.massages.waiting.filter((p) => p.id !== id) });
   };
 
@@ -622,8 +642,17 @@ function MasazeContent({ data }: { data: AppData }) {
     setHourChangeDialog(null);
   };
 
-  const removeHourChangePlan = () => {
+  const removeHourChangePlan = async () => {
     if (!hourChangeDialog) return;
+    if (
+      !(await askConfirm({
+        title: "Usunąć plan?",
+        message: "Zaplanowana zmiana godziny zostanie anulowana.",
+        variant: "danger",
+      }))
+    ) {
+      return;
+    }
     const { list, patientId } = hourChangeDialog;
     if (list === "active") {
       const patient = dataRef.current.massages.active.find((p) => p.id === patientId);
@@ -714,7 +743,7 @@ function MasazeContent({ data }: { data: AppData }) {
                           {isRowFilled(p) && !p.id.startsWith("empty-") && (
                             <button
                               type="button"
-                              onClick={() => deleteActivePatient(p.id)}
+                              onClick={() => void deleteActivePatient(p.id)}
                               className="text-red-600 opacity-0 transition-opacity hover:text-red-800 focus:opacity-100 group-hover/row:opacity-100 dark:text-red-400 dark:hover:text-red-300"
                               title="Usuń wiersz"
                             >
@@ -836,7 +865,7 @@ function MasazeContent({ data }: { data: AppData }) {
                         <span>{index + 1}</span>
                         <button
                           type="button"
-                          onClick={() => deleteWaiting(p.id)}
+                          onClick={() => void deleteWaiting(p.id)}
                           className="text-red-600 opacity-0 transition-opacity hover:text-red-800 focus:opacity-100 group-hover/row:opacity-100 dark:text-red-400 dark:hover:text-red-300"
                           title="Usuń"
                         >
@@ -916,7 +945,7 @@ function MasazeContent({ data }: { data: AppData }) {
           dialog={hourChangeDialog}
           onClose={() => setHourChangeDialog(null)}
           onSave={saveHourChangePlan}
-          onRemove={removeHourChangePlan}
+          onRemove={() => void removeHourChangePlan()}
         />
       )}
     </div>

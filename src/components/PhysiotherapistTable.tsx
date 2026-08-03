@@ -6,6 +6,7 @@ import type { ColumnWidths, Physiotherapist, Patient } from "@/lib/types";
 import { getDefaultColumnWidths, physioDisplayName, resolvePhysioColumnHeaderColor, resolvePhysioRowColor } from "@/lib/physio-utils";
 import { toDateInputValue } from "@/lib/date-utils";
 import { useTheme } from "@/context/ThemeContext";
+import { useConfirm } from "@/context/ConfirmContext";
 import { DatePickerCell } from "@/components/DatePickerCell";
 import { FormattedEditor } from "@/components/FormattedEditor";
 import { stripHtml } from "@/lib/text-format";
@@ -455,6 +456,7 @@ export function PhysiotherapistTable({
   onColumnWidthsChange: (widths: ColumnWidths) => void;
 }) {
   const { theme } = useTheme();
+  const askConfirm = useConfirm();
   const isMobile = useIsMobile();
   const [widths, setWidths] = useState(() => getDefaultColumnWidths(physio.columnWidths));
   const widthsRef = useRef(widths);
@@ -482,6 +484,22 @@ export function PhysiotherapistTable({
   const handleResizeEnd = useCallback(() => {
     onColumnWidthsChange(widthsRef.current);
   }, [onColumnWidthsChange]);
+
+  const requestDeleteRow = useCallback(
+    async (index: number) => {
+      if (
+        !(await askConfirm({
+          title: "Usunąć wiersz pacjenta?",
+          message: "Pacjent zostanie usunięty z listy tego fizjoterapeuty.",
+          variant: "danger",
+        }))
+      ) {
+        return;
+      }
+      onDeleteRow(index);
+    },
+    [askConfirm, onDeleteRow]
+  );
 
   const getOwner = (patient: Patient) =>
     patient.ownerPhysiotherapistId
@@ -594,12 +612,12 @@ export function PhysiotherapistTable({
                           onMove={(toId) => onMovePatient(index, toId)}
                           mode="lp"
                           lpNumber={index + 1}
-                          onDoubleActivate={() => onDeleteRow(index)}
+                          onDoubleActivate={() => void requestDeleteRow(index)}
                         />
                       ) : (
                         <MobileLpNumber
                           lpNumber={index + 1}
-                          onDelete={() => onDeleteRow(index)}
+                          onDelete={() => void requestDeleteRow(index)}
                         />
                       )
                     ) : (
@@ -608,7 +626,7 @@ export function PhysiotherapistTable({
                           <span className="w-4">{index + 1}</span>
                           <button
                             type="button"
-                            onClick={() => onDeleteRow(index)}
+                            onClick={() => void requestDeleteRow(index)}
                             className={`rounded px-0.5 text-[19px] leading-none opacity-0 transition-opacity focus:opacity-100 group-hover/row:opacity-100 ${
                               isDark
                                 ? "text-red-400 hover:bg-red-950/50 hover:text-red-300"
