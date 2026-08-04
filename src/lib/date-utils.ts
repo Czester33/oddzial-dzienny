@@ -398,6 +398,8 @@ export function getLastWorkingDayOfMonth(year: number, monthIndex: number): stri
 }
 
 /** Planned discharge: 15 working days from admission (admission day = day 1). */
+export const PLANNED_DISCHARGE_WORKING_DAYS = 15;
+
 export function getPlannedDischargeDate(admissionDate: string): string {
   const iso = toDateInputValue(admissionDate);
   if (!iso) return "";
@@ -405,14 +407,66 @@ export function getPlannedDischargeDate(admissionDate: string): string {
   const current = new Date(iso + "T12:00:00");
   let counted = 0;
 
-  while (counted < 15) {
+  while (counted < PLANNED_DISCHARGE_WORKING_DAYS) {
     const isoCurrent = isoFromParts(current.getFullYear(), current.getMonth(), current.getDate());
     if (isWorkingDay(isoCurrent)) {
       counted++;
-      if (counted === 15) return isoCurrent;
+      if (counted === PLANNED_DISCHARGE_WORKING_DAYS) return isoCurrent;
     }
     current.setDate(current.getDate() + 1);
   }
 
   return "";
+}
+
+/** Working days from admission through discharge (inclusive; admission day = day 1). */
+export function countWorkingDaysFromAdmission(
+  admissionDate: string,
+  dischargeDate: string,
+  extraClosedDates: readonly string[] = []
+): number {
+  const start = toDateInputValue(admissionDate);
+  const end = toDateInputValue(dischargeDate);
+  if (!start || !end || end < start) return 0;
+
+  const current = new Date(`${start}T12:00:00`);
+  const endDate = new Date(`${end}T12:00:00`);
+  let counted = 0;
+
+  while (current <= endDate) {
+    const isoCurrent = isoFromParts(
+      current.getFullYear(),
+      current.getMonth(),
+      current.getDate()
+    );
+    if (isWorkingDay(isoCurrent, extraClosedDates)) counted++;
+    current.setDate(current.getDate() + 1);
+  }
+
+  return counted;
+}
+
+export function formatWorkingDaysCount(count: number): string {
+  if (count === 1) return "1 dzień roboczy";
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+    return `${count} dni robocze`;
+  }
+  return `${count} dni roboczych`;
+}
+
+/** Parenthetical note when discharge span differs from the default 15 working days. */
+export function plannedDischargeWorkingDaysNote(
+  admissionDate: string,
+  dischargeDate: string
+): string | null {
+  const admission = toDateInputValue(admissionDate);
+  const discharge = toDateInputValue(dischargeDate);
+  if (!admission || !discharge) return null;
+
+  const count = countWorkingDaysFromAdmission(admission, discharge);
+  if (count === PLANNED_DISCHARGE_WORKING_DAYS) return null;
+
+  return `(${formatWorkingDaysCount(count)})`;
 }

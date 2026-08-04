@@ -144,3 +144,6 @@ export function FitWidthScale({
 export function tableRemPx(rems: number): number {
   return rems * 19;
 }
+
+/** Intrinsic width of admission session tables (html rem = 19px). */
+export const ADMISSION_TABLE_REM = 72;

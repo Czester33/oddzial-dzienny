@@ -16,10 +16,15 @@ import { DatePickerCell } from "@/components/DatePickerCell";
 import { TimePickerCell } from "@/components/TimePickerCell";
 import { FormattedEditor } from "@/components/FormattedEditor";
 import { PhysioSelect } from "@/components/PhysioSelect";
-import { FitWidthScale, tableRemPx } from "@/components/FitWidthScale";
+import {
+  ADMISSION_TABLE_REM,
+  FitWidthScale,
+  tableRemPx,
+} from "@/components/FitWidthScale";
 import {
   currentMonthKey,
   getPlannedDischargeDate,
+  plannedDischargeWorkingDaysNote,
   todayIsoDate,
   parseMonthKey,
   toDateInputValue,
@@ -1010,6 +1015,10 @@ function AdmissionSessionTable({
   const askConfirm = useConfirm();
   const colors = resolveAdmissionThemeColors(theme, colorMode);
   const dischargeDate = resolveSessionPlannedDischarge(session);
+  const dischargeWorkingDaysNote = plannedDischargeWorkingDaysNote(
+    session.admissionDate,
+    dischargeDate
+  );
   const doctor = data.doctors.find((d) => d.id === session.doctorId);
   const doctorThemeId = doctor?.themeId ?? "";
 
@@ -1076,10 +1085,11 @@ function AdmissionSessionTable({
   };
 
   return (
-    <FitWidthScale contentWidthPx={tableRemPx(58)}>
+    <FitWidthScale contentWidthPx={tableRemPx(ADMISSION_TABLE_REM)}>
       <div
         id={`admission-session-${session.id}`}
-        className="admission-table-wrap mx-auto w-[58rem] max-w-none overflow-hidden rounded-sm shadow-md ring-1 ring-black/20 dark:ring-slate-600/50"
+        className="admission-table-wrap mx-auto max-w-none overflow-hidden rounded-sm shadow-md ring-1 ring-black/20 dark:ring-slate-600/50"
+        style={{ width: `${ADMISSION_TABLE_REM}rem` }}
       >
       <div
         className={`${CELL_BORDER} border-b px-4 py-3`}
@@ -1130,7 +1140,6 @@ function AdmissionSessionTable({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
         <table className={`admission-table w-full border-collapse ${ADMISSION_TEXT}`}>
           <thead>
             <tr>
@@ -1159,7 +1168,7 @@ function AdmissionSessionTable({
                 Pacjent
               </th>
               <th
-                className={`duty-col-header w-48 ${CELL_BORDER} px-3 py-2.5 text-left ${HEADER_TEXT}`}
+                className={`duty-col-header w-56 ${CELL_BORDER} px-3 py-2.5 text-left ${HEADER_TEXT}`}
                 style={{ backgroundColor: colors.header }}
               >
                 Fizjoterapeuta
@@ -1224,6 +1233,13 @@ function AdmissionSessionTable({
                               }
                             />
                           </div>
+                          {dischargeWorkingDaysNote ? (
+                            <span
+                              className={`mt-1 block text-center text-[21px] tabular-nums text-slate-600 dark:text-slate-400`}
+                            >
+                              {dischargeWorkingDaysNote}
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     </td>
@@ -1342,7 +1358,6 @@ function AdmissionSessionTable({
             })}
           </tbody>
         </table>
-      </div>
       </div>
     </FitWidthScale>
   );

@@ -6,6 +6,7 @@ import {
   formatDatePL,
   formatMonthLabel,
   parseMonthKey,
+  plannedDischargeWorkingDaysNote,
 } from "@/lib/date-utils";
 import {
   getDoctorName,
@@ -20,7 +21,11 @@ import {
 import { adaptHtmlColorsForTheme, stripHtml } from "@/lib/text-format";
 import { useTheme } from "@/context/ThemeContext";
 import { sortAdmissionSlotsByHour } from "@/lib/admission-utils";
-import { FitWidthScale, tableRemPx } from "@/components/FitWidthScale";
+import {
+  ADMISSION_TABLE_REM,
+  FitWidthScale,
+  tableRemPx,
+} from "@/components/FitWidthScale";
 import { Btn } from "@/components/ui";
 
 const ADMISSION_TEXT = "text-[25px]";
@@ -47,6 +52,10 @@ function ArchivedSessionTable({
   const resolvedTheme = resolveAdmissionTheme(doctor?.themeId ?? themeId, month);
   const colors = resolveAdmissionThemeColors(resolvedTheme, colorMode);
   const dischargeDate = resolveSessionPlannedDischarge(session);
+  const dischargeWorkingDaysNote = plannedDischargeWorkingDaysNote(
+    session.admissionDate,
+    dischargeDate
+  );
   const patients = useMemo(
     () => sortAdmissionSlotsByHour(session.patients),
     [session.patients]
@@ -66,8 +75,11 @@ function ArchivedSessionTable({
   }
 
   return (
-    <FitWidthScale contentWidthPx={tableRemPx(58)}>
-      <div className="admission-table-wrap w-[58rem] max-w-none overflow-hidden rounded-sm shadow-md ring-1 ring-black/20 dark:ring-slate-600/50">
+    <FitWidthScale contentWidthPx={tableRemPx(ADMISSION_TABLE_REM)}>
+      <div
+        className="admission-table-wrap max-w-none overflow-hidden rounded-sm shadow-md ring-1 ring-black/20 dark:ring-slate-600/50"
+        style={{ width: `${ADMISSION_TABLE_REM}rem` }}
+      >
       <div
         className={`${CELL_BORDER} border-b px-4 py-3`}
         style={{ backgroundColor: colors.panel }}
@@ -82,7 +94,6 @@ function ArchivedSessionTable({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
         <table className={`admission-table w-full border-collapse ${ADMISSION_TEXT}`}>
           <thead>
             <tr>
@@ -111,7 +122,7 @@ function ArchivedSessionTable({
                 Pacjent
               </th>
               <th
-                className={`w-48 ${CELL_BORDER} px-3 py-2.5 text-left ${HEADER_TEXT}`}
+                className={`w-56 ${CELL_BORDER} px-3 py-2.5 text-left ${HEADER_TEXT}`}
                 style={{ backgroundColor: colors.header }}
               >
                 Fizjoterapeuta
@@ -154,6 +165,11 @@ function ArchivedSessionTable({
                           <span className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">
                             {formatDatePL(dischargeDate) || "—"}
                           </span>
+                          {dischargeWorkingDaysNote ? (
+                            <span className="mt-1 block text-[21px] tabular-nums text-slate-600 dark:text-slate-400">
+                              {dischargeWorkingDaysNote}
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     </td>
@@ -209,7 +225,6 @@ function ArchivedSessionTable({
             })}
           </tbody>
         </table>
-      </div>
       </div>
     </FitWidthScale>
   );
