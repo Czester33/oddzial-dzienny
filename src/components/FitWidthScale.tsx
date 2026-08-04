@@ -147,3 +147,6 @@ export function tableRemPx(rems: number): number {
 
 /** Intrinsic width of admission session tables (html rem = 19px). */
 export const ADMISSION_TABLE_REM = 72;
+
+/** Narrower default for archived admission tables (read-only). */
+export const ARCHIVED_ADMISSION_TABLE_REM = 56;

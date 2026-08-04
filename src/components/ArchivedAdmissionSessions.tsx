@@ -22,7 +22,7 @@ import { adaptHtmlColorsForTheme, stripHtml } from "@/lib/text-format";
 import { useTheme } from "@/context/ThemeContext";
 import { sortAdmissionSlotsByHour } from "@/lib/admission-utils";
 import {
-  ADMISSION_TABLE_REM,
+  ARCHIVED_ADMISSION_TABLE_REM,
   FitWidthScale,
   tableRemPx,
 } from "@/components/FitWidthScale";
@@ -75,10 +75,10 @@ function ArchivedSessionTable({
   }
 
   return (
-    <FitWidthScale contentWidthPx={tableRemPx(ADMISSION_TABLE_REM)}>
+    <FitWidthScale contentWidthPx={tableRemPx(ARCHIVED_ADMISSION_TABLE_REM)}>
       <div
         className="admission-table-wrap max-w-none overflow-hidden rounded-sm shadow-md ring-1 ring-black/20 dark:ring-slate-600/50"
-        style={{ width: `${ADMISSION_TABLE_REM}rem` }}
+        style={{ width: `${ARCHIVED_ADMISSION_TABLE_REM}rem` }}
       >
       <div
         className={`${CELL_BORDER} border-b px-4 py-3`}
