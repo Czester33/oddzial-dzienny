@@ -1422,6 +1422,11 @@ function AdmissionSessionTable({
                         rowColor: p.rowColor,
                       }))}
                     />
+                    {physioOnVacation ? (
+                      <p className="mt-1 rounded bg-amber-500/20 px-1.5 py-0.5 text-center text-[18px] font-bold uppercase tracking-wide text-amber-800 dark:bg-amber-400/15 dark:text-amber-300">
+                        urlop
+                      </p>
+                    ) : null}
                   </td>
                   <td
                     className={`relative ${CELL_BORDER} px-3 py-2 text-center align-middle`}
