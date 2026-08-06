@@ -29,12 +29,25 @@ type SlotChangeAccumulator = {
   removed: boolean;
   admitted: boolean;
   disqualified: boolean;
+  /** Preformatted change snippets, e.g. "Edyta → Monika" or just "Monika" when added. */
   hour?: string;
   physio?: string;
+  nameChange?: string;
 };
 
 function slotName(slot: AdmissionSlot): string {
   return stripHtml(slot.patientName).trim();
+}
+
+/** Prefer arrow form when both sides exist: "A → B". */
+function formatValueChange(from: string, to: string): string | undefined {
+  const fromLabel = from.trim();
+  const toLabel = to.trim();
+  if (!fromLabel && !toLabel) return undefined;
+  if (!fromLabel) return toLabel;
+  if (!toLabel) return `${fromLabel} → —`;
+  if (fromLabel === toLabel) return undefined;
+  return `${fromLabel} → ${toLabel}`;
 }
 
 function normalizeSlot(slot: AdmissionSlot) {
@@ -148,6 +161,11 @@ function buildPatientMessage(acc: SlotChangeAccumulator): string | null {
     return parts.length ? `${headline} — ${parts.join("; ")}` : headline;
   }
 
+  if (acc.nameChange) {
+    const headline = `Zmieniono pacjenta: ${acc.nameChange}`;
+    return parts.length ? `${headline} — ${parts.join("; ")}` : headline;
+  }
+
   if (parts.length === 0) return null;
 
   const label = acc.patientName ? `: ${acc.patientName}` : "";
@@ -226,25 +244,44 @@ function detectAdmissionChanges(before: AppData, after: AppData): AdmissionChang
 
     const prevDate = toDateInputValue(prev.session.admissionDate);
     const nextDate = toDateInputValue(session.admissionDate);
-    if (prevDate !== nextDate && nextDate) {
-      pushSessionEvents(
-        events,
-        monthKey,
-        sessionId,
-        `Zmieniono datę przyjęcia na ${formatDatePL(nextDate)} (${formatMonthLabel(monthKey)})`,
-        collectPhysioIdsFromSession(session)
+    if (prevDate !== nextDate && (prevDate || nextDate)) {
+      const dateChange = formatValueChange(
+        prevDate ? formatDatePL(prevDate) : "",
+        nextDate ? formatDatePL(nextDate) : ""
       );
+      if (dateChange) {
+        pushSessionEvents(
+          events,
+          monthKey,
+          sessionId,
+          `Zmieniono datę przyjęcia: ${dateChange} (${formatMonthLabel(monthKey)})`,
+          collectPhysioIdsFromSession(session)
+        );
+      }
     }
 
-    if (prev.session.doctorId !== session.doctorId && session.doctorId) {
-      const doctor = getDoctorName(after, session.doctorId) || "—";
-      pushSessionEvents(
-        events,
-        monthKey,
-        sessionId,
-        `Zmieniono lekarza prowadzącego: ${doctor}`,
-        collectPhysioIdsFromSession(session)
+    if (prev.session.doctorId !== session.doctorId) {
+      const doctorChange = formatValueChange(
+        prev.session.doctorId
+          ? getDoctorName(before, prev.session.doctorId) ||
+              getDoctorName(after, prev.session.doctorId) ||
+              "—"
+          : "",
+        session.doctorId
+          ? getDoctorName(after, session.doctorId) ||
+              getDoctorName(before, session.doctorId) ||
+              "—"
+          : ""
       );
+      if (doctorChange) {
+        pushSessionEvents(
+          events,
+          monthKey,
+          sessionId,
+          `Zmieniono lekarza prowadzącego: ${doctorChange}`,
+          collectPhysioIdsFromSession(session)
+        );
+      }
     }
 
     const prevSlots = new Map(prev.session.patients.map((slot) => [slot.id, slot]));
@@ -283,14 +320,36 @@ function detectAdmissionChanges(before: AppData, after: AppData): AdmissionChang
         acc.added = true;
       } else if (oldName && !newName) {
         acc.removed = true;
+      } else if (oldName && newName && oldName !== newName) {
+        acc.nameChange = formatValueChange(oldName, newName);
       }
 
-      if (isCompleteTime(slot.admissionHour) && slot.admissionHour !== old.admissionHour) {
-        acc.hour = slot.admissionHour;
+      const prevHour =
+        isCompleteTime(old.admissionHour) && old.admissionHour ? old.admissionHour : "";
+      const nextHour =
+        isCompleteTime(slot.admissionHour) && slot.admissionHour
+          ? slot.admissionHour
+          : "";
+      if (prevHour !== nextHour) {
+        acc.hour = acc.added
+          ? nextHour || undefined
+          : formatValueChange(prevHour, nextHour);
       }
 
-      if (slot.physiotherapistId && slot.physiotherapistId !== old.physiotherapistId) {
-        acc.physio = getPhysioName(after, slot.physiotherapistId) || "—";
+      if (slot.physiotherapistId !== old.physiotherapistId) {
+        const prevPhysio = old.physiotherapistId
+          ? getPhysioName(before, old.physiotherapistId) ||
+            getPhysioName(after, old.physiotherapistId) ||
+            "—"
+          : "";
+        const nextPhysio = slot.physiotherapistId
+          ? getPhysioName(after, slot.physiotherapistId) ||
+            getPhysioName(before, slot.physiotherapistId) ||
+            "—"
+          : "";
+        acc.physio = acc.added
+          ? nextPhysio || undefined
+          : formatValueChange(prevPhysio, nextPhysio);
       }
 
       if (slot.admissionStatus !== old.admissionStatus) {
