@@ -44,7 +44,16 @@ import {
   resolveSessionPlannedDischarge,
   moveAdmissionSessionToMonth,
 } from "@/lib/admission-utils";
-import { placePatientInFreeSlot, clearPatientSlot, physioPlanningDisplayLabel, physioPlanningOptionLabel, physioShortName, physiosForPlanningSelect } from "@/lib/physio-utils";
+import {
+  placePatientInFreeSlot,
+  clearPatientSlot,
+  findPhysioIdForPatient,
+  physioPlanningDisplayLabel,
+  physioPlanningOptionLabel,
+  physioShortName,
+  physiosForPlanningSelect,
+} from "@/lib/physio-utils";
+import { isPhysioOnVacationOnDate } from "@/lib/vacation-utils";
 import { stripHtml } from "@/lib/text-format";
 import {
   ADMISSION_TABLE_THEMES,
@@ -359,20 +368,31 @@ function PrzyjeciaPageContent() {
     applySessionUpdate(updated);
   };
 
+  const clearLinkedPatient = (
+    slot: AdmissionSlot,
+    admissionDate: string
+  ): AppData["currentPatients"] => {
+    if (!slot.linkedPatientId) return data.currentPatients;
+    const hostId =
+      findPhysioIdForPatient(data, slot.linkedPatientId) ||
+      (slot.substitutePhysiotherapistId &&
+      slot.physiotherapistId &&
+      isPhysioOnVacationOnDate(data, slot.physiotherapistId, admissionDate)
+        ? slot.substitutePhysiotherapistId
+        : slot.physiotherapistId);
+    if (!hostId) return data.currentPatients;
+    const list = data.currentPatients[hostId] ?? [];
+    return {
+      ...data.currentPatients,
+      [hostId]: clearPatientSlot(list, slot.linkedPatientId),
+    };
+  };
+
   const admitSlot = (session: AdmissionSession, slotId: string) => {
     const slot = session.patients.find((s) => s.id === slotId);
     if (!slot) return;
 
     if (slot.admissionStatus === "admitted") {
-      let currentPatients = data.currentPatients;
-      if (slot.linkedPatientId && slot.physiotherapistId) {
-        const list = currentPatients[slot.physiotherapistId] ?? [];
-        currentPatients = {
-          ...currentPatients,
-          [slot.physiotherapistId]: clearPatientSlot(list, slot.linkedPatientId),
-        };
-      }
-
       applySessionUpdate(
         {
           ...session,
@@ -382,7 +402,7 @@ function PrzyjeciaPageContent() {
               : s
           ),
         },
-        { currentPatients }
+        { currentPatients: clearLinkedPatient(slot, session.admissionDate) }
       );
       return;
     }
@@ -393,11 +413,25 @@ function PrzyjeciaPageContent() {
     const dischargeDate = resolveSessionPlannedDischarge(session);
     if (!name || !slot.physiotherapistId || !dischargeDate) return;
 
-    const physioId = slot.physiotherapistId;
+    const onVacation = isPhysioOnVacationOnDate(
+      data,
+      slot.physiotherapistId,
+      session.admissionDate
+    );
+    const substituteId = slot.substitutePhysiotherapistId ?? "";
+    if (onVacation && !substituteId) return;
+
+    const targetPhysioId = onVacation && substituteId ? substituteId : slot.physiotherapistId;
+    const ownerId =
+      onVacation && substituteId && substituteId !== slot.physiotherapistId
+        ? slot.physiotherapistId
+        : undefined;
+
     const placed = placePatientInFreeSlot(
-      data.currentPatients[physioId] ?? [],
+      data.currentPatients[targetPhysioId] ?? [],
       name,
-      dischargeDate
+      dischargeDate,
+      ownerId
     );
 
     const updatedSession: AdmissionSession = {
@@ -412,8 +446,30 @@ function PrzyjeciaPageContent() {
     applySessionUpdate(updatedSession, {
       currentPatients: {
         ...data.currentPatients,
-        [physioId]: placed.patients,
+        [targetPhysioId]: placed.patients,
       },
+    });
+  };
+
+  const assignSubstitute = (
+    session: AdmissionSession,
+    slotId: string,
+    substitutePhysiotherapistId: string
+  ) => {
+    const slot = session.patients.find((s) => s.id === slotId);
+    if (!slot || slot.admissionStatus) return;
+
+    const substituteId = substitutePhysiotherapistId.trim();
+    applySessionUpdate({
+      ...session,
+      patients: session.patients.map((s) => {
+        if (s.id !== slotId) return s;
+        if (!substituteId) {
+          const { substitutePhysiotherapistId: _drop, ...rest } = s;
+          return rest;
+        }
+        return { ...s, substitutePhysiotherapistId: substituteId };
+      }),
     });
   };
 
@@ -433,18 +489,10 @@ function PrzyjeciaPageContent() {
       return;
     }
 
-    let currentPatients = data.currentPatients;
-    if (
-      slot.admissionStatus === "admitted" &&
-      slot.linkedPatientId &&
-      slot.physiotherapistId
-    ) {
-      const list = currentPatients[slot.physiotherapistId] ?? [];
-      currentPatients = {
-        ...currentPatients,
-        [slot.physiotherapistId]: clearPatientSlot(list, slot.linkedPatientId),
-      };
-    }
+    const currentPatients =
+      slot.admissionStatus === "admitted"
+        ? clearLinkedPatient(slot, session.admissionDate)
+        : data.currentPatients;
 
     const updatedSession: AdmissionSession = {
       ...session,
@@ -624,7 +672,7 @@ function PrzyjeciaPageContent() {
         ) : (
           <div className="space-y-4">
             {sessions.map((session) => (
-              <div key={session.id} className="flex items-center justify-center gap-1 sm:gap-2">
+              <div key={session.id} className="flex items-center justify-center gap-1 overflow-visible sm:gap-2">
                 {moveMode ? (
                   <button
                     type="button"
@@ -637,7 +685,7 @@ function PrzyjeciaPageContent() {
                     ‹
                   </button>
                 ) : null}
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 overflow-visible">
                   <AdmissionSessionTable
                     session={session}
                     data={data}
@@ -649,6 +697,9 @@ function PrzyjeciaPageContent() {
                     )}
                     onChange={replaceSession}
                     onAdmitSlot={(slotId) => admitSlot(session, slotId)}
+                    onAssignSubstitute={(slotId, substituteId) =>
+                      assignSubstitute(session, slotId, substituteId)
+                    }
                     onDisqualifySlot={(slotId) => disqualifySlot(session, slotId)}
                     onDelete={() => void removeSession(session.id)}
                     onDoctorThemeChange={(doctorId, themeId) => {
@@ -988,6 +1039,8 @@ function DoctorsPanel({
   );
 }
 
+const SUBSTITUTE_SIDE_REM = 15;
+
 function AdmissionSessionTable({
   session,
   data,
@@ -996,6 +1049,7 @@ function AdmissionSessionTable({
   monthIndex,
   onChange,
   onAdmitSlot,
+  onAssignSubstitute,
   onDisqualifySlot,
   onDelete,
   onDoctorThemeChange,
@@ -1007,6 +1061,7 @@ function AdmissionSessionTable({
   monthIndex: number;
   onChange: (session: AdmissionSession) => void;
   onAdmitSlot: (slotId: string) => void;
+  onAssignSubstitute: (slotId: string, substitutePhysiotherapistId: string) => void;
   onDisqualifySlot: (slotId: string) => void;
   onDelete: () => void | Promise<void>;
   onDoctorThemeChange: (doctorId: string, themeId: string) => void;
@@ -1048,12 +1103,24 @@ function AdmissionSessionTable({
     const slot = session.patients.find((p) => p.id === slotId);
     if (
       slot?.admissionStatus &&
-      ("patientName" in patch || "physiotherapistId" in patch)
+      ("patientName" in patch ||
+        "physiotherapistId" in patch ||
+        "substitutePhysiotherapistId" in patch)
     ) {
       return;
     }
 
-    let patients = session.patients.map((p) => (p.id === slotId ? { ...p, ...patch } : p));
+    let patients = session.patients.map((p) => {
+      if (p.id !== slotId) return p;
+      const merged = { ...p, ...patch };
+      if (
+        "physiotherapistId" in patch &&
+        patch.physiotherapistId !== p.physiotherapistId
+      ) {
+        delete merged.substitutePhysiotherapistId;
+      }
+      return merged;
+    });
     if ("admissionHour" in patch) {
       patients = sortAdmissionSlotsByHour(patients);
     }
@@ -1088,9 +1155,10 @@ function AdmissionSessionTable({
     <FitWidthScale contentWidthPx={tableRemPx(ADMISSION_TABLE_REM)}>
       <div
         id={`admission-session-${session.id}`}
-        className="admission-table-wrap mx-auto max-w-none overflow-hidden rounded-sm shadow-md ring-1 ring-black/20 dark:ring-slate-600/50"
+        className="relative mx-auto max-w-none"
         style={{ width: `${ADMISSION_TABLE_REM}rem` }}
       >
+      <div className="admission-table-wrap overflow-visible rounded-sm shadow-md ring-1 ring-black/20 dark:ring-slate-600/50">
       <div
         className={`${CELL_BORDER} border-b px-4 py-3`}
         style={{ backgroundColor: colors.panel }}
@@ -1140,7 +1208,7 @@ function AdmissionSessionTable({
         </div>
       </div>
 
-        <table className={`admission-table w-full border-collapse ${ADMISSION_TEXT}`}>
+        <table className={`admission-table w-full border-collapse overflow-visible ${ADMISSION_TEXT}`}>
           <thead>
             <tr>
               <th
@@ -1184,10 +1252,25 @@ function AdmissionSessionTable({
               const bg = index % 2 === 0 ? colors.rowEven : colors.zebra;
               const locked = Boolean(slot.admissionStatus);
               const name = stripHtml(slot.patientName).trim();
+              const physioOnVacation = Boolean(
+                slot.physiotherapistId &&
+                  isPhysioOnVacationOnDate(
+                    data,
+                    slot.physiotherapistId,
+                    session.admissionDate
+                  )
+              );
+              const needsSubstitute =
+                physioOnVacation && slot.admissionStatus !== "disqualified";
               const admitDisabled =
                 slot.admissionStatus === "disqualified" ||
                 (slot.admissionStatus !== "admitted" &&
-                  !Boolean(name && slot.physiotherapistId && dischargeDate));
+                  !Boolean(
+                    name &&
+                      slot.physiotherapistId &&
+                      dischargeDate &&
+                      (!physioOnVacation || slot.substitutePhysiotherapistId)
+                  ));
               return (
                 <tr key={slot.id} id={`admission-slot-${slot.id}`}>
                   {index === 0 && (
@@ -1341,7 +1424,7 @@ function AdmissionSessionTable({
                     />
                   </td>
                   <td
-                    className={`${CELL_BORDER} px-3 py-2 text-center align-middle`}
+                    className={`relative ${CELL_BORDER} px-3 py-2 text-center align-middle`}
                     style={{ backgroundColor: bg }}
                   >
                     <button
@@ -1352,12 +1435,42 @@ function AdmissionSessionTable({
                     >
                       Usuń
                     </button>
+                    {needsSubstitute ? (
+                      <div
+                        className={`absolute inset-y-0 left-full z-10 flex items-center border-y border-r border-l-[3px] border-black border-l-amber-500 px-2 dark:border-slate-600 dark:border-l-amber-400 ${
+                          locked ? "pointer-events-none opacity-80" : ""
+                        }`}
+                        style={{
+                          width: `${SUBSTITUTE_SIDE_REM}rem`,
+                          backgroundColor: bg,
+                        }}
+                      >
+                        <PhysioSelect
+                          value={slot.substitutePhysiotherapistId ?? ""}
+                          onChange={(substituteId) =>
+                            onAssignSubstitute(slot.id, substituteId)
+                          }
+                          emptyLabel="— zastępstwo —"
+                          className={`w-full cursor-pointer rounded-md border border-amber-600/40 bg-slate-800/90 px-2 py-1.5 ${ADMISSION_TEXT} text-slate-200 outline-none focus:border-amber-500 dark:border-amber-500/45 dark:bg-slate-800/90`}
+                          options={physiosForPlanningSelect(data)
+                            .filter((p) => p.id !== slot.physiotherapistId)
+                            .map((p) => ({
+                              value: p.id,
+                              label: physioPlanningOptionLabel(p, true),
+                              displayLabel: physioPlanningDisplayLabel(p, true),
+                              color: p.color,
+                              rowColor: p.rowColor,
+                            }))}
+                        />
+                      </div>
+                    ) : null}
                   </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
+      </div>
       </div>
     </FitWidthScale>
   );

@@ -497,6 +497,9 @@ export function normalizeAdmissions(
             patientName: slot.patientName ?? "",
             admissionHour: slot.admissionHour ?? "",
             physiotherapistId: slot.physiotherapistId ?? "",
+            ...(slot.substitutePhysiotherapistId
+              ? { substitutePhysiotherapistId: slot.substitutePhysiotherapistId }
+              : {}),
             ...(slot.admissionStatus ? { admissionStatus: slot.admissionStatus } : {}),
             ...(slot.linkedPatientId ? { linkedPatientId: slot.linkedPatientId } : {}),
           }))

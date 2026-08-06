@@ -484,6 +484,40 @@ function collectMarkedVacationDates(data: AppData): Map<string, string[]> {
   return byPhysio;
 }
 
+/** True when the physiotherapist has a vacation mark on the given calendar day. */
+export function isPhysioOnVacationOnDate(
+  data: AppData,
+  physiotherapistId: string,
+  dateIso: string
+): boolean {
+  const day = toDateInputValue(dateIso);
+  if (!day || !physiotherapistId) return false;
+
+  const yearKey = day.slice(0, 4);
+  const active = data.vacations?.[yearKey] ?? [];
+  if (
+    active.some(
+      (entry) =>
+        entry.physiotherapistId === physiotherapistId &&
+        toDateInputValue(entry.date) === day
+    )
+  ) {
+    return true;
+  }
+
+  const monthKeyValue = day.slice(0, 7);
+  const archived = (data.vacationMonthArchive ?? []).find(
+    (month) => month.monthKey === monthKeyValue
+  );
+  return Boolean(
+    archived?.entries.some(
+      (entry) =>
+        entry.physiotherapistId === physiotherapistId &&
+        toDateInputValue(entry.date) === day
+    )
+  );
+}
+
 /** Active range: from 2 working days before start through last vacation day. */
 function findActiveVacationNote(
   dates: string[],

@@ -79,6 +79,8 @@ export interface AdmissionSlot {
   patientName: string;
   admissionHour: string;
   physiotherapistId: string;
+  /** Covering physiotherapist when the assigned one is on vacation. */
+  substitutePhysiotherapistId?: string;
   /** + = admitted to current patients, X = disqualified / no-show */
   admissionStatus?: "admitted" | "disqualified";
   linkedPatientId?: string;

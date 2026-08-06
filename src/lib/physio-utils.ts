@@ -475,10 +475,15 @@ export function isPatientSlotEmpty(patient: Patient): boolean {
 export function placePatientInFreeSlot(
   patients: Patient[],
   text: string,
-  dischargeDate: string
+  dischargeDate: string,
+  ownerPhysiotherapistId?: string
 ): { patients: Patient[]; patientId: string } {
   const list = [...patients];
   const emptyIndex = list.findIndex(isPatientSlotEmpty);
+  const owner =
+    ownerPhysiotherapistId && ownerPhysiotherapistId.trim()
+      ? { ownerPhysiotherapistId }
+      : {};
 
   if (emptyIndex >= 0) {
     const patientId = list[emptyIndex].id;
@@ -486,7 +491,7 @@ export function placePatientInFreeSlot(
       id: patientId,
       text,
       dischargeDate,
-      ownerPhysiotherapistId: list[emptyIndex].ownerPhysiotherapistId,
+      ...owner,
     };
     return { patients: sortPatientsByDischargeDate(list), patientId };
   }
@@ -495,10 +500,22 @@ export function placePatientInFreeSlot(
   return {
     patients: sortPatientsByDischargeDate([
       ...list,
-      { id: patientId, text, dischargeDate },
+      { id: patientId, text, dischargeDate, ...owner },
     ]),
     patientId,
   };
+}
+
+/** Physiotherapist list currently holding this patient row, if any. */
+export function findPhysioIdForPatient(
+  data: AppData,
+  patientId: string
+): string | undefined {
+  if (!patientId) return undefined;
+  for (const [physioId, list] of Object.entries(data.currentPatients ?? {})) {
+    if (list.some((patient) => patient.id === patientId)) return physioId;
+  }
+  return undefined;
 }
 
 /** Clear a patient row back to an empty slot (keep the row). */
@@ -710,6 +727,14 @@ export function sanitizeAppData(data: AppData): AppData {
             { physiotherapists: data.physiotherapists } as AppData,
             slot.physiotherapistId
           ),
+          ...(slot.substitutePhysiotherapistId
+            ? {
+                substitutePhysiotherapistId: resolvePhysioId(
+                  { physiotherapists: data.physiotherapists } as AppData,
+                  slot.substitutePhysiotherapistId
+                ),
+              }
+            : {}),
         })),
       })),
     ])
@@ -883,6 +908,13 @@ export function migrateData(raw: any): AppData {
         patients: session.patients.map((slot) => ({
           ...slot,
           physiotherapistId: migratePhysioRef(slot.physiotherapistId),
+          ...(slot.substitutePhysiotherapistId
+            ? {
+                substitutePhysiotherapistId: migratePhysioRef(
+                  slot.substitutePhysiotherapistId
+                ),
+              }
+            : {}),
         })),
       })),
     ])
@@ -971,6 +1003,13 @@ export function migrateData(raw: any): AppData {
               patientName: p.patientName ?? "",
               admissionHour: p.admissionHour ?? "",
               physiotherapistId: migratePhysioRef(p.physiotherapistId ?? ""),
+              ...(p.substitutePhysiotherapistId
+                ? {
+                    substitutePhysiotherapistId: migratePhysioRef(
+                      p.substitutePhysiotherapistId
+                    ),
+                  }
+                : {}),
               ...(p.admissionStatus ? { admissionStatus: p.admissionStatus } : {}),
               ...(p.linkedPatientId ? { linkedPatientId: p.linkedPatientId } : {}),
             })),
