@@ -7,7 +7,11 @@ import {
   todayIsoDate,
   toDateInputValue,
 } from "./date-utils";
+import { isCompleteTime, timeToMinutes } from "./massage-schedule";
 import { stripHtml } from "./text-format";
+
+/** Admissions before this time on a duty day show the Dyżur badge. */
+export const ADMISSION_DUTY_BADGE_BEFORE_MINUTES = 13 * 60 + 30;
 
 function archiveFromFirstDayOfNextMonth(monthKeyValue: string): string {
   const { year, month } = parseMonthKey(monthKeyValue);
@@ -197,6 +201,56 @@ export function getActiveDutyNoteForPhysio(
 ): string | null {
   const dutyDates = collectDutyDatesByPhysio(data).get(physiotherapistId) ?? [];
   return findActiveDutyNote(dutyDates, now);
+}
+
+/** Physiotherapist assigned to duty on the given calendar day, if any. */
+export function getDutyPhysiotherapistIdOnDate(
+  data: AppData,
+  dateIso: string
+): string | undefined {
+  const day = toDateInputValue(dateIso);
+  if (!day) return undefined;
+
+  const monthKeyValue = day.slice(0, 7);
+  const active = data.duties?.[monthKeyValue] ?? [];
+  const activeHit = active.find(
+    (entry) =>
+      toDateInputValue(entry.date) === day && Boolean(entry.physiotherapistId)
+  );
+  if (activeHit?.physiotherapistId) return activeHit.physiotherapistId;
+
+  const archived = (data.dutyArchive ?? []).find(
+    (month) => month.monthKey === monthKeyValue
+  );
+  const archivedHit = archived?.entries.find(
+    (entry) =>
+      toDateInputValue(entry.date) === day && Boolean(entry.physiotherapistId)
+  );
+  return archivedHit?.physiotherapistId || undefined;
+}
+
+/**
+ * Tue/Thu admission assigned to the duty physio with hour before 13:30.
+ * Informational only — does not require a substitute.
+ */
+export function shouldShowAdmissionDutyBadge(
+  data: AppData,
+  physiotherapistId: string,
+  admissionDate: string,
+  admissionHour: string
+): boolean {
+  const day = toDateInputValue(admissionDate);
+  if (!day || !physiotherapistId) return false;
+
+  const dow = new Date(`${day}T12:00:00`).getDay();
+  if (dow !== 2 && dow !== 4) return false;
+
+  if (!isCompleteTime(admissionHour)) return false;
+  if (timeToMinutes(admissionHour) >= ADMISSION_DUTY_BADGE_BEFORE_MINUTES) {
+    return false;
+  }
+
+  return getDutyPhysiotherapistIdOnDate(data, day) === physiotherapistId;
 }
 
 /** Remove auto duty times from stored header notes (vacation / manual text stays). */

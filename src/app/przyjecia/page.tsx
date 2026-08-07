@@ -54,6 +54,7 @@ import {
   physiosForPlanningSelect,
 } from "@/lib/physio-utils";
 import { isPhysioOnVacationOnDate } from "@/lib/vacation-utils";
+import { shouldShowAdmissionDutyBadge } from "@/lib/duty-utils";
 import { stripHtml } from "@/lib/text-format";
 import {
   ADMISSION_TABLE_THEMES,
@@ -1262,6 +1263,12 @@ function AdmissionSessionTable({
               );
               const needsSubstitute =
                 physioOnVacation && slot.admissionStatus !== "disqualified";
+              const showDutyBadge = shouldShowAdmissionDutyBadge(
+                data,
+                slot.physiotherapistId,
+                session.admissionDate,
+                slot.admissionHour
+              );
               const admitDisabled =
                 slot.admissionStatus === "disqualified" ||
                 (slot.admissionStatus !== "admitted" &&
@@ -1425,6 +1432,11 @@ function AdmissionSessionTable({
                     {physioOnVacation ? (
                       <p className="mt-1 rounded bg-amber-500/20 px-1.5 py-0.5 text-center text-[18px] font-bold uppercase tracking-wide text-amber-800 dark:bg-amber-400/15 dark:text-amber-300">
                         urlop
+                      </p>
+                    ) : null}
+                    {showDutyBadge ? (
+                      <p className="mt-1 rounded bg-yellow-400/30 px-1.5 py-0.5 text-center text-[18px] font-bold uppercase tracking-wide text-yellow-950 dark:bg-yellow-300/20 dark:text-yellow-200">
+                        dyżur
                       </p>
                     ) : null}
                   </td>

@@ -468,6 +468,63 @@ export function isPatientSlotEmpty(patient: Patient): boolean {
   return !stripHtml(patient.text).trim() && !toDateInputValue(patient.dischargeDate);
 }
 
+/** How long an empty patient row may stay before auto-removal. */
+export const EMPTY_PATIENT_ROW_TTL_MS = 60_000;
+
+/**
+ * Track when each empty patient row first became empty.
+ * Filled rows and removed ids are dropped from the map.
+ */
+export function syncEmptyPatientRowTimestamps(
+  data: AppData,
+  emptySince: Map<string, number>,
+  nowMs: number
+): Map<string, number> {
+  const next = new Map(emptySince);
+  const seen = new Set<string>();
+
+  for (const list of Object.values(data.currentPatients ?? {})) {
+    for (const patient of list) {
+      seen.add(patient.id);
+      if (isPatientSlotEmpty(patient)) {
+        if (!next.has(patient.id)) next.set(patient.id, nowMs);
+      } else {
+        next.delete(patient.id);
+      }
+    }
+  }
+
+  for (const id of next.keys()) {
+    if (!seen.has(id)) next.delete(id);
+  }
+
+  return next;
+}
+
+/** Remove empty patient rows that have stayed empty longer than `ttlMs`. */
+export function removeStaleEmptyPatientRows(
+  data: AppData,
+  emptySince: Map<string, number>,
+  nowMs: number,
+  ttlMs: number = EMPTY_PATIENT_ROW_TTL_MS
+): AppData {
+  let changed = false;
+  const nextPatients: Record<string, Patient[]> = {};
+
+  for (const [physioId, list] of Object.entries(data.currentPatients ?? {})) {
+    const filtered = list.filter((patient) => {
+      if (!isPatientSlotEmpty(patient)) return true;
+      const since = emptySince.get(patient.id);
+      if (since == null || nowMs - since < ttlMs) return true;
+      changed = true;
+      return false;
+    });
+    nextPatients[physioId] = filtered;
+  }
+
+  return changed ? { ...data, currentPatients: nextPatients } : data;
+}
+
 /**
  * Fill the first empty slot for a physiotherapist, or append if none is free.
  * Returns the list and the patient id used in Obecni pacjenci.

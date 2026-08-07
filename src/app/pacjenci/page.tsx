@@ -11,9 +11,11 @@ import {
   countSubstitutesAway,
   createEmptyPatient,
   movePatientBetweenPhysios,
+  removeStaleEmptyPatientRows,
   returnSubstitutePatient,
   returnSubstitutesToPhysio,
   sortPatientsByDischargeDate,
+  syncEmptyPatientRowTimestamps,
   visiblePhysiotherapists,
 } from "@/lib/physio-utils";
 import { applyAutoDischarge, hasAutoDischargeChanges } from "@/lib/discharge-utils";
@@ -25,27 +27,51 @@ import { FloatingUpcomingAdmission } from "@/components/FloatingUpcomingAdmissio
 function PacjenciContent({ data }: { data: AppData }) {
   const { error, save } = useData();
   const dataRef = useRef(data);
+  const emptySinceRef = useRef<Map<string, number>>(new Map());
   const [nowTick, setNowTick] = useState(() => Date.now());
 
   dataRef.current = data;
 
   useEffect(() => {
+    emptySinceRef.current = syncEmptyPatientRowTimestamps(
+      data,
+      emptySinceRef.current,
+      Date.now()
+    );
+  }, [data]);
+
+  useEffect(() => {
     const sync = () => {
+      const now = Date.now();
       const current = dataRef.current;
+      emptySinceRef.current = syncEmptyPatientRowTimestamps(
+        current,
+        emptySinceRef.current,
+        now
+      );
+
       let next = applyAutoDischarge(current);
       next = applyVacationNotes(next);
       next = applyDutyNotes(next);
+      next = removeStaleEmptyPatientRows(next, emptySinceRef.current, now);
+      emptySinceRef.current = syncEmptyPatientRowTimestamps(
+        next,
+        emptySinceRef.current,
+        now
+      );
+
       if (
         hasAutoDischargeChanges(current, next) ||
         hasVacationNoteChanges(current, next) ||
-        hasDutyNoteChanges(current, next)
+        hasDutyNoteChanges(current, next) ||
+        next.currentPatients !== current.currentPatients
       ) {
         save(next);
       }
     };
 
     sync();
-    const interval = setInterval(sync, 60_000);
+    const interval = setInterval(sync, 10_000);
     return () => clearInterval(interval);
   }, [save]);
 

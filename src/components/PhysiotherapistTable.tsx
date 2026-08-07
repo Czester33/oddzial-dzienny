@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import type { ColumnWidths, Physiotherapist, Patient } from "@/lib/types";
-import { getDefaultColumnWidths, physioDisplayName, resolvePhysioColumnHeaderColor, resolvePhysioRowColor } from "@/lib/physio-utils";
+import { getDefaultColumnWidths, isPatientSlotEmpty, physioDisplayName, resolvePhysioColumnHeaderColor, resolvePhysioRowColor } from "@/lib/physio-utils";
 import { toDateInputValue } from "@/lib/date-utils";
 import { useTheme } from "@/context/ThemeContext";
 import { useConfirm } from "@/context/ConfirmContext";
@@ -487,18 +487,22 @@ export function PhysiotherapistTable({
 
   const requestDeleteRow = useCallback(
     async (index: number) => {
-      if (
-        !(await askConfirm({
-          title: "Usunąć wiersz pacjenta?",
-          message: "Pacjent zostanie usunięty z listy tego fizjoterapeuty.",
-          variant: "danger",
-        }))
-      ) {
-        return;
+      const patient = patients[index];
+      if (!patient) return;
+      if (!isPatientSlotEmpty(patient)) {
+        if (
+          !(await askConfirm({
+            title: "Usunąć wiersz pacjenta?",
+            message: "Pacjent zostanie usunięty z listy tego fizjoterapeuty.",
+            variant: "danger",
+          }))
+        ) {
+          return;
+        }
       }
       onDeleteRow(index);
     },
-    [askConfirm, onDeleteRow]
+    [askConfirm, onDeleteRow, patients]
   );
 
   const getOwner = (patient: Patient) =>
