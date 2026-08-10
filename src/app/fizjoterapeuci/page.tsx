@@ -301,7 +301,7 @@ export default function FizjoterapeuciPage() {
                       <Input
                         value={physio.headerNote ?? ""}
                         onChange={(headerNote) => updatePhysio({ ...physio, headerNote })}
-                        placeholder="np. urlop 6.07–17.07"
+                        placeholder=""
                         className="!py-1 !text-[17px]"
                       />
                     </div>
