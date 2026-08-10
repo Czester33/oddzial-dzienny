@@ -1439,6 +1439,31 @@ function AdmissionSessionTable({
                         dyżur
                       </p>
                     ) : null}
+                    {needsSubstitute ? (
+                      <div
+                        className={`mt-2 md:hidden ${
+                          locked ? "pointer-events-none opacity-80" : ""
+                        }`}
+                      >
+                        <PhysioSelect
+                          value={slot.substitutePhysiotherapistId ?? ""}
+                          onChange={(substituteId) =>
+                            onAssignSubstitute(slot.id, substituteId)
+                          }
+                          emptyLabel="— zastępstwo —"
+                          className={`w-full cursor-pointer rounded-md border border-amber-600/40 bg-slate-800/90 px-2 py-1.5 ${ADMISSION_TEXT} text-slate-200 outline-none focus:border-amber-500 dark:border-amber-500/45 dark:bg-slate-800/90`}
+                          options={physiosForPlanningSelect(data)
+                            .filter((p) => p.id !== slot.physiotherapistId)
+                            .map((p) => ({
+                              value: p.id,
+                              label: physioPlanningOptionLabel(p, true),
+                              displayLabel: physioPlanningDisplayLabel(p, true),
+                              color: p.color,
+                              rowColor: p.rowColor,
+                            }))}
+                        />
+                      </div>
+                    ) : null}
                   </td>
                   <td
                     className={`relative ${CELL_BORDER} px-3 py-2 text-center align-middle`}
@@ -1454,7 +1479,7 @@ function AdmissionSessionTable({
                     </button>
                     {needsSubstitute ? (
                       <div
-                        className={`absolute inset-y-0 left-full z-10 flex items-center border-y border-r border-l-[3px] border-black border-l-amber-500 px-2 dark:border-slate-600 dark:border-l-amber-400 ${
+                        className={`absolute inset-y-0 left-full z-10 hidden items-center border-y border-r border-l-[3px] border-black border-l-amber-500 px-2 dark:border-slate-600 dark:border-l-amber-400 md:flex ${
                           locked ? "pointer-events-none opacity-80" : ""
                         }`}
                         style={{

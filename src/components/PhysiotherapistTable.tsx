@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import type { ColumnWidths, Physiotherapist, Patient } from "@/lib/types";
-import { getDefaultColumnWidths, isPatientSlotEmpty, physioDisplayName, resolvePhysioColumnHeaderColor, resolvePhysioRowColor } from "@/lib/physio-utils";
+import { getDefaultColumnWidths, physioDisplayName, resolvePhysioColumnHeaderColor, resolvePhysioRowColor } from "@/lib/physio-utils";
 import { toDateInputValue } from "@/lib/date-utils";
 import { useTheme } from "@/context/ThemeContext";
 import { useConfirm } from "@/context/ConfirmContext";
@@ -489,7 +489,8 @@ export function PhysiotherapistTable({
     async (index: number) => {
       const patient = patients[index];
       if (!patient) return;
-      if (!isPatientSlotEmpty(patient)) {
+      // Empty name = no confirm (date alone does not count as a filled patient).
+      if (stripHtml(patient.text)) {
         if (
           !(await askConfirm({
             title: "Usunąć wiersz pacjenta?",
