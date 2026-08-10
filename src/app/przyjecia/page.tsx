@@ -420,8 +420,6 @@ function PrzyjeciaPageContent() {
       session.admissionDate
     );
     const substituteId = slot.substitutePhysiotherapistId ?? "";
-    if (onVacation && !substituteId) return;
-
     const targetPhysioId = onVacation && substituteId ? substituteId : slot.physiotherapistId;
     const ownerId =
       onVacation && substituteId && substituteId !== slot.physiotherapistId
@@ -1272,12 +1270,7 @@ function AdmissionSessionTable({
               const admitDisabled =
                 slot.admissionStatus === "disqualified" ||
                 (slot.admissionStatus !== "admitted" &&
-                  !Boolean(
-                    name &&
-                      slot.physiotherapistId &&
-                      dischargeDate &&
-                      (!physioOnVacation || slot.substitutePhysiotherapistId)
-                  ));
+                  !Boolean(name && slot.physiotherapistId && dischargeDate));
               return (
                 <tr key={slot.id} id={`admission-slot-${slot.id}`}>
                   {index === 0 && (
