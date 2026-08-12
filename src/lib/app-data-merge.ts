@@ -1,4 +1,4 @@
-import type { AppData } from "./types";
+import type { AppData, Patient } from "./types";
 
 export function deepEqual(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
@@ -46,7 +46,8 @@ function mergeByKey<T>(
   local: T[] | undefined,
   remote: T[] | undefined,
   keyOf: (item: T) => string,
-  options?: { sortByKey?: boolean }
+  options?: { sortByKey?: boolean },
+  mergeItem?: (b: T, l: T, r: T) => T
 ): T[] {
   const baseList = base ?? [];
   const localList = local ?? [];
@@ -66,7 +67,7 @@ function mergeByKey<T>(
 
     if (l && r) {
       if (!b) {
-        merged.set(key, l);
+        merged.set(key, mergeItem ? mergeItem(l, l, r) : l);
         continue;
       }
       if (deepEqual(l, b)) {
@@ -77,7 +78,7 @@ function mergeByKey<T>(
         merged.set(key, l);
         continue;
       }
-      merged.set(key, { ...b, ...r, ...l });
+      merged.set(key, mergeItem ? mergeItem(b, l, r) : { ...b, ...r, ...l });
       continue;
     }
 
@@ -87,7 +88,10 @@ function mergeByKey<T>(
     }
 
     if (r && !l) {
-      if (!b || !deepEqual(r, b)) merged.set(key, r);
+      // Local removed an item that existed in base — keep it deleted even if remote edited it.
+      if (b) continue;
+      // Remote added an item this client never had.
+      merged.set(key, r);
     }
   }
 
@@ -123,9 +127,42 @@ function mergeByKey<T>(
 function mergeById<T extends { id: string }>(
   base: T[] | undefined,
   local: T[] | undefined,
-  remote: T[] | undefined
+  remote: T[] | undefined,
+  mergeItem?: (b: T, l: T, r: T) => T
 ): T[] {
-  return mergeByKey(base, local, remote, (item) => item.id);
+  return mergeByKey(base, local, remote, (item) => item.id, undefined, mergeItem);
+}
+
+/** Merge patient fields so concurrent text vs date edits do not clobber each other. */
+function mergePatientFields(base: Patient, local: Patient, remote: Patient): Patient {
+  const merged: Patient = {
+    id: local.id,
+    text: mergeValue(base.text, local.text, remote.text),
+    dischargeDate: mergeValue(base.dischargeDate, local.dischargeDate, remote.dischargeDate),
+  };
+
+  const manual = mergeValue(
+    base.dischargeDateManual,
+    local.dischargeDateManual,
+    remote.dischargeDateManual
+  );
+  if (manual) merged.dischargeDateManual = true;
+
+  const beforeManual = mergeValue(
+    base.dischargeDateBeforeManual,
+    local.dischargeDateBeforeManual,
+    remote.dischargeDateBeforeManual
+  );
+  if (beforeManual) merged.dischargeDateBeforeManual = beforeManual;
+
+  const owner = mergeValue(
+    base.ownerPhysiotherapistId,
+    local.ownerPhysiotherapistId,
+    remote.ownerPhysiotherapistId
+  );
+  if (owner) merged.ownerPhysiotherapistId = owner;
+
+  return merged;
 }
 
 function mergeDutyEntries(
@@ -266,7 +303,7 @@ export function mergeAppData(base: AppData, local: AppData, remote: AppData): Ap
       base.currentPatients,
       local.currentPatients,
       remote.currentPatients,
-      (b, l, r) => mergeById(b, l, r)
+      (b, l, r) => mergeById(b, l, r, mergePatientFields)
     ),
     massages: {
       active: mergeById(massagesBase?.active, massagesLocal?.active, massagesRemote?.active),

@@ -582,6 +582,31 @@ export function clearPatientSlot(patients: Patient[], patientId: string): Patien
   );
 }
 
+/** Drop admission links so a manually removed patient is not treated as still admitted. */
+export function unlinkPatientFromAdmissions(data: AppData, patientId: string): AppData {
+  let changed = false;
+  const admissions: AppData["admissions"] = { ...data.admissions };
+
+  for (const [monthKey, sessions] of Object.entries(admissions)) {
+    let monthChanged = false;
+    const nextSessions = sessions.map((session) => {
+      let sessionChanged = false;
+      const patients = session.patients.map((slot) => {
+        if (slot.linkedPatientId !== patientId) return slot;
+        sessionChanged = true;
+        monthChanged = true;
+        changed = true;
+        const { linkedPatientId: _drop, admissionStatus: _status, ...rest } = slot;
+        return rest;
+      });
+      return sessionChanged ? { ...session, patients } : session;
+    });
+    if (monthChanged) admissions[monthKey] = nextSessions;
+  }
+
+  return changed ? { ...data, admissions } : data;
+}
+
 /** Nearest discharge dates first; empty dates stay at the bottom. */
 export function sortPatientsByDischargeDate(patients: Patient[]): Patient[] {
   return patients

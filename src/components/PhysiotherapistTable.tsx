@@ -447,7 +447,7 @@ export function PhysiotherapistTable({
   substitutesAway?: number;
   /** Live duty badge (e.g. 13:25-21:00); not taken from stored headerNote. */
   dutyNote?: string | null;
-  onUpdatePatient: (index: number, patient: Patient) => void;
+  onUpdatePatient: (patientId: string, patch: Partial<Patient>) => void;
   onAddRow: () => void;
   onDeleteRow: (index: number) => void;
   onMovePatient: (index: number, toPhysioId: string) => void;
@@ -685,7 +685,7 @@ export function PhysiotherapistTable({
                         )}
                       <SpreadsheetCell
                         value={patient.text}
-                        onChange={(text) => onUpdatePatient(index, { ...patient, text })}
+                        onChange={(text) => onUpdatePatient(patient.id, { text })}
                         placeholder=""
                         multiline
                       />
@@ -703,8 +703,7 @@ export function PhysiotherapistTable({
                           const next = toDateInputValue(dischargeDate);
                           const prev = toDateInputValue(patient.dischargeDate);
                           if (!next) {
-                            onUpdatePatient(index, {
-                              ...patient,
+                            onUpdatePatient(patient.id, {
                               dischargeDate: "",
                               dischargeDateManual: undefined,
                               dischargeDateBeforeManual: undefined,
@@ -715,8 +714,7 @@ export function PhysiotherapistTable({
 
                           // First date on an empty field (manual patient) — not a correction.
                           if (!prev && !patient.dischargeDateBeforeManual) {
-                            onUpdatePatient(index, {
-                              ...patient,
+                            onUpdatePatient(patient.id, {
                               dischargeDate: next,
                               dischargeDateManual: undefined,
                               dischargeDateBeforeManual: undefined,
@@ -727,8 +725,7 @@ export function PhysiotherapistTable({
                           // Red only when date differs from the original (from Przyjęcia).
                           const original =
                             toDateInputValue(patient.dischargeDateBeforeManual ?? "") || prev;
-                          onUpdatePatient(index, {
-                            ...patient,
+                          onUpdatePatient(patient.id, {
                             dischargeDate: next,
                             dischargeDateManual: next !== original,
                             dischargeDateBeforeManual: original,
@@ -737,8 +734,7 @@ export function PhysiotherapistTable({
                         onRevert={
                           patient.dischargeDateManual && patient.dischargeDateBeforeManual
                             ? () =>
-                                onUpdatePatient(index, {
-                                  ...patient,
+                                onUpdatePatient(patient.id, {
                                   dischargeDate: patient.dischargeDateBeforeManual!,
                                   dischargeDateManual: undefined,
                                   dischargeDateBeforeManual: undefined,

@@ -16,6 +16,7 @@ import {
   returnSubstitutesToPhysio,
   sortPatientsByDischargeDate,
   syncEmptyPatientRowTimestamps,
+  unlinkPatientFromAdmissions,
   visiblePhysiotherapists,
 } from "@/lib/physio-utils";
 import { applyAutoDischarge, hasAutoDischargeChanges } from "@/lib/discharge-utils";
@@ -23,6 +24,7 @@ import { applyVacationNotes, hasVacationNoteChanges } from "@/lib/vacation-utils
 import { applyDutyNotes, getActiveDutyNoteForPhysio, hasDutyNoteChanges } from "@/lib/duty-utils";
 import { FloatingTodayCalendar } from "@/components/FloatingTodayCalendar";
 import { FloatingUpcomingAdmission } from "@/components/FloatingUpcomingAdmission";
+import { deepEqual } from "@/lib/app-data-merge";
 
 function PacjenciContent({ data }: { data: AppData }) {
   const { error, save } = useData();
@@ -41,16 +43,13 @@ function PacjenciContent({ data }: { data: AppData }) {
   }, [data]);
 
   useEffect(() => {
-    const sync = () => {
-      const now = Date.now();
-      const current = dataRef.current;
+    const applyBackgroundSync = (source: AppData, now: number): AppData => {
       emptySinceRef.current = syncEmptyPatientRowTimestamps(
-        current,
+        source,
         emptySinceRef.current,
         now
       );
-
-      let next = applyAutoDischarge(current);
+      let next = applyAutoDischarge(source);
       next = applyVacationNotes(next);
       next = applyDutyNotes(next);
       next = removeStaleEmptyPatientRows(next, emptySinceRef.current, now);
@@ -59,13 +58,30 @@ function PacjenciContent({ data }: { data: AppData }) {
         emptySinceRef.current,
         now
       );
+      return next;
+    };
 
-      if (
-        hasAutoDischargeChanges(current, next) ||
-        hasVacationNoteChanges(current, next) ||
-        hasDutyNoteChanges(current, next) ||
-        next.currentPatients !== current.currentPatients
-      ) {
+    const hasBackgroundChanges = (before: AppData, after: AppData) =>
+      hasAutoDischargeChanges(before, after) ||
+      hasVacationNoteChanges(before, after) ||
+      hasDutyNoteChanges(before, after) ||
+      after.currentPatients !== before.currentPatients;
+
+    const sync = () => {
+      const now = Date.now();
+      const source = dataRef.current;
+      let next = applyBackgroundSync(source, now);
+
+      // Rebase onto latest UI state so a concurrent row delete is not overwritten.
+      const latest = dataRef.current;
+      if (!deepEqual(latest, source)) {
+        next = applyBackgroundSync(latest, now);
+        if (!hasBackgroundChanges(latest, next)) return;
+        save(next);
+        return;
+      }
+
+      if (hasBackgroundChanges(source, next)) {
         save(next);
       }
     };
@@ -83,68 +99,80 @@ function PacjenciContent({ data }: { data: AppData }) {
   const getPatients = (physioId: string) =>
     sortPatientsByDischargeDate(data.currentPatients[physioId] ?? []);
 
-  const updatePatient = (physioId: string, index: number, patient: Patient) => {
-    const current = getPatients(physioId);
+  const updatePatient = (physioId: string, patientId: string, patch: Partial<Patient>) => {
+    const snapshot = dataRef.current;
+    const current = snapshot.currentPatients[physioId] ?? [];
+    const idx = current.findIndex((p) => p.id === patientId);
+    if (idx < 0) return;
     const updated = [...current];
-    updated[index] = { ...patient, id: patient.id };
+    updated[idx] = { ...updated[idx], ...patch, id: patientId };
     save({
-      ...data,
+      ...snapshot,
       currentPatients: {
-        ...data.currentPatients,
+        ...snapshot.currentPatients,
         [physioId]: sortPatientsByDischargeDate(updated),
       },
     });
   };
 
   const addRow = (physioId: string) => {
-    const current = data.currentPatients[physioId] ?? [];
+    const snapshot = dataRef.current;
+    const current = snapshot.currentPatients[physioId] ?? [];
     save({
-      ...data,
+      ...snapshot,
       currentPatients: {
-        ...data.currentPatients,
+        ...snapshot.currentPatients,
         [physioId]: sortPatientsByDischargeDate([...current, createEmptyPatient()]),
       },
     });
   };
 
   const deleteRow = (physioId: string, index: number) => {
-    const current = getPatients(physioId);
+    const snapshot = dataRef.current;
+    const current = sortPatientsByDischargeDate(snapshot.currentPatients[physioId] ?? []);
+    const removed = current[index];
+    if (!removed) return;
     const updated = current.filter((_, i) => i !== index);
-    save({
-      ...data,
+    const withoutRow: AppData = {
+      ...snapshot,
       currentPatients: {
-        ...data.currentPatients,
+        ...snapshot.currentPatients,
         [physioId]: updated,
       },
-    });
+    };
+    save(unlinkPatientFromAdmissions(withoutRow, removed.id));
   };
 
   const movePatient = (fromPhysioId: string, index: number, toPhysioId: string) => {
-    const fromSorted = getPatients(fromPhysioId);
+    const snapshot = dataRef.current;
+    const fromSorted = sortPatientsByDischargeDate(
+      snapshot.currentPatients[fromPhysioId] ?? []
+    );
     const patient = fromSorted[index];
     if (!patient) return;
 
-    const rawFrom = data.currentPatients[fromPhysioId] ?? [];
+    const rawFrom = snapshot.currentPatients[fromPhysioId] ?? [];
     const rawIndex = rawFrom.findIndex((p) => p.id === patient.id);
     if (rawIndex < 0) return;
 
-    save(movePatientBetweenPhysios(data, fromPhysioId, rawIndex, toPhysioId));
+    save(movePatientBetweenPhysios(snapshot, fromPhysioId, rawIndex, toPhysioId));
   };
 
   const returnAllSubstitutes = (physioId: string) => {
-    const next = returnSubstitutesToPhysio(data, physioId);
-    if (next !== data) save(next);
+    const next = returnSubstitutesToPhysio(dataRef.current, physioId);
+    if (next !== dataRef.current) save(next);
   };
 
   const returnOneSubstitute = (currentPhysioId: string, patientId: string) => {
-    const next = returnSubstitutePatient(data, currentPhysioId, patientId);
-    if (next !== data) save(next);
+    const next = returnSubstitutePatient(dataRef.current, currentPhysioId, patientId);
+    if (next !== dataRef.current) save(next);
   };
 
   const updateColumnWidths = (physioId: string, columnWidths: ColumnWidths) => {
+    const snapshot = dataRef.current;
     save({
-      ...data,
-      physiotherapists: data.physiotherapists.map((p) =>
+      ...snapshot,
+      physiotherapists: snapshot.physiotherapists.map((p) =>
         p.id === physioId ? { ...p, columnWidths } : p
       ),
     });
@@ -194,7 +222,7 @@ function PacjenciContent({ data }: { data: AppData }) {
               allPhysios={visiblePhysios}
               substitutesAway={countSubstitutesAway(data, physio.id)}
               dutyNote={getActiveDutyNoteForPhysio(data, physio.id, new Date(nowTick))}
-              onUpdatePatient={(i, patient) => updatePatient(physio.id, i, patient)}
+              onUpdatePatient={(patientId, patch) => updatePatient(physio.id, patientId, patch)}
               onAddRow={() => addRow(physio.id)}
               onDeleteRow={(i) => deleteRow(physio.id, i)}
               onMovePatient={(i, toId) => movePatient(physio.id, i, toId)}

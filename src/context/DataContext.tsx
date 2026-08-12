@@ -383,11 +383,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const current = dataRef.current;
       lastLocalEditAtRef.current = Date.now();
 
-      dataRef.current = newData;
-      setData(newData);
+      const base = syncedDataRef.current;
+      // Combine this write with the live UI so a background sync cannot wipe fresher edits.
+      const combined =
+        current && base ? mergeAppData(base, newData, current) : newData;
+
+      dataRef.current = combined;
+      setData(combined);
 
       if (!current) {
-        pendingSaveRef.current = newData;
+        pendingSaveRef.current = combined;
         syncPendingFlag();
         void flushSaveQueue();
         return;
@@ -400,9 +405,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
 
       const baseline = undoBaselineRef.current ?? current;
-      recordUndoEntry(baseline, newData);
+      recordUndoEntry(baseline, combined);
 
-      pendingSaveRef.current = newData;
+      pendingSaveRef.current = combined;
       syncPendingFlag();
       void flushSaveQueue();
     },

@@ -1858,7 +1858,8 @@ export function FormattedEditor({
         onPaste={handlePaste}
         onInput={() => {
           tryAutoContinueManualNumbering();
-          emit();
+          // Compact patient cells: persist immediately so background sync cannot wipe typing.
+          emit(compact);
         }}
         onKeyDown={(e) => {
           if (handleManualNumberKeyDown(e)) return;
