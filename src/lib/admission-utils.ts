@@ -185,10 +185,13 @@ export function preferredAdmissionMonthKey(
   return bestMonth ?? current;
 }
 
+/** Default visible window: current month + 2 following months. */
+export const DEFAULT_ADMISSION_MONTH_COUNT = 3;
+
 /** Chronological month keys from current calendar month forward. */
 export function admissionMonthOptions(
   todayIso: string = todayIsoDate(),
-  count = 14
+  count = DEFAULT_ADMISSION_MONTH_COUNT
 ): string[] {
   const current = todayIso.slice(0, 7);
   const { year, month } = parseMonthKey(current);

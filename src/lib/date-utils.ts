@@ -33,6 +33,13 @@ export function formatMonthLabel(key: string): string {
   return `${MONTH_NAMES[month]} ${year}`;
 }
 
+/** Calendar month immediately after `key` (YYYY-MM). */
+export function nextMonthKey(key: string): string {
+  const { year, month } = parseMonthKey(key);
+  const d = new Date(year, month + 1, 1);
+  return monthKey(d.getFullYear(), d.getMonth());
+}
+
 export function formatDatePL(dateStr: string): string {
   if (!dateStr) return "";
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {

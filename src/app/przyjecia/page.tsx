@@ -28,6 +28,8 @@ import {
   todayIsoDate,
   parseMonthKey,
   toDateInputValue,
+  formatMonthLabel,
+  nextMonthKey as monthKeyAfter,
 } from "@/lib/date-utils";
 import {
   createAdmissionSession,
@@ -43,6 +45,7 @@ import {
   preferredAdmissionMonthKey,
   resolveSessionPlannedDischarge,
   moveAdmissionSessionToMonth,
+  DEFAULT_ADMISSION_MONTH_COUNT,
 } from "@/lib/admission-utils";
 import {
   placePatientInFreeSlot,
@@ -192,10 +195,13 @@ function PrzyjeciaPageContent() {
   const [doctorsPanelOpen, setDoctorsPanelOpen] = useState(false);
   const [moveMode, setMoveMode] = useState(false);
   const [todayTick, setTodayTick] = useState(() => todayIsoDate());
+  const [manualMonths, setManualMonths] = useState<string[]>([]);
+  const [monthMenuOpen, setMonthMenuOpen] = useState(false);
+  const monthMenuRef = useRef<HTMLDivElement>(null);
   const userPickedMonthRef = useRef(false);
 
   const monthOptions = useMemo(() => {
-    const base = admissionMonthOptions(todayTick, 14);
+    const base = admissionMonthOptions(todayTick, DEFAULT_ADMISSION_MONTH_COUNT);
     const restored = new Set(data?.autoArchiveSkip?.admissions ?? []);
     const archived = new Set((data?.admissionArchive ?? []).map((m) => m.monthKey));
     const keys = new Set<string>();
@@ -203,14 +209,56 @@ function PrzyjeciaPageContent() {
       if (archived.has(key) && !restored.has(key)) continue;
       keys.add(key);
     }
+    for (const key of manualMonths) {
+      if (archived.has(key) && !restored.has(key)) continue;
+      keys.add(key);
+    }
     for (const key of restored) keys.add(key);
+    // Keep months that already have planned sessions.
+    for (const [key, sessions] of Object.entries(data?.admissions ?? {})) {
+      if (!sessions?.length) continue;
+      if (archived.has(key) && !restored.has(key)) continue;
+      keys.add(key);
+    }
     return [...keys].sort();
-  }, [todayTick, data?.autoArchiveSkip?.admissions, data?.admissionArchive]);
+  }, [
+    todayTick,
+    manualMonths,
+    data?.autoArchiveSkip?.admissions,
+    data?.admissionArchive,
+    data?.admissions,
+  ]);
 
   const selectMonth = (key: string) => {
     userPickedMonthRef.current = true;
     setMonthKeyValue(key);
+    setMonthMenuOpen(false);
   };
+
+  const addNextVisibleMonth = () => {
+    const last = monthOptions[monthOptions.length - 1] ?? todayTick.slice(0, 7);
+    const next = monthKeyAfter(last);
+    setManualMonths((prev) => (prev.includes(next) ? prev : [...prev, next]));
+    selectMonth(next);
+  };
+
+  useEffect(() => {
+    if (!monthMenuOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (!monthMenuRef.current?.contains(e.target as Node)) {
+        setMonthMenuOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMonthMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [monthMenuOpen]);
 
   const rawSessions = useMemo(
     () => data?.admissions[monthKeyValue] ?? [],
@@ -634,24 +682,50 @@ function PrzyjeciaPageContent() {
             >
               ‹
             </Btn>
-            <select
-              value={monthKeyValue}
-              onChange={(e) => selectMonth(e.target.value)}
-              className={`rounded-md border border-slate-300 bg-white px-3 py-1.5 ${ADMISSION_TEXT} text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100`}
-            >
-              {monthOptions.map((key) => {
-                const { year, month } = parseMonthKey(key);
-                const months = [
-                  "Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec",
-                  "Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień",
-                ];
-                return (
-                  <option key={key} value={key}>
-                    {months[month]} {year}
-                  </option>
-                );
-              })}
-            </select>
+            <div ref={monthMenuRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setMonthMenuOpen((open) => !open)}
+                className={`inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 ${ADMISSION_TEXT} text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100`}
+                aria-haspopup="listbox"
+                aria-expanded={monthMenuOpen}
+              >
+                {formatMonthLabel(monthKeyValue)}
+                <span aria-hidden className="text-slate-500 dark:text-slate-400">
+                  ▾
+                </span>
+              </button>
+              {monthMenuOpen ? (
+                <div
+                  role="listbox"
+                  className="absolute left-1/2 z-30 mt-1 max-h-72 min-w-full -translate-x-1/2 overflow-y-auto rounded-md border border-slate-300 bg-white py-1 shadow-lg dark:border-slate-600 dark:bg-slate-800"
+                >
+                  {monthOptions.map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      role="option"
+                      aria-selected={key === monthKeyValue}
+                      onClick={() => selectMonth(key)}
+                      className={`block w-full whitespace-nowrap px-3 py-1.5 text-left ${ADMISSION_TEXT} ${
+                        key === monthKeyValue
+                          ? "bg-blue-600 text-white"
+                          : "text-slate-900 hover:bg-blue-50 dark:text-slate-100 dark:hover:bg-slate-700"
+                      }`}
+                    >
+                      {formatMonthLabel(key)}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={addNextVisibleMonth}
+                    className={`block w-full border-t border-slate-200 px-3 py-1.5 text-left ${ADMISSION_TEXT} font-medium text-blue-700 hover:bg-blue-50 dark:border-slate-600 dark:text-blue-300 dark:hover:bg-slate-700`}
+                  >
+                    + Następny miesiąc
+                  </button>
+                </div>
+              ) : null}
+            </div>
             <Btn
               variant="secondary"
               onClick={() => shiftMonth(1)}
