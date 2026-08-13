@@ -205,6 +205,8 @@ function PacjenciContent({ data }: { data: AppData }) {
       <div className="-mt-6">
         {error && <ErrorBanner message={error} className="mb-2" />}
 
+        <PhysioAdmissionNotificationsRail data={data} onSave={save} />
+
         <div
           className={`grid gap-3 ${
             visiblePhysios.length === 1
@@ -234,7 +236,6 @@ function PacjenciContent({ data }: { data: AppData }) {
         </div>
       </div>
 
-      <PhysioAdmissionNotificationsRail data={data} onSave={save} />
       <FloatingTodayCalendar variant="slate" />
       <FloatingUpcomingAdmission data={data} />
     </>

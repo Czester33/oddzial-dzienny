@@ -34,7 +34,7 @@ const GUIDE_SECTIONS: GuideSection[] = [
       "Urlop: przypomnienie nad tabelą fizjoterapeuty na 2 dni robocze wcześniej (Krzysztof/masaże — 14 dni).",
       "W przypomnieniu widać pełny zakres urlopu (np. 10.08–24.08). Weekendy i dni zamknięcia placówki nie przerywają wpisu.",
       "Dyżur we wtorek/czwartek: od 7:00 nad tabelą widać godziny, np. 13:25–21:00.",
-      "Zmiana w Przyjęciach → powiadomienie u fizjoterapeuty (po prawej; na telefonie na dole).",
+      "Zmiana w Przyjęciach → powiadomienie u fizjoterapeuty (po prawej; na telefonie nad tabelami).",
       "Masaże: skończone osoby znikają; wolne miejsce może wypełnić ktoś z kolejki.",
       "Zaplanowana zmiana godziny masażu wchodzi w życie od wskazanego dnia — godzina i kolejność wierszy aktualizują się same (gdy otwarta jest strona Masaże).",
       "Stare przyjęcia (po terminie) spadają na dół listy.",
@@ -52,7 +52,7 @@ const GUIDE_SECTIONS: GuideSection[] = [
       "Przenieś pacjenta (zastępstwo): komputer — strzałka „→” przy wierszu. Telefon — dotknij Lp., wybierz osobę.",
       "Przy zastępstwie pojawi się napis „zastępstwo”. Cofnij: przycisk przy pacjencie albo „Cofnij zastępstwa” w nagłówku tabeli.",
       "Po lewej: kalendarz i nadchodzące przyjęcia w tym tygodniu.",
-      "Po prawej (na dole na telefonie): powiadomienia o zmianach w przyjęciach.",
+      "Po prawej (na telefonie nad tabelami): powiadomienia o zmianach w przyjęciach.",
     ],
   },
   {

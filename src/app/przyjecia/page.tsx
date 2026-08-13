@@ -131,6 +131,13 @@ function shortName(name: string): string {
   return physioShortName(name);
 }
 
+/** Scroll using visual rect — needed when the target sits inside FitWidthScale transform. */
+function scrollScaledElementIntoView(el: HTMLElement) {
+  const stickyOffset = window.matchMedia("(max-width: 768px)").matches ? 130 : 24;
+  const top = window.scrollY + el.getBoundingClientRect().top - stickyOffset;
+  window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+}
+
 function SideToolButton({
   label,
   active,
@@ -158,6 +165,31 @@ function SideToolButton({
           : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
       }`}
       style={{ writingMode: "vertical-rl", textOrientation: "mixed" }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function AdmissionTopToolButton({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`min-w-0 flex-1 rounded-md border px-3 py-2 ${ADMISSION_TEXT_SM} font-medium shadow-sm transition-colors ${
+        active
+          ? "border-blue-600 bg-blue-600 text-white"
+          : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+      }`}
     >
       {label}
     </button>
@@ -309,12 +341,14 @@ function PrzyjeciaPageContent() {
 
   useEffect(() => {
     if (loading || !data) return;
-    const raw = data.admissions[monthKeyValue] ?? [];
+    const snapshot = dataRef.current;
+    if (!snapshot) return;
+    const raw = snapshot.admissions[monthKeyValue] ?? [];
     const ordered = orderAdmissionSessionsWithPastAtBottom(raw, todayTick);
     if (!admissionSessionsSameOrder(raw, ordered)) {
       save({
-        ...data,
-        admissions: { ...data.admissions, [monthKeyValue]: ordered },
+        ...snapshot,
+        admissions: { ...snapshot.admissions, [monthKeyValue]: ordered },
       });
     }
   }, [loading, data, monthKeyValue, todayTick, save]);
@@ -339,40 +373,73 @@ function PrzyjeciaPageContent() {
       return;
     }
 
-    const timer = window.setTimeout(() => {
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 20;
+
+    const tryFocus = () => {
+      if (cancelled) return;
       const el = document.getElementById(
         slotId ? `admission-slot-${slotId}` : `admission-session-${sessionId}`
       );
-      if (!el) return;
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (!el) {
+        attempts += 1;
+        if (attempts < maxAttempts) {
+          window.setTimeout(tryFocus, 100);
+          return;
+        }
+        deepLinkHandledRef.current = linkKey;
+        return;
+      }
+      // FitWidthScale uses transform on phones — scrollIntoView misses the visual row.
+      scrollScaledElementIntoView(el);
       el.classList.add("ring-4", "ring-blue-500", "ring-offset-2");
       window.setTimeout(() => {
         el.classList.remove("ring-4", "ring-blue-500", "ring-offset-2");
       }, 3500);
       deepLinkHandledRef.current = linkKey;
-    }, 120);
+    };
 
-    return () => window.clearTimeout(timer);
+    const timer = window.setTimeout(tryFocus, 80);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [loading, data, searchParams, monthKeyValue, sessions]);
 
   useEffect(() => {
     const sessionId = scrollToSessionIdRef.current;
     if (!sessionId || !sessions.some((s) => s.id === sessionId)) return;
 
-    const timer = window.setTimeout(() => {
-      const el = document.getElementById(`admission-session-${sessionId}`);
-      if (!el) return;
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-      scrollToSessionIdRef.current = null;
-    }, 120);
+    let cancelled = false;
+    let attempts = 0;
 
-    return () => window.clearTimeout(timer);
+    const tryScroll = () => {
+      if (cancelled) return;
+      const el = document.getElementById(`admission-session-${sessionId}`);
+      if (!el) {
+        attempts += 1;
+        if (attempts < 20) window.setTimeout(tryScroll, 100);
+        else scrollToSessionIdRef.current = null;
+        return;
+      }
+      scrollScaledElementIntoView(el);
+      scrollToSessionIdRef.current = null;
+    };
+
+    const timer = window.setTimeout(tryScroll, 80);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [sessions]);
 
   useEffect(() => {
     if (loading || !data) return;
-    const next = applyAutoArchiveAdmissions(data);
-    if (hasAutoArchiveAdmissionChanges(data, next)) {
+    const snapshot = dataRef.current;
+    if (!snapshot) return;
+    const next = applyAutoArchiveAdmissions(snapshot);
+    if (hasAutoArchiveAdmissionChanges(snapshot, next)) {
       save(next);
     }
   }, [loading, data, save]);
@@ -382,7 +449,9 @@ function PrzyjeciaPageContent() {
   const { month: monthIndex } = parseMonthKey(monthKeyValue);
 
   const applySessionUpdate = (updated: AdmissionSession, patch: Partial<AppData> = {}) => {
-    const next = { ...data.admissions };
+    const snapshot = dataRef.current;
+    if (!snapshot) return;
+    const next = { ...snapshot.admissions };
 
     let sourceKey: string | null = null;
     let sourceIndex = -1;
@@ -410,34 +479,122 @@ function PrzyjeciaPageContent() {
     }
 
     next[targetKey] = orderAdmissionSessionsWithPastAtBottom(targetList, todayTick);
-    commitSave({ ...data, ...patch, admissions: next });
+    commitSave({ ...snapshot, ...patch, admissions: next });
   };
 
-  const replaceSession = (updated: AdmissionSession) => {
-    applySessionUpdate(updated);
+  const findSessionInData = (
+    snapshot: AppData,
+    sessionId: string
+  ): AdmissionSession | null => {
+    for (const list of Object.values(snapshot.admissions ?? {})) {
+      const found = (list ?? []).find((s) => s.id === sessionId);
+      if (found) return found;
+    }
+    return null;
+  };
+
+  const patchSession = (sessionId: string, patch: Partial<AdmissionSession>) => {
+    const snapshot = dataRef.current;
+    if (!snapshot) return;
+    const latest = findSessionInData(snapshot, sessionId);
+    if (!latest) return;
+    applySessionUpdate({ ...latest, ...patch });
+  };
+
+  const patchSessionSlot = (
+    sessionId: string,
+    slotId: string,
+    patch: Partial<AdmissionSlot>
+  ) => {
+    const snapshot = dataRef.current;
+    if (!snapshot) return;
+    const latest = findSessionInData(snapshot, sessionId);
+    if (!latest) return;
+    const slot = latest.patients.find((p) => p.id === slotId);
+    if (
+      slot?.admissionStatus &&
+      ("patientName" in patch ||
+        "physiotherapistId" in patch ||
+        "substitutePhysiotherapistId" in patch)
+    ) {
+      return;
+    }
+
+    let patients = latest.patients.map((p) => {
+      if (p.id !== slotId) return p;
+      const merged = { ...p, ...patch };
+      if (
+        "physiotherapistId" in patch &&
+        patch.physiotherapistId !== p.physiotherapistId
+      ) {
+        delete merged.substitutePhysiotherapistId;
+      }
+      return merged;
+    });
+    if ("admissionHour" in patch) {
+      patients = sortAdmissionSlotsByHour(patients);
+    }
+    applySessionUpdate({ ...latest, patients });
+  };
+
+  const addSessionPatient = (sessionId: string) => {
+    const snapshot = dataRef.current;
+    if (!snapshot) return;
+    const latest = findSessionInData(snapshot, sessionId);
+    if (!latest) return;
+    applySessionUpdate({
+      ...latest,
+      patients: [...latest.patients, createAdmissionSlot()],
+    });
+  };
+
+  const removeSessionPatient = async (sessionId: string, slotId: string) => {
+    const snapshot = dataRef.current;
+    if (!snapshot) return;
+    const latest = findSessionInData(snapshot, sessionId);
+    if (!latest || latest.patients.length <= 1) return;
+    if (
+      !(await askConfirm({
+        title: "Usunąć pacjenta z listy?",
+        message: "Wiersz zostanie usunięty z tego przyjęcia.",
+        variant: "danger",
+      }))
+    ) {
+      return;
+    }
+    applySessionUpdate({
+      ...latest,
+      patients: latest.patients.filter((p) => p.id !== slotId),
+    });
   };
 
   const clearLinkedPatient = (
     slot: AdmissionSlot,
     admissionDate: string
   ): AppData["currentPatients"] => {
-    if (!slot.linkedPatientId) return data.currentPatients;
+    const snapshot = dataRef.current;
+    if (!snapshot) return {};
+    if (!slot.linkedPatientId) return snapshot.currentPatients;
     const hostId =
-      findPhysioIdForPatient(data, slot.linkedPatientId) ||
+      findPhysioIdForPatient(snapshot, slot.linkedPatientId) ||
       (slot.substitutePhysiotherapistId &&
       slot.physiotherapistId &&
-      isPhysioOnVacationOnDate(data, slot.physiotherapistId, admissionDate)
+      isPhysioOnVacationOnDate(snapshot, slot.physiotherapistId, admissionDate)
         ? slot.substitutePhysiotherapistId
         : slot.physiotherapistId);
-    if (!hostId) return data.currentPatients;
-    const list = data.currentPatients[hostId] ?? [];
+    if (!hostId) return snapshot.currentPatients;
+    const list = snapshot.currentPatients[hostId] ?? [];
     return {
-      ...data.currentPatients,
+      ...snapshot.currentPatients,
       [hostId]: clearPatientSlot(list, slot.linkedPatientId),
     };
   };
 
-  const admitSlot = (session: AdmissionSession, slotId: string) => {
+  const admitSlot = (sessionId: string, slotId: string) => {
+    const snapshot = dataRef.current;
+    if (!snapshot) return;
+    const session = findSessionInData(snapshot, sessionId);
+    if (!session) return;
     const slot = session.patients.find((s) => s.id === slotId);
     if (!slot) return;
 
@@ -463,7 +620,7 @@ function PrzyjeciaPageContent() {
     if (!name || !slot.physiotherapistId || !dischargeDate) return;
 
     const onVacation = isPhysioOnVacationOnDate(
-      data,
+      snapshot,
       slot.physiotherapistId,
       session.admissionDate
     );
@@ -475,7 +632,7 @@ function PrzyjeciaPageContent() {
         : undefined;
 
     const placed = placePatientInFreeSlot(
-      data.currentPatients[targetPhysioId] ?? [],
+      snapshot.currentPatients[targetPhysioId] ?? [],
       name,
       dischargeDate,
       ownerId
@@ -492,17 +649,21 @@ function PrzyjeciaPageContent() {
 
     applySessionUpdate(updatedSession, {
       currentPatients: {
-        ...data.currentPatients,
+        ...snapshot.currentPatients,
         [targetPhysioId]: placed.patients,
       },
     });
   };
 
   const assignSubstitute = (
-    session: AdmissionSession,
+    sessionId: string,
     slotId: string,
     substitutePhysiotherapistId: string
   ) => {
+    const snapshot = dataRef.current;
+    if (!snapshot) return;
+    const session = findSessionInData(snapshot, sessionId);
+    if (!session) return;
     const slot = session.patients.find((s) => s.id === slotId);
     if (!slot || slot.admissionStatus) return;
 
@@ -520,7 +681,11 @@ function PrzyjeciaPageContent() {
     });
   };
 
-  const disqualifySlot = (session: AdmissionSession, slotId: string) => {
+  const disqualifySlot = (sessionId: string, slotId: string) => {
+    const snapshot = dataRef.current;
+    if (!snapshot) return;
+    const session = findSessionInData(snapshot, sessionId);
+    if (!session) return;
     const slot = session.patients.find((s) => s.id === slotId);
     if (!slot) return;
 
@@ -539,7 +704,7 @@ function PrzyjeciaPageContent() {
     const currentPatients =
       slot.admissionStatus === "admitted"
         ? clearLinkedPatient(slot, session.admissionDate)
-        : data.currentPatients;
+        : snapshot.currentPatients;
 
     const updatedSession: AdmissionSession = {
       ...session,
@@ -554,12 +719,16 @@ function PrzyjeciaPageContent() {
   };
 
   const saveAdmissions = (admissions: AppData["admissions"]) => {
-    commitSave({ ...data, admissions });
+    const snapshot = dataRef.current;
+    if (!snapshot) return;
+    commitSave({ ...snapshot, admissions });
   };
 
   const saveMonthSessions = (list: AdmissionSession[]) => {
+    const snapshot = dataRef.current;
+    if (!snapshot) return;
     saveAdmissions({
-      ...data.admissions,
+      ...snapshot.admissions,
       [monthKeyValue]: orderAdmissionSessionsWithPastAtBottom(list, todayTick),
     });
   };
@@ -574,33 +743,51 @@ function PrzyjeciaPageContent() {
     ) {
       return;
     }
-    saveMonthSessions(rawSessions.filter((s) => s.id !== sessionId));
+    const snapshot = dataRef.current;
+    if (!snapshot) return;
+    const raw = snapshot.admissions[monthKeyValue] ?? [];
+    saveMonthSessions(raw.filter((s) => s.id !== sessionId));
   };
 
   const moveSessionToMonth = (sessionId: string, targetMonthKey: string) => {
     if (targetMonthKey === monthKeyValue) return;
-    const next = moveAdmissionSessionToMonth(data, sessionId, monthKeyValue, targetMonthKey, todayTick);
+    const snapshot = dataRef.current;
+    if (!snapshot) return;
+    const next = moveAdmissionSessionToMonth(
+      snapshot,
+      sessionId,
+      monthKeyValue,
+      targetMonthKey,
+      todayTick
+    );
     if (!next) return;
     commitSave(next);
   };
 
   const addSession = () => {
+    const snapshot = dataRef.current;
+    if (!snapshot) return;
     const session = createAdmissionSession();
     scrollToSessionIdRef.current = session.id;
-    saveMonthSessions([...rawSessions, session]);
+    const raw = snapshot.admissions[monthKeyValue] ?? [];
+    saveMonthSessions([...raw, session]);
   };
 
   const addDoctor = () => {
+    const snapshot = dataRef.current;
+    if (!snapshot) return;
     save({
-      ...data,
-      doctors: [...data.doctors, createDoctor()],
+      ...snapshot,
+      doctors: [...snapshot.doctors, createDoctor()],
     });
   };
 
   const updateDoctor = (doctor: Doctor) => {
+    const snapshot = dataRef.current;
+    if (!snapshot) return;
     save({
-      ...data,
-      doctors: data.doctors.map((d) => (d.id === doctor.id ? doctor : d)),
+      ...snapshot,
+      doctors: snapshot.doctors.map((d) => (d.id === doctor.id ? doctor : d)),
     });
   };
 
@@ -614,11 +801,13 @@ function PrzyjeciaPageContent() {
     ) {
       return;
     }
+    const snapshot = dataRef.current;
+    if (!snapshot) return;
     commitSave({
-      ...data,
-      doctors: data.doctors.filter((d) => d.id !== id),
+      ...snapshot,
+      doctors: snapshot.doctors.filter((d) => d.id !== id),
       admissions: Object.fromEntries(
-        Object.entries(data.admissions).map(([key, list]) => [
+        Object.entries(snapshot.admissions).map(([key, list]) => [
           key,
           list.map((s) => (s.doctorId === id ? { ...s, doctorId: "" } : s)),
         ])
@@ -652,7 +841,9 @@ function PrzyjeciaPageContent() {
     ) {
       return;
     }
-    commitSave(archiveAdmissionMonth(data, monthKeyValue));
+    const snapshot = dataRef.current;
+    if (!snapshot) return;
+    commitSave(archiveAdmissionMonth(snapshot, monthKeyValue));
     const nextMonth = monthOptions.find((key) => key !== monthKeyValue) ?? currentMonthKey();
     selectMonth(nextMonth);
   };
@@ -738,9 +929,18 @@ function PrzyjeciaPageContent() {
         </div>
         {error && <ErrorBanner message={error} className={ADMISSION_TEXT} />}
 
+        <div className="sticky top-0 z-40 -mx-3 mb-3 flex gap-2 border-b border-slate-200 bg-white/95 px-3 py-2 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 md:hidden">
+          <AdmissionTopToolButton label="+ Przyjęcie" onClick={addSession} />
+          <AdmissionTopToolButton
+            label="Lekarze"
+            active={doctorsPanelOpen}
+            onClick={() => setDoctorsPanelOpen((open) => !open)}
+          />
+        </div>
+
         {sessions.length === 0 ? (
           <Card className={`px-6 py-12 text-center ${ADMISSION_TEXT} text-slate-500 dark:text-slate-400`}>
-            Brak przyjęć w tym miesiącu. Kliknij „+ Przyjęcie” z lewej strony, aby dodać.
+            Brak przyjęć w tym miesiącu. Kliknij „+ Przyjęcie”, aby dodać.
           </Card>
         ) : (
           <div className="space-y-4">
@@ -768,15 +968,21 @@ function PrzyjeciaPageContent() {
                       monthKeyValue,
                       monthIndex
                     )}
-                    onChange={replaceSession}
-                    onAdmitSlot={(slotId) => admitSlot(session, slotId)}
-                    onAssignSubstitute={(slotId, substituteId) =>
-                      assignSubstitute(session, slotId, substituteId)
+                    onPatchSession={(patch) => patchSession(session.id, patch)}
+                    onPatchSlot={(slotId, patch) =>
+                      patchSessionSlot(session.id, slotId, patch)
                     }
-                    onDisqualifySlot={(slotId) => disqualifySlot(session, slotId)}
+                    onAddSlot={() => addSessionPatient(session.id)}
+                    onRemoveSlot={(slotId) => void removeSessionPatient(session.id, slotId)}
+                    onAdmitSlot={(slotId) => admitSlot(session.id, slotId)}
+                    onAssignSubstitute={(slotId, substituteId) =>
+                      assignSubstitute(session.id, slotId, substituteId)
+                    }
+                    onDisqualifySlot={(slotId) => disqualifySlot(session.id, slotId)}
                     onDelete={() => void removeSession(session.id)}
                     onDoctorThemeChange={(doctorId, themeId) => {
-                      const doctor = data.doctors.find((d) => d.id === doctorId);
+                      const snapshot = dataRef.current;
+                      const doctor = snapshot?.doctors.find((d) => d.id === doctorId);
                       if (doctor) updateDoctor({ ...doctor, themeId });
                     }}
                     monthKeyValue={monthKeyValue}
@@ -820,7 +1026,7 @@ function PrzyjeciaPageContent() {
         ) : null}
       </div>
 
-      <div className="fixed left-0 top-1/2 z-40 flex -translate-y-1/2 flex-col gap-2">
+      <div className="fixed left-0 top-1/2 z-40 hidden -translate-y-1/2 flex-col gap-2 md:flex">
         <SideToolButton
           label="+ Przyjęcie"
           side="left"
@@ -828,7 +1034,7 @@ function PrzyjeciaPageContent() {
         />
       </div>
 
-      <div className="fixed right-0 top-1/2 z-40 flex -translate-y-1/2 flex-col gap-2">
+      <div className="fixed right-0 top-1/2 z-40 hidden -translate-y-1/2 flex-col gap-2 md:flex">
         <SideToolButton
           label="Lekarze"
           side="right"
@@ -1120,7 +1326,10 @@ function AdmissionSessionTable({
   theme,
   monthKeyValue,
   monthIndex,
-  onChange,
+  onPatchSession,
+  onPatchSlot,
+  onAddSlot,
+  onRemoveSlot,
   onAdmitSlot,
   onAssignSubstitute,
   onDisqualifySlot,
@@ -1132,7 +1341,10 @@ function AdmissionSessionTable({
   theme: AdmissionTableTheme;
   monthKeyValue: string;
   monthIndex: number;
-  onChange: (session: AdmissionSession) => void;
+  onPatchSession: (patch: Partial<AdmissionSession>) => void;
+  onPatchSlot: (slotId: string, patch: Partial<AdmissionSlot>) => void;
+  onAddSlot: () => void;
+  onRemoveSlot: (slotId: string) => void;
   onAdmitSlot: (slotId: string) => void;
   onAssignSubstitute: (slotId: string, substitutePhysiotherapistId: string) => void;
   onDisqualifySlot: (slotId: string) => void;
@@ -1140,7 +1352,6 @@ function AdmissionSessionTable({
   onDoctorThemeChange: (doctorId: string, themeId: string) => void;
 }) {
   const { theme: colorMode } = useTheme();
-  const askConfirm = useConfirm();
   const colors = resolveAdmissionThemeColors(theme, colorMode);
   const dischargeDate = resolveSessionPlannedDischarge(session);
   const dischargeWorkingDaysNote = plannedDischargeWorkingDaysNote(
@@ -1151,7 +1362,7 @@ function AdmissionSessionTable({
   const doctorThemeId = doctor?.themeId ?? "";
 
   const updateSession = (patch: Partial<AdmissionSession>) => {
-    onChange({ ...session, ...patch });
+    onPatchSession(patch);
   };
 
   const setAdmissionDate = (admissionDate: string) => {
@@ -1173,56 +1384,13 @@ function AdmissionSessionTable({
   };
 
   const updateSlot = (slotId: string, patch: Partial<AdmissionSlot>) => {
-    const slot = session.patients.find((p) => p.id === slotId);
-    if (
-      slot?.admissionStatus &&
-      ("patientName" in patch ||
-        "physiotherapistId" in patch ||
-        "substitutePhysiotherapistId" in patch)
-    ) {
-      return;
-    }
-
-    let patients = session.patients.map((p) => {
-      if (p.id !== slotId) return p;
-      const merged = { ...p, ...patch };
-      if (
-        "physiotherapistId" in patch &&
-        patch.physiotherapistId !== p.physiotherapistId
-      ) {
-        delete merged.substitutePhysiotherapistId;
-      }
-      return merged;
-    });
-    if ("admissionHour" in patch) {
-      patients = sortAdmissionSlotsByHour(patients);
-    }
-
-    updateSession({ patients });
+    onPatchSlot(slotId, patch);
   };
 
   const patients = useMemo(
     () => sortAdmissionSlotsByHour(session.patients),
     [session.patients]
   );
-
-  const addSlot = () => {
-    updateSession({ patients: [...session.patients, createAdmissionSlot()] });
-  };
-
-  const removeSlot = async (slotId: string) => {
-    if (session.patients.length <= 1) return;
-    if (
-      !(await askConfirm({
-        title: "Usunąć pacjenta z listy?",
-        message: "Wiersz zostanie usunięty z tego przyjęcia.",
-        variant: "danger",
-      }))
-    ) {
-      return;
-    }
-    updateSession({ patients: session.patients.filter((p) => p.id !== slotId) });
-  };
 
   return (
     <FitWidthScale contentWidthPx={tableRemPx(ADMISSION_TABLE_REM)}>
@@ -1267,7 +1435,7 @@ function AdmissionSessionTable({
               disabled={!session.doctorId}
               onSelect={(themeId) => onDoctorThemeChange(session.doctorId, themeId)}
             />
-            <Btn variant="secondary" onClick={addSlot} className={ADMISSION_TEXT}>
+            <Btn variant="secondary" onClick={onAddSlot} className={ADMISSION_TEXT}>
               + Pacjent
             </Btn>
             <button
@@ -1538,7 +1706,7 @@ function AdmissionSessionTable({
                   >
                     <button
                       type="button"
-                      onClick={() => void removeSlot(slot.id)}
+                      onClick={() => onRemoveSlot(slot.id)}
                       disabled={patients.length <= 1}
                       className={`${ADMISSION_TEXT} text-red-700 hover:underline disabled:opacity-30 dark:text-red-400`}
                     >

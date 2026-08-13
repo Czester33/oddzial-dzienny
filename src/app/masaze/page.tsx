@@ -547,23 +547,33 @@ function MasazeContent({ data }: { data: AppData }) {
     updateMassages({ active: sort ? sortMassagePatientsByHour(filled) : filled });
   };
 
-  const updateActivePatient = (patient: MassagePatient, sort = false) => {
+  const patchActivePatient = (
+    patientId: string,
+    patch: Partial<MassagePatient>,
+    sort = false
+  ) => {
     const current = dataRef.current;
     const next = [...current.massages.active];
 
-    if (patient.id.startsWith("empty-")) {
-      if (!isRowFilled(patient)) return;
-      next.push({ ...patient, id: uuidv4() });
-    } else {
-      const idx = next.findIndex((p) => p.id === patient.id);
-      if (idx === -1) return;
-      if (!isRowFilled(patient)) {
-        next.splice(idx, 1);
-      } else {
-        next[idx] = patient;
-      }
+    if (patientId.startsWith("empty-")) {
+      const created = { id: uuidv4(), name: "", hour: "", lastTreatmentDate: "", physiotherapistId: "", ...patch };
+      if (!isRowFilled(created)) return;
+      next.push(created);
+      persistActive(next, sort);
+      return;
     }
 
+    const idx = next.findIndex((p) => p.id === patientId);
+    if (idx === -1) return;
+    const merged: MassagePatient = { ...next[idx], ...patch, id: patientId };
+    if ("plannedHourChange" in patch && !patch.plannedHourChange) {
+      delete merged.plannedHourChange;
+    }
+    if (!isRowFilled(merged)) {
+      next.splice(idx, 1);
+    } else {
+      next[idx] = merged;
+    }
     persistActive(next, sort);
   };
 
@@ -597,9 +607,16 @@ function MasazeContent({ data }: { data: AppData }) {
     updateMassages({ waiting: [...dataRef.current.massages.waiting, patient] });
   };
 
-  const updateWaiting = (patient: MassageWaiting) => {
+  const patchWaiting = (patientId: string, patch: Partial<MassageWaiting>) => {
     updateMassages({
-      waiting: dataRef.current.massages.waiting.map((p) => (p.id === patient.id ? patient : p)),
+      waiting: dataRef.current.massages.waiting.map((p) => {
+        if (p.id !== patientId) return p;
+        const merged: MassageWaiting = { ...p, ...patch, id: patientId };
+        if ("plannedHourChange" in patch && !patch.plannedHourChange) {
+          delete merged.plannedHourChange;
+        }
+        return merged;
+      }),
     });
   };
 
@@ -657,13 +674,11 @@ function MasazeContent({ data }: { data: AppData }) {
 
     const { list, patientId } = hourChangeDialog;
     if (list === "active") {
-      const patient = dataRef.current.massages.active.find((p) => p.id === patientId);
-      if (!patient) return;
-      updateActivePatient({ ...patient, plannedHourChange }, false);
+      if (!dataRef.current.massages.active.some((p) => p.id === patientId)) return;
+      patchActivePatient(patientId, { plannedHourChange }, false);
     } else {
-      const patient = dataRef.current.massages.waiting.find((p) => p.id === patientId);
-      if (!patient) return;
-      updateWaiting({ ...patient, plannedHourChange });
+      if (!dataRef.current.massages.waiting.some((p) => p.id === patientId)) return;
+      patchWaiting(patientId, { plannedHourChange });
     }
     setHourChangeDialog(null);
   };
@@ -681,17 +696,11 @@ function MasazeContent({ data }: { data: AppData }) {
     }
     const { list, patientId } = hourChangeDialog;
     if (list === "active") {
-      const patient = dataRef.current.massages.active.find((p) => p.id === patientId);
-      if (!patient) return;
-      const next = { ...patient };
-      delete next.plannedHourChange;
-      updateActivePatient(next, false);
+      if (!dataRef.current.massages.active.some((p) => p.id === patientId)) return;
+      patchActivePatient(patientId, { plannedHourChange: undefined }, false);
     } else {
-      const patient = dataRef.current.massages.waiting.find((p) => p.id === patientId);
-      if (!patient) return;
-      const next = { ...patient };
-      delete next.plannedHourChange;
-      updateWaiting(next);
+      if (!dataRef.current.massages.waiting.some((p) => p.id === patientId)) return;
+      patchWaiting(patientId, { plannedHourChange: undefined });
     }
     setHourChangeDialog(null);
   };
@@ -781,7 +790,7 @@ function MasazeContent({ data }: { data: AppData }) {
                       <td className={CELL}>
                         <PatientNameCell
                           value={p.name}
-                          onChange={(name) => updateActivePatient({ ...p, name }, false)}
+                          onChange={(name) => patchActivePatient(p.id, { name }, false)}
                         />
                       </td>
                       <td className={CELL}>
@@ -791,14 +800,14 @@ function MasazeContent({ data }: { data: AppData }) {
                           hourChangeMode={hourChangeMode}
                           editable={isRowFilled(p) && !p.id.startsWith("empty-")}
                           onPlanClick={() => openHourChangeDialog("active", p)}
-                          onHourChange={(hour) => updateActivePatient({ ...p, hour }, false)}
+                          onHourChange={(hour) => patchActivePatient(p.id, { hour }, false)}
                         />
                       </td>
                       <td className={CELL}>
                         <DatePickerCell
                           value={p.lastTreatmentDate}
                           onChange={(lastTreatmentDate) =>
-                            updateActivePatient({ ...p, lastTreatmentDate }, false)
+                            patchActivePatient(p.id, { lastTreatmentDate }, false)
                           }
                           onPickerClose={sortActiveRows}
                           title="Do kiedy"
@@ -809,7 +818,7 @@ function MasazeContent({ data }: { data: AppData }) {
                         <PhysioSelect
                           value={p.physiotherapistId}
                           onChange={(physiotherapistId) =>
-                            updateActivePatient({ ...p, physiotherapistId }, false)
+                            patchActivePatient(p.id, { physiotherapistId }, false)
                           }
                           options={physioOptions(data)}
                         />
@@ -902,7 +911,7 @@ function MasazeContent({ data }: { data: AppData }) {
                     <td className={CELL}>
                       <PatientNameCell
                         value={p.name}
-                        onChange={(name) => updateWaiting({ ...p, name })}
+                        onChange={(name) => patchWaiting(p.id, { name })}
                       />
                     </td>
                     <td className={CELL}>
@@ -912,13 +921,13 @@ function MasazeContent({ data }: { data: AppData }) {
                         hourChangeMode={hourChangeMode}
                         editable={Boolean(stripHtml(p.name).trim() || (p.hour ?? "").trim())}
                         onPlanClick={() => openHourChangeDialog("waiting", p)}
-                        onHourChange={(hour) => updateWaiting({ ...p, hour })}
+                        onHourChange={(hour) => patchWaiting(p.id, { hour })}
                       />
                     </td>
                     <td className={CELL}>
                       <DatePickerCell
                         value={p.startDate}
-                        onChange={(startDate) => updateWaiting({ ...p, startDate })}
+                        onChange={(startDate) => patchWaiting(p.id, { startDate })}
                         title="OD kiedy"
                         textClassName={MASSAGE_TABLE_TEXT}
                       />
@@ -926,7 +935,9 @@ function MasazeContent({ data }: { data: AppData }) {
                     <td className={CELL}>
                       <DatePickerCell
                         value={p.lastTreatmentDate}
-                        onChange={(lastTreatmentDate) => updateWaiting({ ...p, lastTreatmentDate })}
+                        onChange={(lastTreatmentDate) =>
+                          patchWaiting(p.id, { lastTreatmentDate })
+                        }
                         title="Do kiedy"
                         textClassName={MASSAGE_TABLE_TEXT}
                       />
@@ -934,7 +945,9 @@ function MasazeContent({ data }: { data: AppData }) {
                     <td className={CELL}>
                       <PhysioSelect
                         value={p.physiotherapistId}
-                        onChange={(physiotherapistId) => updateWaiting({ ...p, physiotherapistId })}
+                        onChange={(physiotherapistId) =>
+                          patchWaiting(p.id, { physiotherapistId })
+                        }
                         options={physioOptions(data)}
                       />
                     </td>

@@ -1,4 +1,4 @@
-import type { AppData, Patient } from "./types";
+import type { AdmissionSession, AdmissionSlot, AppData, MassagePatient, Patient } from "./types";
 
 export function deepEqual(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
@@ -88,10 +88,8 @@ function mergeByKey<T>(
     }
 
     if (r && !l) {
-      // Local removed an item that existed in base — keep it deleted even if remote edited it.
-      if (b) continue;
-      // Remote added an item this client never had.
-      merged.set(key, r);
+      // Local deleted: keep deleted only when remote did not change the item.
+      if (!b || !deepEqual(r, b)) merged.set(key, r);
     }
   }
 
@@ -162,6 +160,134 @@ function mergePatientFields(base: Patient, local: Patient, remote: Patient): Pat
   );
   if (owner) merged.ownerPhysiotherapistId = owner;
 
+  return merged;
+}
+
+function mergeAdmissionSlotFields(
+  base: AdmissionSlot,
+  local: AdmissionSlot,
+  remote: AdmissionSlot
+): AdmissionSlot {
+  const merged: AdmissionSlot = {
+    id: local.id,
+    patientName: mergeValue(base.patientName, local.patientName, remote.patientName),
+    admissionHour: mergeValue(base.admissionHour, local.admissionHour, remote.admissionHour),
+    physiotherapistId: mergeValue(
+      base.physiotherapistId,
+      local.physiotherapistId,
+      remote.physiotherapistId
+    ),
+  };
+
+  const substitute = mergeValue(
+    base.substitutePhysiotherapistId,
+    local.substitutePhysiotherapistId,
+    remote.substitutePhysiotherapistId
+  );
+  if (substitute) merged.substitutePhysiotherapistId = substitute;
+
+  const status = mergeValue(
+    base.admissionStatus,
+    local.admissionStatus,
+    remote.admissionStatus
+  );
+  if (status) merged.admissionStatus = status;
+
+  const linked = mergeValue(
+    base.linkedPatientId,
+    local.linkedPatientId,
+    remote.linkedPatientId
+  );
+  if (linked) merged.linkedPatientId = linked;
+
+  return merged;
+}
+
+function mergeAdmissionSessionFields(
+  base: AdmissionSession,
+  local: AdmissionSession,
+  remote: AdmissionSession
+): AdmissionSession {
+  const merged: AdmissionSession = {
+    id: local.id,
+    doctorId: mergeValue(base.doctorId, local.doctorId, remote.doctorId),
+    admissionDate: mergeValue(base.admissionDate, local.admissionDate, remote.admissionDate),
+    patients: mergeById(base.patients, local.patients, remote.patients, mergeAdmissionSlotFields),
+  };
+
+  const planned = mergeValue(
+    base.plannedDischargeDate,
+    local.plannedDischargeDate,
+    remote.plannedDischargeDate
+  );
+  if (planned) merged.plannedDischargeDate = planned;
+
+  const plannedManual = mergeValue(
+    base.plannedDischargeDateManual,
+    local.plannedDischargeDateManual,
+    remote.plannedDischargeDateManual
+  );
+  if (plannedManual) merged.plannedDischargeDateManual = true;
+
+  return merged;
+}
+
+function mergeMassagePatientFields(
+  base: MassagePatient,
+  local: MassagePatient,
+  remote: MassagePatient
+): MassagePatient {
+  const merged: MassagePatient = {
+    id: local.id,
+    name: mergeValue(base.name, local.name, remote.name),
+    hour: mergeValue(base.hour, local.hour, remote.hour),
+    lastTreatmentDate: mergeValue(
+      base.lastTreatmentDate,
+      local.lastTreatmentDate,
+      remote.lastTreatmentDate
+    ),
+    physiotherapistId: mergeValue(
+      base.physiotherapistId,
+      local.physiotherapistId,
+      remote.physiotherapistId
+    ),
+  };
+  const planned = mergeValue(
+    base.plannedHourChange,
+    local.plannedHourChange,
+    remote.plannedHourChange
+  );
+  if (planned) merged.plannedHourChange = planned;
+  return merged;
+}
+
+function mergeMassageWaitingFields(
+  base: { id: string; name: string; hour: string; startDate: string; lastTreatmentDate: string; physiotherapistId: string; plannedHourChange?: MassagePatient["plannedHourChange"] },
+  local: typeof base,
+  remote: typeof base
+): typeof base {
+  const merged = {
+    id: local.id,
+    name: mergeValue(base.name, local.name, remote.name),
+    hour: mergeValue(base.hour, local.hour, remote.hour),
+    startDate: mergeValue(base.startDate, local.startDate, remote.startDate),
+    lastTreatmentDate: mergeValue(
+      base.lastTreatmentDate,
+      local.lastTreatmentDate,
+      remote.lastTreatmentDate
+    ),
+    physiotherapistId: mergeValue(
+      base.physiotherapistId,
+      local.physiotherapistId,
+      remote.physiotherapistId
+    ),
+  } as typeof base;
+  const planned = mergeValue(
+    base.plannedHourChange,
+    local.plannedHourChange,
+    remote.plannedHourChange
+  );
+  if (planned) merged.plannedHourChange = planned;
   return merged;
 }
 
@@ -306,8 +432,18 @@ export function mergeAppData(base: AppData, local: AppData, remote: AppData): Ap
       (b, l, r) => mergeById(b, l, r, mergePatientFields)
     ),
     massages: {
-      active: mergeById(massagesBase?.active, massagesLocal?.active, massagesRemote?.active),
-      waiting: mergeById(massagesBase?.waiting, massagesLocal?.waiting, massagesRemote?.waiting),
+      active: mergeById(
+        massagesBase?.active,
+        massagesLocal?.active,
+        massagesRemote?.active,
+        mergeMassagePatientFields
+      ),
+      waiting: mergeById(
+        massagesBase?.waiting,
+        massagesLocal?.waiting,
+        massagesRemote?.waiting,
+        mergeMassageWaitingFields
+      ),
       scheduleHours: mergeValue(
         massagesBase?.scheduleHours,
         massagesLocal?.scheduleHours,
@@ -327,22 +463,9 @@ export function mergeAppData(base: AppData, local: AppData, remote: AppData): Ap
     duties: mergeKeyedRecord(base.duties, local.duties, remote.duties, (b, l, r) =>
       mergeDutyEntries(b, l, r)
     ),
-    admissions: mergeKeyedRecord(base.admissions, local.admissions, remote.admissions, (b, l, r) => {
-      const sessions = mergeById(b, l, r).map((session) => {
-        const baseSession = (b ?? []).find((s) => s.id === session.id);
-        const localSession = (l ?? []).find((s) => s.id === session.id);
-        const remoteSession = (r ?? []).find((s) => s.id === session.id);
-        return {
-          ...session,
-          patients: mergeById(
-            baseSession?.patients,
-            localSession?.patients,
-            remoteSession?.patients
-          ),
-        };
-      });
-      return sessions;
-    }),
+    admissions: mergeKeyedRecord(base.admissions, local.admissions, remote.admissions, (b, l, r) =>
+      mergeById(b, l, r, mergeAdmissionSessionFields)
+    ),
     vacations: mergeKeyedRecord(base.vacations, local.vacations, remote.vacations, (b, l, r) =>
       mergeVacationEntries(b, l, r)
     ),

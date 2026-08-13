@@ -383,16 +383,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const current = dataRef.current;
       lastLocalEditAtRef.current = Date.now();
 
-      const base = syncedDataRef.current;
-      // Combine this write with the live UI so a background sync cannot wipe fresher edits.
-      const combined =
-        current && base ? mergeAppData(base, newData, current) : newData;
-
-      dataRef.current = combined;
-      setData(combined);
+      // Authoritative write from the caller — pages must build from dataRef.
+      // Do not three-way-merge with live UI here: that wiped fresher fields from
+      // stale snapshots (e.g. admission patientName).
+      dataRef.current = newData;
+      setData(newData);
 
       if (!current) {
-        pendingSaveRef.current = combined;
+        pendingSaveRef.current = newData;
         syncPendingFlag();
         void flushSaveQueue();
         return;
@@ -405,9 +403,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
 
       const baseline = undoBaselineRef.current ?? current;
-      recordUndoEntry(baseline, combined);
+      recordUndoEntry(baseline, newData);
 
-      pendingSaveRef.current = combined;
+      pendingSaveRef.current = newData;
       syncPendingFlag();
       void flushSaveQueue();
     },

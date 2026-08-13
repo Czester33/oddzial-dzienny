@@ -187,10 +187,13 @@ export function Navigation() {
             <p className="text-[15px] text-amber-700 dark:text-amber-400">{APP_BETA_NOTICE}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            {/* Desktop only: status width changes and reflows the wrapped header on phones. */}
             {saving ? (
-              <span className="text-[19px] text-blue-600 dark:text-blue-400">Zapisywanie...</span>
+              <span className="hidden text-[19px] text-blue-600 md:inline dark:text-blue-400">
+                Zapisywanie...
+              </span>
             ) : syncedLabel ? (
-              <span className="text-[15px] text-slate-500 dark:text-slate-400">
+              <span className="hidden text-[15px] text-slate-500 md:inline dark:text-slate-400">
                 Zsynchronizowano o {syncedLabel}
               </span>
             ) : null}
