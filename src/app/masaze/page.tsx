@@ -13,9 +13,10 @@ import { FormattedEditor } from "@/components/FormattedEditor";
 import { FloatingTodayCalendar } from "@/components/FloatingTodayCalendar";
 import { FitWidthScale } from "@/components/FitWidthScale";
 import { stripHtml } from "@/lib/text-format";
-import { formatDatePL, toDateInputValue } from "@/lib/date-utils";
+import { formatDatePL, toDateInputValue, todayIsoDate } from "@/lib/date-utils";
 import { resolvePhysioRowColor, physioPlanningDisplayLabel, physioPlanningOptionLabel, physiosForPlanningSelect } from "@/lib/physio-utils";
 import {
+  allMassageHourChangesPlanned,
   applyMassageSync,
   buildPlannedHourChange,
   clampMaxMassagesPerDay,
@@ -58,6 +59,19 @@ const TIME_INPUT_CLASS = `w-full border-0 bg-transparent px-0.5 py-0.5 text-cent
 const PLANNED_HOUR_GLOW =
   "rounded shadow-[inset_0_0_8px_2px_rgba(250,204,21,0.75)] ring-2 ring-inset ring-yellow-400/70";
 const PLANNED_HOUR_LABEL_CLASS = `${TIME_INPUT_CLASS} whitespace-nowrap px-1 tracking-tight`;
+/** Reminder glow for “Zaplanuj zmianę godziny” in the last days of the month. */
+const MONTH_END_PLAN_HOUR_GLOW =
+  "border-yellow-500 bg-gradient-to-b from-yellow-300 to-amber-400 text-amber-950 shadow-[0_0_14px_4px_rgba(250,204,21,0.85)] ring-2 ring-yellow-300 animate-[gold-glow_1.6s_ease-in-out_infinite] hover:from-yellow-200 hover:to-amber-300 dark:border-yellow-400 dark:from-yellow-400 dark:to-amber-500 dark:text-amber-950 dark:hover:from-yellow-300 dark:hover:to-amber-400";
+
+function isWithinLastDaysOfMonth(days: number, todayIso: string = todayIsoDate()): boolean {
+  const parts = todayIso.split("-").map(Number);
+  const year = parts[0];
+  const month = parts[1];
+  const day = parts[2];
+  if (!year || !month || !day) return false;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  return day > daysInMonth - days;
+}
 
 type HourChangeList = "active" | "waiting";
 
@@ -421,16 +435,31 @@ function ActiveMassageToolsPanel({
   maxPerDay: number;
   onMaxPerDayChange: (maxPerDay: number) => void;
 }) {
+  const monthEndReminder =
+    !hourChangeMode &&
+    isWithinLastDaysOfMonth(3) &&
+    !allMassageHourChangesPlanned(active, waiting);
+
   return (
     <>
       <div className="flex flex-col gap-2">
-        <Btn
-          variant={hourChangeMode ? "primary" : "secondary"}
-          onClick={onToggleHourChangeMode}
-          className="w-full text-[16px]"
-        >
-          {hourChangeMode ? "Anuluj planowanie" : "Zaplanuj zmianę godziny"}
-        </Btn>
+        {monthEndReminder ? (
+          <button
+            type="button"
+            onClick={onToggleHourChangeMode}
+            className={`w-full rounded-md px-3 py-1.5 text-[16px] font-medium ${MONTH_END_PLAN_HOUR_GLOW}`}
+          >
+            Zaplanuj zmianę godziny
+          </button>
+        ) : (
+          <Btn
+            variant={hourChangeMode ? "primary" : "secondary"}
+            onClick={onToggleHourChangeMode}
+            className="w-full text-[16px]"
+          >
+            {hourChangeMode ? "Anuluj planowanie" : "Zaplanuj zmianę godziny"}
+          </Btn>
+        )}
         {hourChangeMode && (
           <p className="text-center text-[14px] leading-snug text-slate-500 dark:text-slate-400">
             Kliknij godzinę pacjenta, aby ustawić zmianę

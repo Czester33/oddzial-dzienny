@@ -213,3 +213,13 @@ textarea,
 .dark :where(.decoration-red-400, .decoration-red-600) {
   text-decoration-color: var(--readable-red);
 }
+
+@keyframes gold-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 8px 2px rgba(250, 204, 21, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 18px 6px rgba(250, 204, 21, 0.95);
+  }
+}

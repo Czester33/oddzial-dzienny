@@ -363,6 +363,17 @@ export function isFuturePlannedHourChange(
   return planned.effectiveDate > getTodayIso(now);
 }
 
+/** True when every active/waiting patient already has a future hour change planned. */
+export function allMassageHourChangesPlanned(
+  active: Array<{ plannedHourChange?: MassageHourChange }>,
+  waiting: Array<{ plannedHourChange?: MassageHourChange }>,
+  now = new Date()
+): boolean {
+  const patients = [...active, ...waiting];
+  if (patients.length === 0) return true;
+  return patients.every((patient) => isFuturePlannedHourChange(patient, now));
+}
+
 export function formatPlannedHourChangeLabel(
   patient: { hour: string; plannedHourChange?: MassageHourChange },
   now = new Date()
