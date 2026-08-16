@@ -14,6 +14,7 @@ import type {
 import { getPlannedDischargeDate, toDateInputValue } from "./date-utils";
 import { buildPlannedHourChange, clampMaxMassagesPerDay, DEFAULT_MAX_MASSAGES_PER_DAY } from "./massage-schedule";
 import { normalizeAdmissions, migrateFlatArchiveToMonths } from "./admission-utils";
+import { persistPatientCheckupFields } from "./checkup-utils";
 import { normalizeNavLabels, normalizeNavOrder } from "./nav-utils";
 import { stripHtml, replaceNbspInHtml, stripEmojis } from "./text-format";
 
@@ -785,6 +786,7 @@ export function sanitizeAppData(data: AppData): AppData {
           ? { dischargeDateManual: true, dischargeDateBeforeManual: p.dischargeDateBeforeManual }
           : {}),
         ...(ownerId && ownerId !== physio.id ? { ownerPhysiotherapistId: ownerId } : {}),
+        ...persistPatientCheckupFields(p),
       };
     });
   }
@@ -968,6 +970,7 @@ export function migrateData(raw: any): AppData {
           ? { dischargeDateManual: true, dischargeDateBeforeManual: p.dischargeDateBeforeManual }
           : {}),
         ...(p.ownerPhysiotherapistId ? { ownerPhysiotherapistId: p.ownerPhysiotherapistId } : {}),
+        ...persistPatientCheckupFields(p),
       }));
   }
 

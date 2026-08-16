@@ -25,6 +25,10 @@ export interface Patient {
   dischargeDateBeforeManual?: string;
   /** Original physiotherapist when patient is temporarily moved (substitute). */
   ownerPhysiotherapistId?: string;
+  /** Planned checkup with the attending doctor (YYYY-MM-DD). */
+  checkupDate?: string;
+  /** True after the checkup took place (green K dismissed). */
+  checkupDone?: boolean;
 }
 
 export interface MassageHourChange {

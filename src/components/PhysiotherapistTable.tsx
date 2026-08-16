@@ -4,13 +4,16 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProp
 import { createPortal } from "react-dom";
 import type { ColumnWidths, Physiotherapist, Patient } from "@/lib/types";
 import { getDefaultColumnWidths, physioDisplayName, resolvePhysioColumnHeaderColor, resolvePhysioRowColor } from "@/lib/physio-utils";
-import { toDateInputValue } from "@/lib/date-utils";
+import { formatDischargeShort, toDateInputValue, todayIsoDate } from "@/lib/date-utils";
 import { useTheme } from "@/context/ThemeContext";
 import { useConfirm } from "@/context/ConfirmContext";
 import { DatePickerCell } from "@/components/DatePickerCell";
 import { FormattedEditor } from "@/components/FormattedEditor";
 import { stripHtml } from "@/lib/text-format";
 import { stripPersistedDutyNotes } from "@/lib/duty-utils";
+import { findAdmissionForPatient, isCheckupDueToday, isCheckupReminderDay } from "@/lib/checkup-utils";
+import { getDoctorName } from "@/lib/admission-utils";
+import { useData } from "@/context/DataContext";
 
 const WIDTH_LIMITS: Record<keyof ColumnWidths, { min: number; max: number }> = {
   lp: { min: 36, max: 80 },
@@ -456,6 +459,7 @@ export function PhysiotherapistTable({
   onColumnWidthsChange: (widths: ColumnWidths) => void;
 }) {
   const { theme } = useTheme();
+  const { data } = useData();
   const askConfirm = useConfirm();
   const isMobile = useIsMobile();
   const [widths, setWidths] = useState(() => getDefaultColumnWidths(physio.columnWidths));
@@ -683,12 +687,66 @@ export function PhysiotherapistTable({
                             )}
                           </div>
                         )}
-                      <SpreadsheetCell
-                        value={patient.text}
-                        onChange={(text) => onUpdatePatient(patient.id, { text })}
-                        placeholder=""
-                        multiline
-                      />
+                      <div className="flex items-center gap-1">
+                        {(() => {
+                          const todayIso = todayIsoDate();
+                          const dueToday = isCheckupDueToday(patient, todayIso);
+                          const reminder = isCheckupReminderDay(
+                            patient,
+                            todayIso,
+                            data?.clinicClosedDays ?? []
+                          );
+                          if (!dueToday && !reminder) return null;
+                          const doctorName = data
+                            ? stripHtml(
+                                getDoctorName(
+                                  data,
+                                  findAdmissionForPatient(data, patient.id).doctorId
+                                )
+                              )
+                            : "";
+                          if (reminder) {
+                            const when = formatDischargeShort(patient.checkupDate ?? "");
+                            return (
+                              <span
+                                className="ml-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-yellow-400 text-[15px] font-bold text-amber-950"
+                                title={
+                                  doctorName
+                                    ? `${doctorName} — kontrola ${when || "wkrótce"}`
+                                    : `Kontrola ${when || "wkrótce"}`
+                                }
+                              >
+                                K
+                              </span>
+                            );
+                          }
+                          return (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                onUpdatePatient(patient.id, { checkupDone: true })
+                              }
+                              className="ml-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-emerald-600 text-[15px] font-bold text-white hover:bg-emerald-500"
+                              title={
+                                doctorName
+                                  ? `${doctorName} — kliknij, jeśli się odbyła`
+                                  : "Kliknij, jeśli się odbyła"
+                              }
+                              aria-label="Oznacz kontrolę jako odbytą"
+                            >
+                              K
+                            </button>
+                          );
+                        })()}
+                        <div className="min-w-0 flex-1">
+                          <SpreadsheetCell
+                            value={patient.text}
+                            onChange={(text) => onUpdatePatient(patient.id, { text })}
+                            placeholder=""
+                            multiline
+                          />
+                        </div>
+                      </div>
                     </div>
                   </td>
                   <td

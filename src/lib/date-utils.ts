@@ -394,6 +394,22 @@ export function isWorkingDay(
   );
 }
 
+/** Previous Mon–Fri that is not a holiday or clinic-closed day. */
+export function previousWorkingDay(
+  dateStr: string,
+  extraClosedDates: readonly string[] = []
+): string {
+  const iso = toDateInputValue(dateStr);
+  if (!iso) return "";
+  const current = new Date(iso + "T12:00:00");
+  for (let i = 0; i < 31; i++) {
+    current.setDate(current.getDate() - 1);
+    const candidate = isoFromParts(current.getFullYear(), current.getMonth(), current.getDate());
+    if (isWorkingDay(candidate, extraClosedDates)) return candidate;
+  }
+  return "";
+}
+
 /** Last Mon–Fri in the month that is not a public holiday (monthIndex 0-based). */
 export function getLastWorkingDayOfMonth(year: number, monthIndex: number): string {
   const lastDay = new Date(year, monthIndex + 1, 0).getDate();

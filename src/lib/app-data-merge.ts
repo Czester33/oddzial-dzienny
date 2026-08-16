@@ -160,6 +160,12 @@ function mergePatientFields(base: Patient, local: Patient, remote: Patient): Pat
   );
   if (owner) merged.ownerPhysiotherapistId = owner;
 
+  const checkupDate = mergeValue(base.checkupDate, local.checkupDate, remote.checkupDate);
+  if (checkupDate) merged.checkupDate = checkupDate;
+
+  const checkupDone = mergeValue(base.checkupDone, local.checkupDone, remote.checkupDone);
+  if (checkupDone) merged.checkupDone = true;
+
   return merged;
 }
 

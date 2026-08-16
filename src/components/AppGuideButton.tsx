@@ -53,6 +53,8 @@ const GUIDE_SECTIONS: GuideSection[] = [
       "Przy zastępstwie pojawi się napis „zastępstwo”. Cofnij: przycisk przy pacjencie albo „Cofnij zastępstwa” w nagłówku tabeli.",
       "Po lewej: kalendarz i nadchodzące przyjęcia w tym tygodniu.",
       "Po prawej (na telefonie nad tabelami): powiadomienia o zmianach w przyjęciach.",
+      "W dniu kontroli przy nazwisku: zielony „K”. Klik — kontrola odbyła się, przycisk znika.",
+      "Dzień roboczy przed kontrolą (także sobota i niedziela): żółty „K” (informacja, bez klikania).",
     ],
   },
   {
@@ -106,6 +108,18 @@ const GUIDE_SECTIONS: GuideSection[] = [
       "Zmiana w przyjęciu → powiadomienie u fizjoterapeuty na stronie Pacjenci.",
       "Przyciski ‹ › na dole (po prawie) — przenosisz całe przyjęcie do innego miesiąca.",
       "Zarchiwizowany miesiąc znika z wyboru. Po „Cofnij z archiwum” możesz poprawić i kliknąć „Archiwizuj”.",
+    ],
+  },
+  {
+    title: "Kontrole",
+    href: "/kontrole",
+    intro: "Jedna kontrola u lekarza prowadzącego podczas pobytu.",
+    items: [
+      "Lista obecnych pacjentów, pogrupowana według lekarza z przyjęcia, z fizjoterapeutą.",
+      "Ustaw datę kontroli w kolumnie „Data kontroli”.",
+      "W dniu kontroli przy nazwisku na stronie Obecni pacjenci pojawia się zielony przycisk „K”.",
+      "Od poprzedniego dnia roboczego (także w weekend) przy nazwisku: żółty „K” (przypomnienie).",
+      "Klik „K” przy dacie = kontrola się odbyła (także gdy ktoś zapomniał na liście obecnych). Ponowny klik cofa.",
     ],
   },
   {
