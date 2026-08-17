@@ -7,7 +7,7 @@ import {
   MONTH_NAMES,
   parseMonthKey,
 } from "@/lib/date-utils";
-import { getPhysioName, resolvePhysioColumnHeaderColor, resolvePhysioRowColor } from "@/lib/physio-utils";
+import { getPhysioById, physioDisplayName, resolvePhysioColumnHeaderColor, resolvePhysioRowColor } from "@/lib/physio-utils";
 import { useTheme } from "@/context/ThemeContext";
 import { FitWidthScale, tableRemPx } from "@/components/FitWidthScale";
 
@@ -61,6 +61,15 @@ function resolveMonthColors(month: number, isDark: boolean) {
   };
 }
 
+function physioTileBg(color: string, rowColor: string, isDark: boolean): string {
+  if (isDark) return resolvePhysioRowColor(color, rowColor, "dark");
+  return color;
+}
+
+function physioTileText(isDark: boolean): string {
+  return isDark ? "#f1f5f9" : "#ffffff";
+}
+
 export function ArchivedDutyMonthPanel({
   entry,
   data,
@@ -105,12 +114,27 @@ export function ArchivedDutyMonthPanel({
 
   const renderPersonCell = (duty: DutyEntry | undefined, bg: string) => {
     if (!duty) return <td className={cell} style={{ backgroundColor: bg }} />;
-    const name = duty.physiotherapistId
-      ? getPhysioName(data, duty.physiotherapistId) || "—"
-      : "—";
+    const physio = duty.physiotherapistId
+      ? getPhysioById(data, duty.physiotherapistId)
+      : undefined;
+    const tileBg = physio ? physioTileBg(physio.color, physio.rowColor, isDark) : "transparent";
+    const tileText = physio
+      ? physioTileText(isDark)
+      : isDark
+        ? "#94a3b8"
+        : "#64748b";
     return (
-      <td className={cell} style={{ backgroundColor: bg }}>
-        {name}
+      <td className={`${cell} p-1 text-center`} style={{ backgroundColor: bg }}>
+        <span
+          className={`inline-block min-w-[8ch] rounded border px-2 py-1 text-center text-[19px] font-semibold leading-tight ${
+            physio
+              ? "border-black/20 dark:border-white/25"
+              : "border-dashed border-slate-300 dark:border-slate-600"
+          }`}
+          style={{ color: tileText, backgroundColor: tileBg }}
+        >
+          {physioDisplayName(physio?.name ?? "—")}
+        </span>
       </td>
     );
   };

@@ -11,7 +11,7 @@ import { DatePickerCell } from "@/components/DatePickerCell";
 import { FormattedEditor } from "@/components/FormattedEditor";
 import { stripHtml } from "@/lib/text-format";
 import { stripPersistedDutyNotes } from "@/lib/duty-utils";
-import { findAdmissionForPatient, isCheckupDueToday, isCheckupReminderDay } from "@/lib/checkup-utils";
+import { findDoctorIdForPatient, isCheckupDueToday, isCheckupReminderDay } from "@/lib/checkup-utils";
 import { getDoctorName } from "@/lib/admission-utils";
 import { useData } from "@/context/DataContext";
 
@@ -701,7 +701,7 @@ export function PhysiotherapistTable({
                             ? stripHtml(
                                 getDoctorName(
                                   data,
-                                  findAdmissionForPatient(data, patient.id).doctorId
+                                  findDoctorIdForPatient(data, patient.id)
                                 )
                               )
                             : "";

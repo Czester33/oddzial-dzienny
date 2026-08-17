@@ -419,6 +419,14 @@ export function physiosForPlanningSelect(data: AppData): Physiotherapist[] {
   return [...visible, ...hidden];
 }
 
+/** Planning list plus currently assigned person (retired / archived profile). */
+export function physiosForDutySelect(data: AppData, selectedId = ""): Physiotherapist[] {
+  const list = physiosForPlanningSelect(data);
+  if (!selectedId || list.some((p) => p.id === selectedId)) return list;
+  const assigned = getPhysioById(data, selectedId);
+  return assigned ? [...list, assigned] : list;
+}
+
 /** @deprecated Use physiosForPlanningSelect */
 export function physiosForAdmissionSelect(data: AppData): Physiotherapist[] {
   return physiosForPlanningSelect(data);
@@ -583,29 +591,39 @@ export function clearPatientSlot(patients: Patient[], patientId: string): Patien
   );
 }
 
-/** Drop admission links so a manually removed patient is not treated as still admitted. */
-export function unlinkPatientFromAdmissions(data: AppData, patientId: string): AppData {
+export function uniqueRemovedPatientIds(ids: string[] | undefined): string[] {
+  return [...new Set((ids ?? []).filter(Boolean))].sort();
+}
+
+/** Drop current-patient rows whose ids were removed by hand. */
+export function purgeRemovedCurrentPatients(data: AppData): AppData {
+  const ids = new Set(data.removedPatientIds ?? []);
+  if (ids.size === 0) return data;
   let changed = false;
-  const admissions: AppData["admissions"] = { ...data.admissions };
-
-  for (const [monthKey, sessions] of Object.entries(admissions)) {
-    let monthChanged = false;
-    const nextSessions = sessions.map((session) => {
-      let sessionChanged = false;
-      const patients = session.patients.map((slot) => {
-        if (slot.linkedPatientId !== patientId) return slot;
-        sessionChanged = true;
-        monthChanged = true;
-        changed = true;
-        const { linkedPatientId: _drop, admissionStatus: _status, ...rest } = slot;
-        return rest;
-      });
-      return sessionChanged ? { ...session, patients } : session;
-    });
-    if (monthChanged) admissions[monthKey] = nextSessions;
+  const currentPatients: Record<string, Patient[]> = {};
+  for (const [physioId, list] of Object.entries(data.currentPatients ?? {})) {
+    const next = list.filter((p) => !ids.has(p.id));
+    if (next.length !== list.length) changed = true;
+    currentPatients[physioId] = next;
   }
+  if (!changed) return data;
+  return { ...data, currentPatients };
+}
 
-  return changed ? { ...data, admissions } : data;
+/** Keep admission marked, but never restore this patient row from sync. */
+export function rememberRemovedPatient(data: AppData, patientId: string): AppData {
+  if (!patientId) return data;
+  const removedPatientIds = uniqueRemovedPatientIds([...(data.removedPatientIds ?? []), patientId]);
+  return purgeRemovedCurrentPatients({ ...data, removedPatientIds });
+}
+
+/** Union tombstones from two snapshots so a poll cannot revive a local delete. */
+export function withRemovedPatientIds(data: AppData, extraIds: string[] | undefined): AppData {
+  const removedPatientIds = uniqueRemovedPatientIds([
+    ...(data.removedPatientIds ?? []),
+    ...(extraIds ?? []),
+  ]);
+  return purgeRemovedCurrentPatients({ ...data, removedPatientIds });
 }
 
 /** Nearest discharge dates first; empty dates stay at the bottom. */
@@ -771,24 +789,28 @@ function resolvePhysioId(data: AppData, value: string): string {
 }
 
 export function sanitizeAppData(data: AppData): AppData {
+  const removedPatientIds = uniqueRemovedPatientIds(data.removedPatientIds);
+  const removed = new Set(removedPatientIds);
   const currentPatients: Record<string, Patient[]> = {};
   for (const physio of data.physiotherapists) {
-    currentPatients[physio.id] = (data.currentPatients[physio.id] ?? []).map((p) => {
-      const legacyComment = (p as { comment?: string }).comment ?? "";
-      const text = p.text ?? "";
-      const ownerId = p.ownerPhysiotherapistId ?? "";
-      return {
-        id: p.id,
-        text: legacyComment && text ? `${text} ${legacyComment}` : legacyComment || text,
-        dischargeDate: p.dischargeDate ?? "",
-        // Manual flag only with a known original date (from Przyjęcia correction).
-        ...(p.dischargeDateManual && p.dischargeDateBeforeManual
-          ? { dischargeDateManual: true, dischargeDateBeforeManual: p.dischargeDateBeforeManual }
-          : {}),
-        ...(ownerId && ownerId !== physio.id ? { ownerPhysiotherapistId: ownerId } : {}),
-        ...persistPatientCheckupFields(p),
-      };
-    });
+    currentPatients[physio.id] = (data.currentPatients[physio.id] ?? [])
+      .filter((p) => !removed.has(p.id))
+      .map((p) => {
+        const legacyComment = (p as { comment?: string }).comment ?? "";
+        const text = p.text ?? "";
+        const ownerId = p.ownerPhysiotherapistId ?? "";
+        return {
+          id: p.id,
+          text: legacyComment && text ? `${text} ${legacyComment}` : legacyComment || text,
+          dischargeDate: p.dischargeDate ?? "",
+          // Manual flag only with a known original date (from Przyjęcia correction).
+          ...(p.dischargeDateManual && p.dischargeDateBeforeManual
+            ? { dischargeDateManual: true, dischargeDateBeforeManual: p.dischargeDateBeforeManual }
+            : {}),
+          ...(ownerId && ownerId !== physio.id ? { ownerPhysiotherapistId: ownerId } : {}),
+          ...persistPatientCheckupFields(p),
+        };
+      });
   }
 
   const doctors: Doctor[] = (data.doctors ?? []).map((d) => ({
@@ -849,6 +871,7 @@ export function sanitizeAppData(data: AppData): AppData {
       rowColor: p.rowColor ?? "#e2e8f0",
     })),
     currentPatients,
+    ...(removedPatientIds.length ? { removedPatientIds } : {}),
     massages: mapMassagesFields(data.massages),
     announcements: data.announcements ?? [],
     announcementsSeenAt: data.announcementsSeenAt ?? "",

@@ -1,4 +1,4 @@
-import type { AdmissionSession, AdmissionSlot, AppData, MassagePatient, Patient } from "./types";
+import type { AdmissionSession, AdmissionSlot, AppData, Doctor, MassagePatient, Patient, Physiotherapist } from "./types";
 
 export function deepEqual(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
@@ -17,6 +17,34 @@ function mergeValue<T>(base: T, local: T, remote: T): T {
   if (deepEqual(remote, base)) return local;
   // Both changed the same leaf — prefer local (this client's intent).
   return local;
+}
+
+/**
+ * Optional field: a missing key on local is "not in this snapshot", not a delete.
+ * Explicit clear must send "" / false.
+ */
+function mergeOptionalString(
+  base: string | undefined,
+  local: string | undefined,
+  remote: string | undefined
+): string | undefined {
+  if (local === undefined) {
+    return mergeValue(base, base, remote);
+  }
+  const picked = mergeValue(base, local, remote);
+  return picked ? picked : undefined;
+}
+
+function mergeOptionalFlag(
+  base: boolean | undefined,
+  local: boolean | undefined,
+  remote: boolean | undefined
+): boolean | undefined {
+  if (local === undefined) {
+    return mergeValue(base, base, remote);
+  }
+  const picked = mergeValue(base, local, remote);
+  return picked ? true : undefined;
 }
 
 function mergeStringSet(
@@ -46,7 +74,7 @@ function mergeByKey<T>(
   local: T[] | undefined,
   remote: T[] | undefined,
   keyOf: (item: T) => string,
-  options?: { sortByKey?: boolean },
+  options?: { sortByKey?: boolean; localDeleteWins?: boolean },
   mergeItem?: (b: T, l: T, r: T) => T
 ): T[] {
   const baseList = base ?? [];
@@ -88,6 +116,7 @@ function mergeByKey<T>(
     }
 
     if (r && !l) {
+      if (options?.localDeleteWins && b) continue;
       // Local deleted: keep deleted only when remote did not change the item.
       if (!b || !deepEqual(r, b)) merged.set(key, r);
     }
@@ -126,9 +155,40 @@ function mergeById<T extends { id: string }>(
   base: T[] | undefined,
   local: T[] | undefined,
   remote: T[] | undefined,
-  mergeItem?: (b: T, l: T, r: T) => T
+  mergeItem?: (b: T, l: T, r: T) => T,
+  options?: { localDeleteWins?: boolean }
 ): T[] {
-  return mergeByKey(base, local, remote, (item) => item.id, undefined, mergeItem);
+  return mergeByKey(base, local, remote, (item) => item.id, options, mergeItem);
+}
+
+/** Merge doctor fields so a name edit does not drop themeId from another client. */
+function mergeDoctorFields(base: Doctor, local: Doctor, remote: Doctor): Doctor {
+  const merged: Doctor = {
+    id: local.id,
+    name: mergeValue(base.name, local.name, remote.name),
+  };
+  const themeId = mergeOptionalString(base.themeId, local.themeId, remote.themeId);
+  if (themeId) merged.themeId = themeId;
+  return merged;
+}
+
+function mergePhysioFields(
+  base: Physiotherapist,
+  local: Physiotherapist,
+  remote: Physiotherapist
+): Physiotherapist {
+  const merged: Physiotherapist = {
+    id: local.id,
+    name: mergeValue(base.name, local.name, remote.name),
+    color: mergeValue(base.color, local.color, remote.color),
+    rowColor: mergeValue(base.rowColor, local.rowColor, remote.rowColor),
+    columnWidths: mergeValue(base.columnWidths, local.columnWidths, remote.columnWidths),
+  };
+  const headerNote = mergeValue(base.headerNote, local.headerNote, remote.headerNote);
+  if (headerNote) merged.headerNote = headerNote;
+  const hidden = mergeOptionalFlag(base.hidden, local.hidden, remote.hidden);
+  if (hidden) merged.hidden = true;
+  return merged;
 }
 
 /** Merge patient fields so concurrent text vs date edits do not clobber each other. */
@@ -160,10 +220,13 @@ function mergePatientFields(base: Patient, local: Patient, remote: Patient): Pat
   );
   if (owner) merged.ownerPhysiotherapistId = owner;
 
-  const checkupDate = mergeValue(base.checkupDate, local.checkupDate, remote.checkupDate);
+  const doctorId = mergeOptionalString(base.doctorId, local.doctorId, remote.doctorId);
+  if (doctorId) merged.doctorId = doctorId;
+
+  const checkupDate = mergeOptionalString(base.checkupDate, local.checkupDate, remote.checkupDate);
   if (checkupDate) merged.checkupDate = checkupDate;
 
-  const checkupDone = mergeValue(base.checkupDone, local.checkupDone, remote.checkupDone);
+  const checkupDone = mergeOptionalFlag(base.checkupDone, local.checkupDone, remote.checkupDone);
   if (checkupDone) merged.checkupDone = true;
 
   return merged;
@@ -409,6 +472,17 @@ function mergeMaxIso(
   return candidates.sort().at(-1) ?? "";
 }
 
+function dropRemovedPatients(
+  lists: Record<string, Patient[]>,
+  removed: string[]
+): Record<string, Patient[]> {
+  if (removed.length === 0) return lists;
+  const ids = new Set(removed);
+  return Object.fromEntries(
+    Object.entries(lists).map(([key, list]) => [key, list.filter((p) => !ids.has(p.id))])
+  );
+}
+
 /**
  * Three-way merge of AppData for concurrent multi-client edits.
  * base = last shared snapshot; local = this client's draft; remote = server.
@@ -417,9 +491,19 @@ export function mergeAppData(base: AppData, local: AppData, remote: AppData): Ap
   const massagesBase = base.massages;
   const massagesLocal = local.massages;
   const massagesRemote = remote.massages;
+  const removedPatientIds = mergeStringSet(
+    base.removedPatientIds,
+    local.removedPatientIds,
+    remote.removedPatientIds
+  );
 
   return {
-    physiotherapists: mergeById(base.physiotherapists, local.physiotherapists, remote.physiotherapists),
+    physiotherapists: mergeById(
+      base.physiotherapists,
+      local.physiotherapists,
+      remote.physiotherapists,
+      mergePhysioFields
+    ),
     retiredPhysiotherapists: mergeById(
       base.retiredPhysiotherapists,
       local.retiredPhysiotherapists,
@@ -430,12 +514,15 @@ export function mergeAppData(base: AppData, local: AppData, remote: AppData): Ap
       local.archivePhysiotherapistProfiles,
       remote.archivePhysiotherapistProfiles
     ),
-    doctors: mergeById(base.doctors, local.doctors, remote.doctors),
-    currentPatients: mergeKeyedRecord(
-      base.currentPatients,
-      local.currentPatients,
-      remote.currentPatients,
-      (b, l, r) => mergeById(b, l, r, mergePatientFields)
+    doctors: mergeById(base.doctors, local.doctors, remote.doctors, mergeDoctorFields),
+    currentPatients: dropRemovedPatients(
+      mergeKeyedRecord(
+        base.currentPatients,
+        local.currentPatients,
+        remote.currentPatients,
+        (b, l, r) => mergeById(b, l, r, mergePatientFields, { localDeleteWins: true })
+      ),
+      removedPatientIds
     ),
     massages: {
       active: mergeById(
@@ -563,6 +650,7 @@ export function mergeAppData(base: AppData, local: AppData, remote: AppData): Ap
       const merged = mergeStringRecord(base.navLabels, local.navLabels, remote.navLabels);
       return Object.keys(merged).length ? merged : undefined;
     })(),
+    ...(removedPatientIds.length ? { removedPatientIds } : {}),
   };
 }
 

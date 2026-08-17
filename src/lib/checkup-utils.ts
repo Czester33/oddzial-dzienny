@@ -68,17 +68,25 @@ export function findAdmissionForPatient(
 }
 
 export function findDoctorIdForPatient(data: AppData, patientId: string): string {
-  return findAdmissionForPatient(data, patientId).doctorId;
+  const fromAdmission = findAdmissionForPatient(data, patientId).doctorId;
+  if (fromAdmission) return fromAdmission;
+  for (const list of Object.values(data.currentPatients ?? {})) {
+    const hit = list.find((p) => p.id === patientId);
+    if (hit?.doctorId) return hit.doctorId;
+  }
+  return "";
 }
 
 export function persistPatientCheckupFields(
   patient: Patient
-): Pick<Patient, "checkupDate" | "checkupDone"> {
+): Pick<Patient, "checkupDate" | "checkupDone" | "doctorId"> {
   const checkupDate = toDateInputValue(patient.checkupDate ?? "");
-  if (!checkupDate) return {};
+  const doctorId = (patient.doctorId ?? "").trim();
   return {
-    checkupDate,
-    ...(patient.checkupDone ? { checkupDone: true } : {}),
+    ...(checkupDate
+      ? { checkupDate, ...(patient.checkupDone ? { checkupDone: true } : {}) }
+      : {}),
+    ...(doctorId ? { doctorId } : {}),
   };
 }
 
@@ -86,13 +94,14 @@ export function withCheckupDate(patient: Patient, date: string): Patient {
   const iso = toDateInputValue(date);
   const next: Patient = { ...patient };
   if (!iso) {
-    delete next.checkupDate;
-    delete next.checkupDone;
+    // Empty string is an explicit clear (missing key is ignored by merge).
+    next.checkupDate = "";
+    next.checkupDone = false;
     return next;
   }
   const prev = toDateInputValue(patient.checkupDate ?? "");
   next.checkupDate = iso;
-  if (iso !== prev) delete next.checkupDone;
+  if (iso !== prev) next.checkupDone = false;
   return next;
 }
 
@@ -128,6 +137,49 @@ function patchLinkedAdmissionName(data: AppData, patientId: string, name: string
   }
 
   return changed ? { ...data, admissions } : data;
+}
+
+function patchLinkedAdmissionDoctor(data: AppData, patientId: string, doctorId: string): AppData {
+  let changed = false;
+  const admissions: AppData["admissions"] = { ...data.admissions };
+
+  for (const [monthKey, sessions] of Object.entries(admissions)) {
+    let monthChanged = false;
+    const nextSessions = sessions.map((session) => {
+      if (!session.patients.some((slot) => slot.linkedPatientId === patientId)) {
+        return session;
+      }
+      monthChanged = true;
+      changed = true;
+      return { ...session, doctorId };
+    });
+    if (monthChanged) admissions[monthKey] = nextSessions;
+  }
+
+  return changed ? { ...data, admissions } : data;
+}
+
+/** Assign attending doctor from Kontrole (patient record + linked admission session). */
+export function withCheckupDoctor(
+  data: AppData,
+  physioId: string,
+  patientId: string,
+  doctorId: string
+): AppData {
+  if (!doctorId) return data;
+  const next = patchLinkedAdmissionDoctor(data, patientId, doctorId);
+  const list = next.currentPatients[physioId] ?? [];
+  const idx = list.findIndex((p) => p.id === patientId);
+  if (idx < 0) return next;
+  const updated = [...list];
+  updated[idx] = { ...list[idx], doctorId };
+  return {
+    ...next,
+    currentPatients: {
+      ...next.currentPatients,
+      [physioId]: updated,
+    },
+  };
 }
 
 /** Update the name shown on Kontrole (admission slot, and first line of current patient). */
@@ -191,7 +243,7 @@ export function withCheckupDoneFlag(patient: Patient, done: boolean): Patient {
     next.checkupDone = true;
     return next;
   }
-  delete next.checkupDone;
+  next.checkupDone = false;
   return next;
 }
 
@@ -229,7 +281,7 @@ export function listCurrentPatientsForCheckups(data: AppData): CheckupListRow[] 
         physioId,
         patientName,
         physioName: physioNameById(data, physioId),
-        doctorId: admission.doctorId,
+        doctorId: admission.doctorId || patient.doctorId || "",
         admissionDate: admission.admissionDate,
         checkupDate: toDateInputValue(patient.checkupDate ?? ""),
         checkupDone: Boolean(patient.checkupDone),

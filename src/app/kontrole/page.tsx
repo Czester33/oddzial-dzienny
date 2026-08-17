@@ -7,13 +7,15 @@ import type { AppData } from "@/lib/types";
 import { PageHeader, LoadingState, ErrorBanner, Card } from "@/components/ui";
 import { DatePickerCell } from "@/components/DatePickerCell";
 import { FormattedEditor } from "@/components/FormattedEditor";
-import { groupCheckupPatientsByDoctor, withCheckupDate, withCheckupDoneFlag, withCheckupPatientName } from "@/lib/checkup-utils";
+import { groupCheckupPatientsByDoctor, withCheckupDate, withCheckupDoneFlag, withCheckupDoctor, withCheckupPatientName } from "@/lib/checkup-utils";
 import {
   resolveAdmissionTheme,
   resolveAdmissionThemeColors,
 } from "@/lib/admission-themes";
 import { getPhysioById, physioDisplayName } from "@/lib/physio-utils";
 import { formatDatePL } from "@/lib/date-utils";
+import { stripHtml } from "@/lib/text-format";
+import { FloatingTodayCalendar } from "@/components/FloatingTodayCalendar";
 
 function KontroleContent({ data }: { data: AppData }) {
   const { error, save } = useData();
@@ -58,6 +60,12 @@ function KontroleContent({ data }: { data: AppData }) {
   const setPatientName = (physioId: string, patientId: string, name: string) => {
     const snapshot = dataRef.current;
     save(withCheckupPatientName(snapshot, physioId, patientId, name));
+  };
+
+  const setCheckupDoctor = (physioId: string, patientId: string, doctorId: string) => {
+    if (!doctorId) return;
+    const snapshot = dataRef.current;
+    save(withCheckupDoctor(snapshot, physioId, patientId, doctorId));
   };
 
   const setDoctorName = (doctorId: string, name: string) => {
@@ -170,6 +178,27 @@ function KontroleContent({ data }: { data: AppData }) {
                                   multiline
                                   className="w-full min-w-0 border-0 bg-transparent px-1 py-0.5 text-[16px] leading-snug break-words focus:bg-white/70 dark:focus:bg-black/25"
                                 />
+                                {!doctor ? (
+                                  <select
+                                    value=""
+                                    onChange={(e) =>
+                                      setCheckupDoctor(
+                                        row.physioId,
+                                        row.patientId,
+                                        e.target.value
+                                      )
+                                    }
+                                    className="mt-1 w-full rounded-md border border-black/20 bg-white/90 px-2 py-1 text-[14px] text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-600 dark:bg-slate-800/90 dark:text-slate-100"
+                                    aria-label="Przypisz lekarza prowadzącego"
+                                  >
+                                    <option value="">— przypisz lekarza —</option>
+                                    {data.doctors.map((d) => (
+                                      <option key={d.id} value={d.id}>
+                                        {stripHtml(d.name).trim() || "Bez nazwy"}
+                                      </option>
+                                    ))}
+                                  </select>
+                                ) : null}
                               </td>
                               <td className="border border-black px-2 py-1.5 text-center dark:border-slate-600">
                                 {physio ? (
@@ -248,5 +277,10 @@ export default function KontrolePage() {
 
   if (loading || !data) return <LoadingState />;
 
-  return <KontroleContent data={data} />;
+  return (
+    <>
+      <KontroleContent data={data} />
+      <FloatingTodayCalendar variant="slate" storageKey="kontrole-floating-calendar" />
+    </>
+  );
 }

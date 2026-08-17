@@ -84,6 +84,23 @@ const BODY_TEXT = "text-black dark:text-slate-100";
 const ADMISSION_CELL_INPUT =
   `w-full border-0 bg-transparent px-1 py-0.5 text-center ${ADMISSION_TEXT} leading-snug focus:bg-white/60 dark:focus:bg-slate-700/60`;
 
+function splitAdmissionPatientLines(html: string): { name: string; note: string } {
+  const text = html ?? "";
+  const breakRe = /<br\s*\/?>|<\/div>\s*<div[^>]*>|<\/p>\s*<p[^>]*>/i;
+  const match = text.match(breakRe);
+  if (!match || match.index == null) return { name: text, note: "" };
+  return {
+    name: text.slice(0, match.index),
+    note: text.slice(match.index + match[0].length),
+  };
+}
+
+function joinAdmissionPatientLines(name: string, note: string): string {
+  const rest = note.replace(/^<br\s*\/?>/i, "").trim();
+  if (!rest) return name;
+  return `${name}<br>${note.replace(/^<br\s*\/?>/i, "")}`;
+}
+
 function AdmissionPatientCell({
   value,
   onChange,
@@ -97,18 +114,38 @@ function AdmissionPatientCell({
   lineThrough?: boolean;
   admitted?: boolean;
 }) {
+  const { name, note } = splitAdmissionPatientLines(value);
+
   if (admitted) {
-    const name = stripHtml(value).trim();
     return (
-      <div className="flex justify-center pr-[5.75rem]">
-        <span
-          className={`inline-block max-w-full rounded-md bg-green-600 px-1.5 py-0.5 text-center font-bold leading-snug text-white dark:bg-green-700 ${ADMISSION_TEXT} ${
-            lineThrough ? "line-through" : ""
-          }`}
-          style={{ fontSize: ADMISSION_FONT_PX }}
-        >
-          {name}
-        </span>
+      <div
+        className={`pr-[5.75rem] text-center ${disabled ? "pointer-events-none opacity-70" : ""}`}
+      >
+        <div className="flex justify-center">
+          <div
+            className={`inline-block w-fit max-w-full rounded-md bg-green-600 px-1.5 py-0.5 text-center font-bold leading-snug text-white dark:bg-green-700 ${ADMISSION_TEXT} ${
+              lineThrough ? "line-through" : ""
+            }`}
+            style={{ fontSize: ADMISSION_FONT_PX }}
+          >
+            <FormattedEditor
+              value={name}
+              onChange={(nextName) => onChange(joinAdmissionPatientLines(nextName, note))}
+              fontSize={ADMISSION_FONT_PX}
+              compact
+              color="#ffffff"
+              className="border-0 bg-transparent px-0 py-0 text-center font-bold leading-snug text-white"
+            />
+          </div>
+        </div>
+        <FormattedEditor
+          value={note}
+          onChange={(nextNote) => onChange(joinAdmissionPatientLines(name, nextNote))}
+          fontSize={ADMISSION_FONT_PX}
+          compact
+          multiline
+          className={`w-full border-0 bg-transparent px-1 py-0.5 text-center ${ADMISSION_TEXT} leading-snug focus:bg-white/60 dark:focus:bg-slate-700/60`}
+        />
       </div>
     );
   }
@@ -117,7 +154,6 @@ function AdmissionPatientCell({
     <FormattedEditor
       value={value}
       onChange={onChange}
-      placeholder="Imię i nazwisko pacjenta"
       fontSize={ADMISSION_FONT_PX}
       compact
       className={`w-full border-0 bg-transparent px-1 py-0.5 text-center ${ADMISSION_TEXT} leading-snug pr-[5.75rem] ${
@@ -513,10 +549,11 @@ function PrzyjeciaPageContent() {
     const slot = latest.patients.find((p) => p.id === slotId);
     if (
       slot?.admissionStatus &&
-      ("patientName" in patch ||
-        "physiotherapistId" in patch ||
-        "substitutePhysiotherapistId" in patch)
+      ("physiotherapistId" in patch || "substitutePhysiotherapistId" in patch)
     ) {
+      return;
+    }
+    if (slot?.admissionStatus === "disqualified" && "patientName" in patch) {
       return;
     }
 
@@ -1594,7 +1631,7 @@ function AdmissionSessionTable({
                     <AdmissionPatientCell
                       value={slot.patientName}
                       onChange={(patientName) => updateSlot(slot.id, { patientName })}
-                      disabled={locked}
+                      disabled={slot.admissionStatus === "disqualified"}
                       lineThrough={slot.admissionStatus === "disqualified"}
                       admitted={slot.admissionStatus === "admitted"}
                     />

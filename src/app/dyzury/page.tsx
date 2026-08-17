@@ -22,9 +22,10 @@ import {
   parseMonthKey,
 } from "@/lib/date-utils";
 import {
+  getPhysioById,
   physioDisplayName,
-  physioPlanningDisplayLabel,
   physioPlanningOptionLabel,
+  physiosForDutySelect,
   physiosForPlanningSelect,
   resolvePhysioColumnHeaderColor,
   resolvePhysioRowColor,
@@ -164,14 +165,6 @@ function DutyMonthTable({
     "block w-full rounded border px-2 py-1 text-center text-[19px] font-semibold leading-tight";
   const selectText = isDark ? "#f8fafc" : "#0f172a";
   const optionBg = isDark ? "#1e293b" : "#ffffff";
-  const dutyTileLabel = physiosForPlanningSelect(data).reduce(
-    (longest, physio) => {
-      const label = physioPlanningOptionLabel(physio);
-      return label.length > longest.length ? label : longest;
-    },
-    "—"
-  );
-  const dutyTileWidth = `${dutyTileLabel.length + 2}ch`;
 
   const tueThuDates = getTuesdaysAndThursdays(year, month);
   const existing = data.duties[monthKey];
@@ -183,13 +176,24 @@ function DutyMonthTable({
   const leftDuties = currentDuties.slice(0, mid);
   const rightDuties = currentDuties.slice(mid);
   const rowCount = Math.max(leftDuties.length, rightDuties.length);
+  const dutyTileLabel = currentDuties.reduce((longest, duty) => {
+    const physio = duty.physiotherapistId
+      ? getPhysioById(data, duty.physiotherapistId)
+      : undefined;
+    const label = physio ? physioPlanningOptionLabel(physio) : "—";
+    return label.length > longest.length ? label : longest;
+  }, physiosForPlanningSelect(data).reduce((longest, physio) => {
+    const label = physioPlanningOptionLabel(physio);
+    return label.length > longest.length ? label : longest;
+  }, "—"));
+  const dutyTileWidth = `${dutyTileLabel.length + 2}ch`;
 
   const renderPersonCell = (duty: DutyEntry | undefined, bg: string) => {
     if (!duty) {
       return <td className={cell} style={{ backgroundColor: bg }} />;
     }
     const physio = duty.physiotherapistId
-      ? data.physiotherapists.find((p) => p.id === duty.physiotherapistId)
+      ? getPhysioById(data, duty.physiotherapistId)
       : undefined;
     const tileBg = physio ? physioTileBg(physio.color, physio.rowColor, isDark) : "transparent";
     const tileText = physio
@@ -227,7 +231,7 @@ function DutyMonthTable({
             <option value="" style={{ backgroundColor: optionBg, color: selectText }}>
               —
             </option>
-            {physiosForPlanningSelect(data).map((p) => (
+            {physiosForDutySelect(data, duty.physiotherapistId).map((p) => (
               <option
                 key={p.id}
                 value={p.id}

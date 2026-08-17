@@ -25,6 +25,8 @@ export interface Patient {
   dischargeDateBeforeManual?: string;
   /** Original physiotherapist when patient is temporarily moved (substitute). */
   ownerPhysiotherapistId?: string;
+  /** Attending doctor when the admission session has none. */
+  doctorId?: string;
   /** Planned checkup with the attending doctor (YYYY-MM-DD). */
   checkupDate?: string;
   /** True after the checkup took place (green K dismissed). */
@@ -184,6 +186,8 @@ export interface AppData {
   archivePhysiotherapistProfiles?: Physiotherapist[];
   doctors: Doctor[];
   currentPatients: Record<string, Patient[]>;
+  /** Patient ids removed by hand from Obecni pacjenci — do not restore on sync. */
+  removedPatientIds?: string[];
   massages: MassagesData;
   duties: Record<string, DutyEntry[]>;
   admissions: Record<string, AdmissionSession[]>;

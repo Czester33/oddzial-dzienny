@@ -11,6 +11,7 @@ import {
 } from "react";
 import type { AppData } from "@/lib/types";
 import { deepEqual, mergeAppData } from "@/lib/app-data-merge";
+import { withRemovedPatientIds } from "@/lib/physio-utils";
 
 const MAX_UNDO_HISTORY = 50;
 const REMOTE_POLL_MS = 8_000;
@@ -147,7 +148,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
           }
         }
 
-        adoptServerState(payload.data, payload.updatedAt);
+        const incoming = withRemovedPatientIds(
+          payload.data,
+          dataRef.current?.removedPatientIds
+        );
+        const droppedRevived =
+          Object.values(incoming.currentPatients ?? {}).reduce((n, list) => n + list.length, 0) <
+          Object.values(payload.data.currentPatients ?? {}).reduce((n, list) => n + list.length, 0);
+
+        adoptServerState(incoming, payload.updatedAt);
+        if (droppedRevived) {
+          pendingSaveRef.current = incoming;
+          syncPendingFlag();
+          void flushSaveQueueRef.current();
+        }
         if (!options?.silent) {
           clearHistory();
         }
@@ -161,7 +175,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
       }
     },
-    [adoptServerState, clearHistory]
+    [adoptServerState, clearHistory, syncPendingFlag]
   );
 
   useEffect(() => {
@@ -217,19 +231,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const persist = useCallback(async (newData: AppData): Promise<PersistResult> => {
     setError(null);
     try {
+      const originBase = undoBaselineRef.current ?? syncedDataRef.current;
       let attemptData = newData;
       let baseUpdatedAt = serverUpdatedAtRef.current;
-      let baseData = syncedDataRef.current;
+      let remoteSnapshot = syncedDataRef.current;
 
       for (let attempt = 0; attempt < 5; attempt++) {
-        if (pendingSaveRef.current && baseData) {
-          attemptData = mergeAppData(baseData, pendingSaveRef.current, attemptData);
+        if (pendingSaveRef.current) {
+          const pending = pendingSaveRef.current;
           pendingSaveRef.current = null;
           syncPendingFlag();
-        } else if (pendingSaveRef.current) {
-          attemptData = pendingSaveRef.current;
-          pendingSaveRef.current = null;
-          syncPendingFlag();
+          attemptData = originBase
+            ? mergeAppData(originBase, pending, attemptData)
+            : pending;
+        }
+
+        if (originBase && remoteSnapshot) {
+          attemptData = mergeAppData(originBase, attemptData, remoteSnapshot);
         }
 
         const res = await fetch("/api/data", {
@@ -246,7 +264,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             data: AppData;
             updatedAt: string;
           };
-          if (!baseData) {
+          if (!originBase) {
             syncedDataRef.current = conflict.data;
             serverUpdatedAtRef.current = conflict.updatedAt;
             return {
@@ -258,11 +276,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
           }
 
           const localIntent = pendingSaveRef.current ?? dataRef.current ?? attemptData;
-          attemptData = mergeAppData(baseData, localIntent, conflict.data);
+          attemptData = mergeAppData(originBase, localIntent, conflict.data);
+          remoteSnapshot = conflict.data;
           baseUpdatedAt = conflict.updatedAt;
-          baseData = conflict.data;
-          syncedDataRef.current = conflict.data;
-          serverUpdatedAtRef.current = conflict.updatedAt;
           continue;
         }
 
@@ -381,31 +397,38 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const save = useCallback(
     async (newData: AppData) => {
       const current = dataRef.current;
-      lastLocalEditAtRef.current = Date.now();
 
-      // Authoritative write from the caller — pages must build from dataRef.
-      // Do not three-way-merge with live UI here: that wiped fresher fields from
-      // stale snapshots (e.g. admission patientName).
-      dataRef.current = newData;
-      setData(newData);
+      if (current) {
+        if (!saveInFlightRef.current && !pendingSaveRef.current) {
+          undoBaselineRef.current = current;
+        } else if (!undoBaselineRef.current) {
+          undoBaselineRef.current = current;
+        }
+      }
+
+      const base = syncedDataRef.current ?? undoBaselineRef.current ?? current;
+      const merged =
+        current && base ? mergeAppData(base, newData, current) : newData;
+
+      if (current && deepEqual(merged, current)) {
+        return;
+      }
+
+      lastLocalEditAtRef.current = Date.now();
+      dataRef.current = merged;
+      setData(merged);
 
       if (!current) {
-        pendingSaveRef.current = newData;
+        pendingSaveRef.current = merged;
         syncPendingFlag();
         void flushSaveQueue();
         return;
       }
 
-      if (!saveInFlightRef.current && !pendingSaveRef.current) {
-        undoBaselineRef.current = current;
-      } else if (!undoBaselineRef.current) {
-        undoBaselineRef.current = current;
-      }
-
       const baseline = undoBaselineRef.current ?? current;
-      recordUndoEntry(baseline, newData);
+      recordUndoEntry(baseline, merged);
 
-      pendingSaveRef.current = newData;
+      pendingSaveRef.current = merged;
       syncPendingFlag();
       void flushSaveQueue();
     },

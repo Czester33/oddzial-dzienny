@@ -102,14 +102,6 @@ export default function FizjoterapeuciPage() {
       archive: data.archive.map((a) =>
         a.physiotherapistId === id ? { ...a, physiotherapistId: "" } : a
       ),
-      dutyArchive: (data.dutyArchive ?? []).map((month) => ({
-        ...month,
-        entries: month.entries.map((entry) =>
-          entry.physiotherapistId === id
-            ? { ...entry, physiotherapistId: "" }
-            : entry
-        ),
-      })),
     });
   };
 

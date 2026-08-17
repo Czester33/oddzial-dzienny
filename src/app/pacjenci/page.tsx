@@ -16,7 +16,7 @@ import {
   returnSubstitutesToPhysio,
   sortPatientsByDischargeDate,
   syncEmptyPatientRowTimestamps,
-  unlinkPatientFromAdmissions,
+  rememberRemovedPatient,
   visiblePhysiotherapists,
 } from "@/lib/physio-utils";
 import { applyAutoDischarge, hasAutoDischargeChanges } from "@/lib/discharge-utils";
@@ -64,8 +64,7 @@ function PacjenciContent({ data }: { data: AppData }) {
     const hasBackgroundChanges = (before: AppData, after: AppData) =>
       hasAutoDischargeChanges(before, after) ||
       hasVacationNoteChanges(before, after) ||
-      hasDutyNoteChanges(before, after) ||
-      after.currentPatients !== before.currentPatients;
+      hasDutyNoteChanges(before, after);
 
     const sync = () => {
       const now = Date.now();
@@ -140,7 +139,7 @@ function PacjenciContent({ data }: { data: AppData }) {
         [physioId]: updated,
       },
     };
-    save(unlinkPatientFromAdmissions(withoutRow, removed.id));
+    save(rememberRemovedPatient(withoutRow, removed.id));
   };
 
   const movePatient = (fromPhysioId: string, index: number, toPhysioId: string) => {
