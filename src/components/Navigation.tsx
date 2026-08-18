@@ -9,6 +9,54 @@ import { AnnouncementsButton } from "@/components/AnnouncementsButton";
 import { AppGuideButton } from "@/components/AppGuideButton";
 import { getOrderedNavItems, NAV_ITEMS, reorderNavOrder } from "@/lib/nav-utils";
 import { APP_BETA_NOTICE } from "@/lib/app-beta-notice";
+import type { NotepadNote } from "@/lib/types";
+import { isoFromParts, isWorkingDay } from "@/lib/date-utils";
+
+const NEW_NOTEPAD_WORKING_DAYS = 2;
+
+function localIsoDate(ms: number): string {
+  const d = new Date(ms);
+  return isoFromParts(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function nthWorkingDayOnOrAfter(
+  startIso: string,
+  count: number,
+  extraClosedDates: readonly string[]
+): string {
+  const current = new Date(`${startIso}T12:00:00`);
+  let counted = 0;
+  for (let i = 0; i < 31; i++) {
+    const iso = isoFromParts(current.getFullYear(), current.getMonth(), current.getDate());
+    if (isWorkingDay(iso, extraClosedDates)) {
+      counted++;
+      if (counted === count) return iso;
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  return startIso;
+}
+
+function countNewNotepadNotes(
+  notes: NotepadNote[] | undefined,
+  nowMs: number,
+  extraClosedDates: readonly string[] = []
+): number {
+  if (!notes?.length) return 0;
+  const todayIso = localIsoDate(nowMs);
+  return notes.filter((note) => {
+    const created = new Date(note.createdAt).getTime();
+    if (!Number.isFinite(created)) return false;
+    const createdIso = localIsoDate(created);
+    if (createdIso > todayIso) return true;
+    const until = nthWorkingDayOnOrAfter(
+      createdIso,
+      NEW_NOTEPAD_WORKING_DAYS,
+      extraClosedDates
+    );
+    return todayIso <= until;
+  }).length;
+}
 
 function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
@@ -33,6 +81,7 @@ function ThemeToggle() {
 function NavTab({
   href,
   label,
+  displayLabel,
   active,
   editing,
   onStartEdit,
@@ -41,6 +90,7 @@ function NavTab({
 }: {
   href: string;
   label: string;
+  displayLabel?: string;
   active: boolean;
   editing: boolean;
   onStartEdit: () => void;
@@ -98,7 +148,7 @@ function NavTab({
           : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
       }`}
     >
-      {label}
+      {displayLabel ?? label}
     </Link>
   );
 }
@@ -118,10 +168,20 @@ export function Navigation() {
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
   const [editingHref, setEditingHref] = useState<string | null>(null);
 
+  const [nowTick, setNowTick] = useState(() => Date.now());
   const navItems = useMemo(
     () => getOrderedNavItems(data?.navOrder, data?.navLabels),
     [data?.navOrder, data?.navLabels]
   );
+  const newNotepadCount = useMemo(
+    () => countNewNotepadNotes(data?.notepadNotes, nowTick, data?.clinicClosedDays),
+    [data?.notepadNotes, data?.clinicClosedDays, nowTick]
+  );
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTick(Date.now()), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const handleReorder = (fromIndex: number, toIndex: number) => {
     if (!data || fromIndex === toIndex) return;
@@ -310,6 +370,11 @@ export function Navigation() {
                 <NavTab
                   href={item.href}
                   label={item.label}
+                  displayLabel={
+                    item.href === "/notatnik" && newNotepadCount > 0
+                      ? `${item.label} (${newNotepadCount})`
+                      : item.label
+                  }
                   active={active}
                   editing={isEditing}
                   onStartEdit={() => setEditingHref(item.href)}
