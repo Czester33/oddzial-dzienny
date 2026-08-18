@@ -100,12 +100,14 @@ export function TimePickerCell({
   onChange,
   className = INPUT_CLASS,
   autoFocus = false,
+  disabled = false,
 }: {
   value?: string;
   onChange: (v: string) => void;
   scheduleHours?: string;
   className?: string;
   autoFocus?: boolean;
+  disabled?: boolean;
 }) {
   const safeValue = value ?? "";
   const [draft, setDraft] = useState(safeValue);
@@ -128,6 +130,9 @@ export function TimePickerCell({
       inputMode="numeric"
       maxLength={5}
       autoFocus={autoFocus}
+      readOnly={disabled}
+      tabIndex={disabled ? -1 : undefined}
+      aria-disabled={disabled || undefined}
       value={focused ? draft : displayValue}
       onFocus={() => {
         setDraft(displayValue);
@@ -143,7 +148,7 @@ export function TimePickerCell({
         setDraft(normalized);
         onChange(normalized);
       }}
-      className={className}
+      className={`${className}${disabled ? " pointer-events-none cursor-default" : ""}`}
       aria-label="Godzina"
     />
   );

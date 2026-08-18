@@ -21,6 +21,8 @@ import {
   stripInlineStylesInSubtree,
   unwrapBoldTagsInSubtree,
   unwrapUnderlineTagsInSubtree,
+  elementHasExplicitUnderline,
+  unwrapUnderlineElement,
   type InlineFormatProperty,
 } from "@/lib/text-format";
 import { useTheme } from "@/context/ThemeContext";
@@ -534,8 +536,129 @@ function isRangeBold(el: HTMLElement, range: Range): boolean {
 function isRangeUnderlined(el: HTMLElement, range: Range): boolean {
   const probe = getBoldProbeElement(el, range);
   if (!probe) return false;
-  const style = window.getComputedStyle(probe);
-  return style.textDecorationLine.includes("underline") || style.textDecoration.includes("underline");
+  let node: Element | null = probe;
+  while (node && el.contains(node)) {
+    if (node instanceof HTMLElement && elementHasExplicitUnderline(node)) return true;
+    const style = window.getComputedStyle(node);
+    if (style.textDecorationLine.includes("underline") || style.textDecoration.includes("underline")) {
+      return true;
+    }
+    if (node === el) break;
+    node = node.parentElement;
+  }
+  return false;
+}
+
+function findUnderlineAncestor(node: Node, root: HTMLElement): HTMLElement | null {
+  let cur: Node | null = node;
+  while (cur && cur !== root) {
+    if (cur instanceof HTMLElement && elementHasExplicitUnderline(cur)) return cur;
+    cur = cur.parentNode;
+  }
+  return null;
+}
+
+function splitUnderlineAncestorsBefore(marker: Node, root: HTMLElement) {
+  let parent = marker.parentElement;
+  while (parent && parent !== root) {
+    const nextParent = parent.parentElement;
+    if (elementHasExplicitUnderline(parent) && marker.previousSibling) {
+      const left = parent.cloneNode(false) as HTMLElement;
+      while (parent.firstChild && parent.firstChild !== marker) {
+        left.appendChild(parent.firstChild);
+      }
+      parent.parentNode?.insertBefore(left, parent);
+    }
+    parent = nextParent;
+  }
+}
+
+function splitUnderlineAncestorsAfter(marker: Node, root: HTMLElement) {
+  let parent = marker.parentElement;
+  while (parent && parent !== root) {
+    const nextParent = parent.parentElement;
+    if (elementHasExplicitUnderline(parent) && marker.nextSibling) {
+      const right = parent.cloneNode(false) as HTMLElement;
+      while (marker.nextSibling) {
+        right.appendChild(marker.nextSibling);
+      }
+      parent.parentNode?.insertBefore(right, parent.nextSibling);
+    }
+    parent = nextParent;
+  }
+}
+
+function walkNextNode(node: Node): Node | null {
+  if (node.firstChild) return node.firstChild;
+  let cur: Node | null = node;
+  while (cur) {
+    if (cur.nextSibling) return cur.nextSibling;
+    cur = cur.parentNode;
+  }
+  return null;
+}
+
+/** Parent underline cannot be cancelled with text-decoration:none on a child. */
+function clearUnderlineFormat(root: HTMLElement, range: Range): Range | null {
+  const collapsed = range.collapsed;
+  const startMarker = document.createElement("span");
+  const endMarker = document.createElement("span");
+  startMarker.setAttribute("data-od-u", "s");
+  endMarker.setAttribute("data-od-u", "e");
+
+  const endRange = range.cloneRange();
+  endRange.collapse(false);
+  endRange.insertNode(endMarker);
+  const startRange = range.cloneRange();
+  startRange.collapse(true);
+  startRange.insertNode(startMarker);
+
+  if (collapsed) {
+    let wrapper = findUnderlineAncestor(startMarker, root);
+    while (wrapper) {
+      unwrapUnderlineElement(wrapper);
+      wrapper = findUnderlineAncestor(startMarker, root);
+    }
+  } else {
+    splitUnderlineAncestorsBefore(startMarker, root);
+    splitUnderlineAncestorsAfter(endMarker, root);
+
+    const toClear: HTMLElement[] = [];
+    let ancestor = startMarker.parentElement;
+    while (ancestor && ancestor !== root) {
+      if (elementHasExplicitUnderline(ancestor) && ancestor.contains(endMarker)) {
+        toClear.push(ancestor);
+      }
+      ancestor = ancestor.parentElement;
+    }
+
+    let n: Node | null = startMarker;
+    while (n && n !== endMarker) {
+      if (n instanceof HTMLElement && n !== startMarker && elementHasExplicitUnderline(n)) {
+        toClear.push(n);
+      }
+      n = walkNextNode(n);
+    }
+
+    toClear.sort((a, b) => (a.contains(b) ? 1 : b.contains(a) ? -1 : 0));
+    for (const el of toClear) {
+      if (el.isConnected) unwrapUnderlineElement(el);
+    }
+  }
+
+  const next = document.createRange();
+  try {
+    next.setStartAfter(startMarker);
+    next.setEndBefore(endMarker);
+    if (collapsed) next.collapse(true);
+  } catch {
+    startMarker.remove();
+    endMarker.remove();
+    return null;
+  }
+  startMarker.remove();
+  endMarker.remove();
+  return next;
 }
 
 function FormatToggleButton({
@@ -1384,14 +1507,16 @@ export function FormattedEditor({
     }
 
     const turnOff = isRangeUnderlined(el, resolved.range);
-    const nextRange = applyInlineFormat(
-      el,
-      (span) => {
-        span.style.textDecoration = turnOff ? "none" : "underline";
-      },
-      selectionRangeRef.current,
-      ["textDecoration"]
-    );
+    const nextRange = turnOff
+      ? clearUnderlineFormat(el, resolved.range)
+      : applyInlineFormat(
+          el,
+          (span) => {
+            span.style.textDecoration = "underline";
+          },
+          selectionRangeRef.current,
+          ["textDecoration"]
+        );
     if (!nextRange) {
       formattingRef.current = false;
       return;

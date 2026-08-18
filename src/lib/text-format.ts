@@ -272,11 +272,44 @@ export function unwrapUnderlineTagsInSubtree(root: Node) {
   underlineElements.sort((a, b) => (a.contains(b) ? 1 : b.contains(a) ? -1 : 0));
 
   for (const el of underlineElements) {
-    const parent = el.parentNode;
-    if (!parent) continue;
-    while (el.firstChild) {
-      parent.insertBefore(el.firstChild, el);
-    }
-    parent.removeChild(el);
+    unwrapElementKeepChildren(el);
+  }
+}
+
+export function elementHasExplicitUnderline(el: HTMLElement): boolean {
+  if (el.tagName === "U") return true;
+  const spec = `${el.style.textDecoration} ${el.style.textDecorationLine}`;
+  return /\bunderline\b/i.test(spec);
+}
+
+function unwrapElementKeepChildren(el: HTMLElement) {
+  const parent = el.parentNode;
+  if (!parent) return;
+  while (el.firstChild) {
+    parent.insertBefore(el.firstChild, el);
+  }
+  parent.removeChild(el);
+}
+
+/** Remove underline from this element; unwrap empty leftover spans/<u>. */
+export function unwrapUnderlineElement(el: HTMLElement) {
+  if (el.tagName === "U") {
+    unwrapElementKeepChildren(el);
+    return;
+  }
+
+  const stripUnderline = (value: string) =>
+    value
+      .replace(/\bunderline\b/gi, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const line = stripUnderline(el.style.textDecorationLine);
+  const dec = stripUnderline(el.style.textDecoration);
+  el.style.textDecorationLine = !line || line === "none" ? "" : line;
+  el.style.textDecoration = !dec || dec === "none" ? "" : dec;
+  if (!el.style.cssText.trim()) el.removeAttribute("style");
+  if (el.tagName === "SPAN" && el.attributes.length === 0) {
+    unwrapElementKeepChildren(el);
   }
 }

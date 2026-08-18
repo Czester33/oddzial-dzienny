@@ -83,6 +83,7 @@ const BODY_TEXT = "text-black dark:text-slate-100";
 
 const ADMISSION_CELL_INPUT =
   `w-full border-0 bg-transparent px-1 py-0.5 text-center ${ADMISSION_TEXT} leading-snug focus:bg-white/60 dark:focus:bg-slate-700/60`;
+const LOCKED_CONTROL = "disabled:cursor-not-allowed disabled:!opacity-100";
 
 function splitAdmissionPatientLines(html: string): { name: string; note: string } {
   const text = html ?? "";
@@ -101,27 +102,31 @@ function joinAdmissionPatientLines(name: string, note: string): string {
   return `${name}<br>${note.replace(/^<br\s*\/?>/i, "")}`;
 }
 
+function admissionPatientDisplayName(html: string): string {
+  return stripHtml(splitAdmissionPatientLines(html).name).trim();
+}
+
 function AdmissionPatientCell({
   value,
   onChange,
-  disabled,
+  nameDisabled,
+  noteDisabled,
   lineThrough,
   admitted,
 }: {
   value: string;
   onChange: (v: string) => void;
-  disabled?: boolean;
+  nameDisabled?: boolean;
+  noteDisabled?: boolean;
   lineThrough?: boolean;
   admitted?: boolean;
 }) {
   const { name, note } = splitAdmissionPatientLines(value);
 
-  if (admitted) {
-    return (
-      <div
-        className={`pr-[5.75rem] text-center ${disabled ? "pointer-events-none opacity-70" : ""}`}
-      >
-        <div className="flex justify-center">
+  return (
+    <div className="pr-[5.75rem] text-center">
+      {admitted ? (
+        <div className={`flex justify-center ${nameDisabled ? "pointer-events-none" : ""}`}>
           <div
             className={`inline-block w-fit max-w-full rounded-md bg-green-600 px-1.5 py-0.5 text-center font-bold leading-snug text-white dark:bg-green-700 ${ADMISSION_TEXT} ${
               lineThrough ? "line-through" : ""
@@ -138,6 +143,25 @@ function AdmissionPatientCell({
             />
           </div>
         </div>
+      ) : (
+        <FormattedEditor
+          value={name}
+          onChange={(nextName) => onChange(joinAdmissionPatientLines(nextName, note))}
+          fontSize={ADMISSION_FONT_PX}
+          compact
+          className={`w-full border-0 bg-transparent px-1 py-0.5 text-center ${ADMISSION_TEXT} leading-snug ${
+            lineThrough ? "line-through" : ""
+          } ${nameDisabled ? "pointer-events-none" : ""} focus:bg-white/60 dark:focus:bg-slate-700/60`}
+        />
+      )}
+      {noteDisabled ? (
+        stripHtml(note) ? (
+          <div
+            className={`mt-0.5 ${ADMISSION_TEXT} leading-snug pointer-events-none`}
+            dangerouslySetInnerHTML={{ __html: note }}
+          />
+        ) : null
+      ) : (
         <FormattedEditor
           value={note}
           onChange={(nextNote) => onChange(joinAdmissionPatientLines(name, nextNote))}
@@ -146,20 +170,8 @@ function AdmissionPatientCell({
           multiline
           className={`w-full border-0 bg-transparent px-1 py-0.5 text-center ${ADMISSION_TEXT} leading-snug focus:bg-white/60 dark:focus:bg-slate-700/60`}
         />
-      </div>
-    );
-  }
-
-  return (
-    <FormattedEditor
-      value={value}
-      onChange={onChange}
-      fontSize={ADMISSION_FONT_PX}
-      compact
-      className={`w-full border-0 bg-transparent px-1 py-0.5 text-center ${ADMISSION_TEXT} leading-snug pr-[5.75rem] ${
-        lineThrough ? "line-through" : ""
-      } ${disabled ? "pointer-events-none opacity-70" : ""} focus:bg-white/60 dark:focus:bg-slate-700/60`}
-    />
+      )}
+    </div>
   );
 }
 
@@ -179,11 +191,13 @@ function SideToolButton({
   active,
   onClick,
   side = "right",
+  disabled,
 }: {
   label: string;
   active?: boolean;
   onClick: () => void;
   side?: "left" | "right";
+  disabled?: boolean;
 }) {
   const rounded =
     side === "left"
@@ -194,8 +208,9 @@ function SideToolButton({
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       aria-pressed={active}
-      className={`${rounded} px-2.5 py-3 ${ADMISSION_TEXT_SM} font-medium shadow-md transition-colors ${
+      className={`${rounded} px-2.5 py-3 ${ADMISSION_TEXT_SM} font-medium shadow-md transition-colors ${LOCKED_CONTROL} ${
         active
           ? "border-blue-600 bg-blue-600 text-white"
           : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
@@ -207,21 +222,91 @@ function SideToolButton({
   );
 }
 
+function AdmissionsPinDialog({
+  error,
+  onSubmit,
+  onCancel,
+}: {
+  error: string;
+  onSubmit: (pin: string) => void;
+  onCancel: () => void;
+}) {
+  const [pin, setPin] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/35 p-4">
+      <form
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="admissions-pin-title"
+        className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit(pin);
+        }}
+      >
+        <h2
+          id="admissions-pin-title"
+          className="text-[20px] font-semibold text-slate-800 dark:text-slate-100"
+        >
+          Edycja przyjęć
+        </h2>
+        <p className="mt-3 text-[16px] leading-relaxed text-slate-600 dark:text-slate-300">
+          Wpisz PIN, aby edytować dzień, godzinę, daty, fizjoterapeutę i nazwisko.
+        </p>
+        <input
+          ref={inputRef}
+          type="password"
+          inputMode="numeric"
+          autoComplete="off"
+          value={pin}
+          onChange={(e) => setPin(e.target.value)}
+          className="mt-4 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-[19px] text-slate-900 outline-none focus:border-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          aria-label="PIN"
+        />
+        {error ? (
+          <p className="mt-2 text-[15px] text-red-600 dark:text-red-400">{error}</p>
+        ) : null}
+        <div className="mt-5 flex flex-wrap justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-[16px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+          >
+            Anuluj
+          </button>
+          <Btn type="submit" className="text-[16px]" disabled={!pin.trim()}>
+            Odblokuj
+          </Btn>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 function AdmissionTopToolButton({
   label,
   active,
   onClick,
+  disabled,
 }: {
   label: string;
   active?: boolean;
   onClick: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       aria-pressed={active}
-      className={`min-w-0 flex-1 rounded-md border px-3 py-2 ${ADMISSION_TEXT_SM} font-medium shadow-sm transition-colors ${
+      className={`min-w-0 flex-1 rounded-md border px-3 py-2 ${ADMISSION_TEXT_SM} font-medium shadow-sm transition-colors ${LOCKED_CONTROL} ${
         active
           ? "border-blue-600 bg-blue-600 text-white"
           : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
@@ -265,8 +350,64 @@ function PrzyjeciaPageContent() {
   const [todayTick, setTodayTick] = useState(() => todayIsoDate());
   const [manualMonths, setManualMonths] = useState<string[]>([]);
   const [monthMenuOpen, setMonthMenuOpen] = useState(false);
+  const [pinRequired, setPinRequired] = useState(false);
+  const [planUnlocked, setPlanUnlocked] = useState(true);
+  const [pinDialogOpen, setPinDialogOpen] = useState(false);
+  const [pinError, setPinError] = useState("");
   const monthMenuRef = useRef<HTMLDivElement>(null);
   const userPickedMonthRef = useRef(false);
+
+  const canPlanEdit = !pinRequired || planUnlocked;
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/auth/admissions-edit", { cache: "no-store" });
+        if (!res.ok) return;
+        const json = (await res.json()) as { required?: boolean; unlocked?: boolean };
+        if (cancelled) return;
+        setPinRequired(Boolean(json.required));
+        setPlanUnlocked(json.required ? Boolean(json.unlocked) : true);
+      } catch {
+        /* keep defaults */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const unlockPlanEdit = async (pin: string) => {
+    setPinError("");
+    try {
+      const res = await fetch("/api/auth/admissions-edit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin }),
+      });
+      if (!res.ok) {
+        setPinError("Nieprawidłowy PIN");
+        return;
+      }
+      setPlanUnlocked(true);
+      setPinRequired(true);
+      setPinDialogOpen(false);
+    } catch {
+      setPinError("Nie udało się sprawdzić PIN-u");
+    }
+  };
+
+  const lockPlanEdit = async () => {
+    try {
+      await fetch("/api/auth/admissions-edit", { method: "DELETE" });
+    } catch {
+      /* still lock locally */
+    }
+    setPlanUnlocked(false);
+    setMoveMode(false);
+    setDoctorsPanelOpen(false);
+  };
 
   const monthOptions = useMemo(() => {
     const base = admissionMonthOptions(todayTick, DEFAULT_ADMISSION_MONTH_COUNT);
@@ -652,7 +793,7 @@ function PrzyjeciaPageContent() {
 
     if (slot.admissionStatus) return;
 
-    const name = stripHtml(slot.patientName).trim();
+    const name = admissionPatientDisplayName(slot.patientName);
     const dischargeDate = resolveSessionPlannedDischarge(session);
     if (!name || !slot.physiotherapistId || !dischargeDate) return;
 
@@ -802,6 +943,7 @@ function PrzyjeciaPageContent() {
   };
 
   const addSession = () => {
+    if (!canPlanEdit) return;
     const snapshot = dataRef.current;
     if (!snapshot) return;
     const session = createAdmissionSession();
@@ -892,12 +1034,36 @@ function PrzyjeciaPageContent() {
           <h2 className={`${ADMISSION_TEXT} text-center font-semibold text-slate-800 dark:text-slate-100`}>
             Przyjęcia nowych pacjentów
           </h2>
+          <p className="mx-auto mt-8 max-w-3xl text-center text-[19px] font-medium leading-relaxed text-slate-800 dark:text-slate-100 sm:mt-12">
+            Dzień przyjęcia, godzinę, nazwisko pacjenta i fizjoterapeutę zmienia wyłącznie rejestracja.
+            <br />
+            Przyjęcie pacjenta (+), dyskwalifikację (×), zastępstwo oraz notatkę pod nazwiskiem
+            może ustawić każdy.
+          </p>
           <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:absolute sm:right-0 sm:top-0 sm:mt-0">
+            {pinRequired ? (
+              canPlanEdit ? (
+                <Btn variant="secondary" onClick={() => void lockPlanEdit()} className={ADMISSION_TEXT}>
+                  Zakończ edycję
+                </Btn>
+              ) : (
+                <Btn
+                  onClick={() => {
+                    setPinError("");
+                    setPinDialogOpen(true);
+                  }}
+                  className={ADMISSION_TEXT}
+                >
+                  Edytuj
+                </Btn>
+              )
+            ) : null}
             {monthRestoredFromArchive ? (
               <Btn
                 variant="secondary"
                 onClick={archiveCurrentMonth}
-                className={ADMISSION_TEXT}
+                disabled={!canPlanEdit}
+                className={`${ADMISSION_TEXT} ${LOCKED_CONTROL}`}
               >
                 Archiwizuj
               </Btn>
@@ -967,7 +1133,11 @@ function PrzyjeciaPageContent() {
         {error && <ErrorBanner message={error} className={ADMISSION_TEXT} />}
 
         <div className="sticky top-0 z-40 -mx-3 mb-3 flex gap-2 border-b border-slate-200 bg-white/95 px-3 py-2 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 md:hidden">
-          <AdmissionTopToolButton label="+ Przyjęcie" onClick={addSession} />
+          <AdmissionTopToolButton
+            label="+ Przyjęcie"
+            onClick={addSession}
+            disabled={!canPlanEdit}
+          />
           <AdmissionTopToolButton
             label="Lekarze"
             active={doctorsPanelOpen}
@@ -1024,6 +1194,7 @@ function PrzyjeciaPageContent() {
                     }}
                     monthKeyValue={monthKeyValue}
                     monthIndex={monthIndex}
+                    canPlanEdit={canPlanEdit}
                   />
                 </div>
                 {moveMode ? (
@@ -1048,10 +1219,17 @@ function PrzyjeciaPageContent() {
             <button
               type="button"
               onClick={() => setMoveMode((open) => !open)}
-              title={moveMode ? "Gotowe przenoszenie" : "Przenieś tabele do innego miesiąca"}
+              disabled={!canPlanEdit}
+              title={
+                !canPlanEdit
+                  ? "Odblokuj edycję PIN-em"
+                  : moveMode
+                    ? "Gotowe przenoszenie"
+                    : "Przenieś tabele do innego miesiąca"
+              }
               aria-label={moveMode ? "Gotowe przenoszenie" : "Przenieś tabele do innego miesiąca"}
               aria-pressed={moveMode}
-              className={`rounded border px-1.5 py-1 font-mono text-[12px] leading-none tracking-tight shadow-sm transition-colors ${
+              className={`rounded border px-1.5 py-1 font-mono text-[12px] leading-none tracking-tight shadow-sm transition-colors ${LOCKED_CONTROL} ${
                 moveMode
                   ? "border-blue-500 bg-blue-600 text-white hover:bg-blue-500"
                   : "border-slate-300 bg-white text-slate-500 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
@@ -1068,6 +1246,7 @@ function PrzyjeciaPageContent() {
           label="+ Przyjęcie"
           side="left"
           onClick={addSession}
+          disabled={!canPlanEdit}
         />
       </div>
 
@@ -1111,6 +1290,7 @@ function PrzyjeciaPageContent() {
               <DoctorsPanel
                 doctors={data.doctors}
                 monthIndex={monthIndex}
+                canEdit={canPlanEdit}
                 onAdd={addDoctor}
                 onUpdate={updateDoctor}
                 onDelete={deleteDoctor}
@@ -1119,6 +1299,20 @@ function PrzyjeciaPageContent() {
           </aside>
         </>
       )}
+
+      {pinDialogOpen
+        ? createPortal(
+            <AdmissionsPinDialog
+              error={pinError}
+              onSubmit={(pin) => void unlockPlanEdit(pin)}
+              onCancel={() => {
+                setPinDialogOpen(false);
+                setPinError("");
+              }}
+            />,
+            document.body
+          )
+        : null}
     </>
   );
 }
@@ -1205,7 +1399,7 @@ function TableThemePicker({
         type="button"
         disabled={disabled}
         onClick={() => setOpen((v) => !v)}
-        className="flex h-10 w-10 items-center justify-center rounded-md border border-black/20 bg-white/90 shadow-sm transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:bg-slate-800/90 dark:hover:bg-slate-700"
+        className={`flex h-10 w-10 items-center justify-center rounded-md border border-black/20 bg-white/90 shadow-sm transition-colors hover:bg-white ${LOCKED_CONTROL} dark:border-slate-600 dark:bg-slate-800/90 dark:hover:bg-slate-700`}
         aria-label="Zmień motyw tabeli"
         aria-expanded={open}
         title={disabled ? "Wybierz lekarza" : title}
@@ -1287,12 +1481,14 @@ function ThemeSwatches({
 function DoctorsPanel({
   doctors,
   monthIndex,
+  canEdit = true,
   onAdd,
   onUpdate,
   onDelete,
 }: {
   doctors: Doctor[];
   monthIndex: number;
+  canEdit?: boolean;
   onAdd: () => void;
   onUpdate: (doctor: Doctor) => void;
   onDelete: (id: string) => void | Promise<void>;
@@ -1303,7 +1499,7 @@ function DoctorsPanel({
         Każde przyjęcie prowadzi jeden lekarz z tej listy. Motyw ustawia domyślne kolory jego
         tabel.
       </p>
-      <Btn variant="secondary" onClick={onAdd} className={ADMISSION_TEXT}>
+      <Btn variant="secondary" onClick={onAdd} disabled={!canEdit} className={`${ADMISSION_TEXT} ${LOCKED_CONTROL}`}>
         + Dodaj lekarza
       </Btn>
       {doctors.length === 0 ? (
@@ -1324,7 +1520,8 @@ function DoctorsPanel({
                   value={stripHtml(doctor.name)}
                   onChange={(e) => onUpdate({ ...doctor, name: e.target.value })}
                   placeholder="Imię i nazwisko lekarza"
-                  className={`w-full ${FIELD_SELECT}`}
+                  disabled={!canEdit}
+                  className={`w-full ${FIELD_SELECT} ${LOCKED_CONTROL}`}
                 />
                 <div className="mt-3 flex items-center justify-between gap-2">
                   <span
@@ -1336,13 +1533,15 @@ function DoctorsPanel({
                     theme={theme}
                     selectedId={doctor.themeId ?? ""}
                     title="Zmień domyślny motyw lekarza"
+                    disabled={!canEdit}
                     onSelect={(themeId) => onUpdate({ ...doctor, themeId })}
                   />
                 </div>
                 <button
                   type="button"
                   onClick={() => void onDelete(doctor.id)}
-                  className={`mt-3 ${ADMISSION_TEXT} text-red-600 hover:underline dark:text-red-400`}
+                  disabled={!canEdit}
+                  className={`mt-3 ${ADMISSION_TEXT} text-red-600 hover:underline ${LOCKED_CONTROL} dark:text-red-400`}
                 >
                   Usuń
                 </button>
@@ -1372,6 +1571,7 @@ function AdmissionSessionTable({
   onDisqualifySlot,
   onDelete,
   onDoctorThemeChange,
+  canPlanEdit = true,
 }: {
   session: AdmissionSession;
   data: AppData;
@@ -1387,6 +1587,7 @@ function AdmissionSessionTable({
   onDisqualifySlot: (slotId: string) => void;
   onDelete: () => void | Promise<void>;
   onDoctorThemeChange: (doctorId: string, themeId: string) => void;
+  canPlanEdit?: boolean;
 }) {
   const { theme: colorMode } = useTheme();
   const colors = resolveAdmissionThemeColors(theme, colorMode);
@@ -1449,7 +1650,8 @@ function AdmissionSessionTable({
             <select
               value={session.doctorId}
               onChange={(e) => updateSession({ doctorId: e.target.value })}
-              className={FIELD_SELECT}
+              disabled={!canPlanEdit}
+              className={`${FIELD_SELECT} ${LOCKED_CONTROL}`}
             >
               <option value="">— wybierz lekarza —</option>
               {data.doctors.map((d) => (
@@ -1469,16 +1671,17 @@ function AdmissionSessionTable({
                   monthIndex
                 ).id
               }
-              disabled={!session.doctorId}
+              disabled={!canPlanEdit || !session.doctorId}
               onSelect={(themeId) => onDoctorThemeChange(session.doctorId, themeId)}
             />
-            <Btn variant="secondary" onClick={onAddSlot} className={ADMISSION_TEXT}>
+            <Btn variant="secondary" onClick={onAddSlot} disabled={!canPlanEdit} className={`${ADMISSION_TEXT} ${LOCKED_CONTROL}`}>
               + Pacjent
             </Btn>
             <button
               type="button"
               onClick={() => void onDelete()}
-              className={`${ADMISSION_TEXT} text-red-700 hover:underline dark:text-red-400`}
+              disabled={!canPlanEdit}
+              className={`${ADMISSION_TEXT} text-red-700 hover:underline ${LOCKED_CONTROL} dark:text-red-400`}
             >
               Usuń przyjęcie
             </button>
@@ -1529,7 +1732,7 @@ function AdmissionSessionTable({
             {patients.map((slot, index) => {
               const bg = index % 2 === 0 ? colors.rowEven : colors.zebra;
               const locked = Boolean(slot.admissionStatus);
-              const name = stripHtml(slot.patientName).trim();
+              const name = admissionPatientDisplayName(slot.patientName);
               const physioOnVacation = Boolean(
                 slot.physiotherapistId &&
                   isPhysioOnVacationOnDate(
@@ -1570,6 +1773,7 @@ function AdmissionSessionTable({
                             <DatePickerCell
                               value={session.admissionDate}
                               onChange={setAdmissionDate}
+                              readOnly={!canPlanEdit}
                               title="Data przyjęcia"
                               textClassName={ADMISSION_TEXT}
                               defaultMonthKey={monthKeyValue}
@@ -1587,6 +1791,7 @@ function AdmissionSessionTable({
                             <DatePickerCell
                               value={dischargeDate}
                               onChange={setPlannedDischargeDate}
+                              readOnly={!canPlanEdit}
                               title="Planowany wypis (sugerowane: 15 dni roboczych)"
                               textClassName={ADMISSION_TEXT}
                               defaultMonthKey={
@@ -1619,6 +1824,7 @@ function AdmissionSessionTable({
                     <TimePickerCell
                       value={slot.admissionHour}
                       onChange={(admissionHour) => updateSlot(slot.id, { admissionHour })}
+                      disabled={!canPlanEdit}
                       className={`${ADMISSION_CELL_INPUT} tabular-nums text-inherit focus:bg-black/10 dark:focus:bg-white/10`}
                     />
                   </td>
@@ -1631,7 +1837,8 @@ function AdmissionSessionTable({
                     <AdmissionPatientCell
                       value={slot.patientName}
                       onChange={(patientName) => updateSlot(slot.id, { patientName })}
-                      disabled={slot.admissionStatus === "disqualified"}
+                      nameDisabled={!canPlanEdit || slot.admissionStatus === "disqualified"}
+                      noteDisabled={slot.admissionStatus === "disqualified"}
                       lineThrough={slot.admissionStatus === "disqualified"}
                       admitted={slot.admissionStatus === "admitted"}
                     />
@@ -1683,12 +1890,13 @@ function AdmissionSessionTable({
                   </td>
                   <td
                     className={`${CELL_BORDER} px-3 py-2 align-middle ${BODY_TEXT} ${
-                      locked ? "pointer-events-none opacity-70" : ""
+                      locked ? "pointer-events-none" : ""
                     }`}
                     style={{ backgroundColor: bg }}
                   >
                     <PhysioSelect
                       value={slot.physiotherapistId}
+                      disabled={!canPlanEdit || locked}
                       onChange={(physiotherapistId) =>
                         updateSlot(slot.id, { physiotherapistId })
                       }
@@ -1714,7 +1922,7 @@ function AdmissionSessionTable({
                     {needsSubstitute ? (
                       <div
                         className={`mt-2 md:hidden ${
-                          locked ? "pointer-events-none opacity-80" : ""
+                          locked ? "pointer-events-none" : ""
                         }`}
                       >
                         <PhysioSelect
@@ -1744,15 +1952,15 @@ function AdmissionSessionTable({
                     <button
                       type="button"
                       onClick={() => onRemoveSlot(slot.id)}
-                      disabled={patients.length <= 1}
-                      className={`${ADMISSION_TEXT} text-red-700 hover:underline disabled:opacity-30 dark:text-red-400`}
+                      disabled={!canPlanEdit || patients.length <= 1}
+                      className={`${ADMISSION_TEXT} text-red-700 hover:underline ${LOCKED_CONTROL} dark:text-red-400`}
                     >
                       Usuń
                     </button>
                     {needsSubstitute ? (
                       <div
                         className={`absolute inset-y-0 left-full z-10 hidden items-center border-y border-r border-l-[3px] border-black border-l-amber-500 px-2 dark:border-slate-600 dark:border-l-amber-400 md:flex ${
-                          locked ? "pointer-events-none opacity-80" : ""
+                          locked ? "pointer-events-none" : ""
                         }`}
                         style={{
                           width: `${SUBSTITUTE_SIDE_REM}rem`,

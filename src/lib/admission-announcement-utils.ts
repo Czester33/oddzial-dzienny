@@ -36,7 +36,7 @@ type SlotChangeAccumulator = {
 };
 
 function slotName(slot: AdmissionSlot): string {
-  return stripHtml(slot.patientName).trim();
+  return stripHtml(slot.patientName).trim().split("\n")[0]?.trim() ?? "";
 }
 
 /** Prefer arrow form when both sides exist: "A → B". */

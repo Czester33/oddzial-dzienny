@@ -1,4 +1,5 @@
 export const APP_AUTH_COOKIE = "oddzial_session";
+export const APP_ADMISSIONS_EDIT_COOKIE = "oddzial_admissions_edit";
 
 const SESSION_TIMEZONE = "Europe/Warsaw";
 const SESSION_RESET_HOUR = 6;
@@ -113,10 +114,21 @@ export function isAppAuthEnabled(): boolean {
   return Boolean(process.env.APP_ACCESS_PASSWORD?.trim());
 }
 
+export function isAdmissionsEditPinConfigured(): boolean {
+  return Boolean(process.env.APP_ADMISSIONS_EDIT_PIN?.trim());
+}
+
+export function verifyAdmissionsEditPin(pin: string): boolean {
+  const expected = process.env.APP_ADMISSIONS_EDIT_PIN?.trim();
+  if (!expected) return true;
+  return safeEqual(pin, expected);
+}
+
 function authSecret(): string | null {
   const secret = process.env.APP_ACCESS_SECRET?.trim();
   const password = process.env.APP_ACCESS_PASSWORD?.trim();
-  return secret || password || null;
+  const pin = process.env.APP_ADMISSIONS_EDIT_PIN?.trim();
+  return secret || password || pin || null;
 }
 
 function toBase64Url(bytes: Uint8Array): string {
@@ -183,6 +195,38 @@ export async function createSessionToken(nowSec = Math.floor(Date.now() / 1000))
 export async function isSessionTokenValid(token: string | undefined | null): Promise<boolean> {
   if (!token) return false;
   if (!isAppAuthEnabled()) return true;
+
+  const secret = authSecret();
+  if (!secret) return false;
+
+  const dot = token.lastIndexOf(".");
+  if (dot <= 0) return false;
+
+  const payload = token.slice(0, dot);
+  const signature = token.slice(dot + 1);
+  const expiresAt = Number.parseInt(payload, 10);
+  if (!Number.isFinite(expiresAt)) return false;
+  if (expiresAt <= Math.floor(Date.now() / 1000)) return false;
+
+  const expected = await hmacSign(payload, secret);
+  const expectedBytes = fromBase64Url(expected);
+  const actualBytes = fromBase64Url(signature);
+  if (!expectedBytes || !actualBytes || expectedBytes.length !== actualBytes.length) {
+    return false;
+  }
+
+  let diff = 0;
+  for (let i = 0; i < expectedBytes.length; i++) {
+    diff |= expectedBytes[i] ^ actualBytes[i];
+  }
+  return diff === 0;
+}
+
+export async function isAdmissionsEditTokenValid(
+  token: string | undefined | null
+): Promise<boolean> {
+  if (!isAdmissionsEditPinConfigured()) return true;
+  if (!token) return false;
 
   const secret = authSecret();
   if (!secret) return false;

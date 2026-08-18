@@ -21,12 +21,14 @@ export function PhysioSelect({
   options,
   emptyLabel = "— wybierz —",
   className = DEFAULT_CLASS,
+  disabled = false,
 }: {
   value: string;
   onChange: (v: string) => void;
   options: PhysioSelectOption[];
   emptyLabel?: string;
   className?: string;
+  disabled?: boolean;
 }) {
   const { theme } = useTheme();
   const selected = options.find((o) => o.value === value);
@@ -39,7 +41,7 @@ export function PhysioSelect({
 
   return (
     <div
-      className={`relative ${className}`}
+      className={`relative ${className} ${disabled ? "pointer-events-none" : ""}`}
       style={
         selected
           ? {
@@ -66,8 +68,9 @@ export function PhysioSelect({
       </span>
       <select
         value={value}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
-        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
         aria-label={emptyLabel}
       >
         <option value="">{emptyLabel}</option>
