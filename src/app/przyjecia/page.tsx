@@ -84,6 +84,7 @@ const BODY_TEXT = "text-black dark:text-slate-100";
 const ADMISSION_CELL_INPUT =
   `w-full border-0 bg-transparent px-1 py-0.5 text-center ${ADMISSION_TEXT} leading-snug focus:bg-white/60 dark:focus:bg-slate-700/60`;
 const LOCKED_CONTROL = "disabled:cursor-not-allowed disabled:!opacity-100";
+const SHOW_ADMISSION_RULES_NOTICE = false;
 
 function splitAdmissionPatientLines(html: string): { name: string; note: string } {
   const text = html ?? "";
@@ -1034,12 +1035,14 @@ function PrzyjeciaPageContent() {
           <h2 className={`${ADMISSION_TEXT} text-center font-semibold text-slate-800 dark:text-slate-100`}>
             Przyjęcia nowych pacjentów
           </h2>
-          <p className="mx-auto mt-8 max-w-3xl text-center text-[19px] font-medium leading-relaxed text-slate-800 dark:text-slate-100 sm:mt-12">
-            Dzień przyjęcia, godzinę, nazwisko pacjenta i fizjoterapeutę zmienia wyłącznie rejestracja.
-            <br />
-            Przyjęcie pacjenta (+), dyskwalifikację (×), zastępstwo oraz notatkę pod nazwiskiem
-            może ustawić każdy.
-          </p>
+          {SHOW_ADMISSION_RULES_NOTICE ? (
+            <p className="mx-auto mt-8 max-w-3xl text-center text-[19px] font-medium leading-relaxed text-slate-800 dark:text-slate-100 sm:mt-12">
+              Dzień przyjęcia, godzinę, nazwisko pacjenta i fizjoterapeutę zmienia wyłącznie rejestracja.
+              <br />
+              Przyjęcie pacjenta (+), dyskwalifikację (×), zastępstwo oraz notatkę pod nazwiskiem
+              może ustawić każdy.
+            </p>
+          ) : null}
           <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:absolute sm:right-0 sm:top-0 sm:mt-0">
             {pinRequired ? (
               canPlanEdit ? (
