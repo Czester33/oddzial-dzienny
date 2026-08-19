@@ -84,7 +84,7 @@ const BODY_TEXT = "text-black dark:text-slate-100";
 const ADMISSION_CELL_INPUT =
   `w-full border-0 bg-transparent px-1 py-0.5 text-center ${ADMISSION_TEXT} leading-snug focus:bg-white/60 dark:focus:bg-slate-700/60`;
 const LOCKED_CONTROL = "disabled:cursor-not-allowed disabled:!opacity-100";
-const SHOW_ADMISSION_RULES_NOTICE = false;
+const SHOW_ADMISSION_RULES_NOTICE = true;
 
 function splitAdmissionPatientLines(html: string): { name: string; note: string } {
   const text = html ?? "";
