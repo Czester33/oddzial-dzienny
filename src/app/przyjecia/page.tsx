@@ -262,12 +262,16 @@ function AdmissionsPinDialog({
         </p>
         <input
           ref={inputRef}
-          type="password"
+          type="text"
           inputMode="numeric"
-          autoComplete="off"
+          name="admissions-edit-pin"
+          autoComplete="one-time-code"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
           value={pin}
           onChange={(e) => setPin(e.target.value)}
-          className="mt-4 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-[19px] text-slate-900 outline-none focus:border-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          className="mt-4 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-[19px] text-slate-900 outline-none [-webkit-text-security:disc] focus:border-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
           aria-label="PIN"
         />
         {error ? (

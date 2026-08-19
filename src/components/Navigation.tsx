@@ -8,7 +8,6 @@ import { useTheme } from "@/context/ThemeContext";
 import { AnnouncementsButton } from "@/components/AnnouncementsButton";
 import { AppGuideButton } from "@/components/AppGuideButton";
 import { getOrderedNavItems, NAV_ITEMS, reorderNavOrder } from "@/lib/nav-utils";
-import { APP_BETA_NOTICE } from "@/lib/app-beta-notice";
 import type { NotepadNote } from "@/lib/types";
 import { isoFromParts, isWorkingDay } from "@/lib/date-utils";
 
@@ -241,10 +240,9 @@ export function Navigation() {
         <div className="flex flex-wrap items-center justify-between gap-2 py-2.5 sm:gap-3 sm:py-3">
           <div className="min-w-0">
             <h1 className="text-[19px] font-bold text-slate-800 dark:text-slate-100">
-              Oddział dzienny (wersja beta)
+              Oddział dzienny
             </h1>
             <p className="text-[19px] text-slate-500 dark:text-slate-400">Zarządzanie pacjentami i grafikiem</p>
-            <p className="text-[15px] text-amber-700 dark:text-amber-400">{APP_BETA_NOTICE}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {/* Desktop only: status width changes and reflows the wrapped header on phones. */}

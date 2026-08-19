@@ -13,9 +13,8 @@ const geistSans = Geist({
 const themeInitScript = `(function(){try{var t=localStorage.getItem("oddzial-theme");if(t==="light"){document.documentElement.classList.remove("dark");document.documentElement.style.colorScheme="light";}else{document.documentElement.classList.add("dark");document.documentElement.style.colorScheme="dark";}}catch(e){document.documentElement.classList.add("dark");document.documentElement.style.colorScheme="dark";}})();`;
 
 export const metadata: Metadata = {
-  title: "Oddział dzienny (wersja beta)",
-  description:
-    "Zarządzanie pacjentami, dyżurami i urlopami oddziału dziennego. Aplikacja w fazie testów — nie wszystkie funkcje mogą działać poprawnie.",
+  title: "Oddział dzienny",
+  description: "Zarządzanie pacjentami, dyżurami i urlopami oddziału dziennego.",
 };
 
 export const viewport: Viewport = {
