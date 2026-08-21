@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "backup:app-state": "node --env-file=.env.local scripts/backup-app-state.mjs",
+    "sql:bundle": "node scripts/build-sql-bundle.mjs",
+    "db:backfill": "node --env-file=.env.local scripts/backfill-relational.mjs",
+    "db:verify": "node --env-file=.env.local scripts/verify-relational-roundtrip.mjs",
+    "db:verify-idempotence": "node --env-file=.env.local scripts/verify-relational-idempotence.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.7",

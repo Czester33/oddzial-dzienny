@@ -43,3 +43,9 @@ next-env.d.ts
 
 # local simulation artifacts
 /data/simulation/
+
+# database backups (patient data — never commit)
+/backups/
+
+# supabase cli
+/supabase/.temp/

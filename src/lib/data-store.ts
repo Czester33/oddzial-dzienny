@@ -26,6 +26,10 @@ import {
   loadAppDataRevisionFromSupabase,
   saveAppDataToSupabaseVersioned,
 } from "./supabase/app-data-repository";
+import {
+  loadAppDataRevisionFromRelational,
+  saveAppDataToRelationalVersioned,
+} from "./supabase/relational-repository";
 import { getStorageBackend } from "./storage-backend";
 import {
   parseStoredDocument,
@@ -103,6 +107,8 @@ async function readRevision(): Promise<{ data: AppData | null; updatedAt: string
   switch (getStorageBackend()) {
     case "supabase":
       return loadAppDataRevisionFromSupabase();
+    case "supabase-relational":
+      return loadAppDataRevisionFromRelational();
     case "blob":
       return readRevisionFromBlob();
     default:
@@ -167,6 +173,10 @@ export async function saveDataRevision(
 
   if (backend === "supabase") {
     return saveAppDataToSupabaseVersioned(data, baseUpdatedAt);
+  }
+
+  if (backend === "supabase-relational") {
+    return saveAppDataToRelationalVersioned(data, baseUpdatedAt);
   }
 
   const current = await readRevision();

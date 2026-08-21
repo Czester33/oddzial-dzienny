@@ -593,7 +593,23 @@ function MasazeContent({ data }: { data: AppData }) {
     }
 
     const idx = next.findIndex((p) => p.id === patientId);
-    if (idx === -1) return;
+    if (idx === -1) {
+      // The row was dropped when its last field was cleared, but the editor is
+      // still bound to this id. Revive it, otherwise everything typed after
+      // clearing the cell is silently discarded.
+      const revived = {
+        id: patientId,
+        name: "",
+        hour: "",
+        lastTreatmentDate: "",
+        physiotherapistId: "",
+        ...patch,
+      };
+      if (!isRowFilled(revived)) return;
+      next.push(revived);
+      persistActive(next, sort);
+      return;
+    }
     const merged: MassagePatient = { ...next[idx], ...patch, id: patientId };
     if ("plannedHourChange" in patch && !patch.plannedHourChange) {
       delete merged.plannedHourChange;
@@ -796,8 +812,11 @@ function MasazeContent({ data }: { data: AppData }) {
                 </thead>
                 <tbody>
                   {activeRows.map((p, index) => (
+                    // Keyed by position, not by id: filling a blank row turns it
+                    // into a real patient, and an id-based key would remount the
+                    // cell mid-typing, losing focus and the caret.
                     <tr
-                      key={p.id.startsWith("empty-") ? `empty-${index}-${sortedActive.length}` : p.id}
+                      key={`active-row-${index}`}
                       className="group/row"
                       style={{ backgroundColor: index % 2 === 0 ? ROW_BG : ROW_BG_ALT }}
                     >

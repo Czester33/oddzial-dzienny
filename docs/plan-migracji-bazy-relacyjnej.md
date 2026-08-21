@@ -1,8 +1,31 @@
 # Plan migracji: JSONB (`app_state.payload`) → model relacyjny
 
 Branch: `plan/relational-db-schema`  
-Data: 2026-07-23  
+Data: 2026-07-23, aktualizacja 2026-08-21  
 Status: **plan roboczy** (bez implementacji aplikacji)
+
+> Aktualizacja 2026-08-21: mapowanie w §2 zsynchronizowane z bieżącym `src/lib/types.ts`
+> (kontrole u lekarza, notatnik, statusy fizjoterapeutów, archiwum urlopów miesięcznych,
+> stan odczytu ogłoszeń, zaplanowane zmiany godzin masażu, limity masaży).
+> Dodano §0 — backup przed migracją.
+
+---
+
+## 0. Backup przed migracją (warunek wstępny)
+
+Żadna migracja nie startuje bez aktualnej, zweryfikowanej kopii `app_state`.
+
+| Krok | Narzędzie | Status |
+|------|-----------|--------|
+| Zrzut `payload` + `updated_at` do pliku | `npm run backup:app-state` → `backups/app-state-<ISO>.json` | gotowe |
+| Zrzut całej bazy (schemat + dane) | `npx supabase db dump` (wymaga `supabase link`) | do zrobienia |
+| Snapshot projektu | panel Supabase (backup / PITR) | do zrobienia ręcznie |
+| Weryfikacja odtwarzalności | restore do lokalnej instancji, porównanie z `GET /api/data` | do zrobienia |
+
+Format pliku backupu to ta sama koperta `{ payload, updatedAt }` co `data/app-data.json`,
+więc kopia działa też jako lokalny fallback i jako wejście dla backfillu (§5).
+
+Katalog `backups/` jest w `.gitignore` — zawiera dane pacjentów i nie trafia do repo.
 
 ---
 
@@ -38,21 +61,30 @@ Klucze `monthKey` = `YYYY-MM`, `yearKey` = `YYYY` (zgodnie z kodem aplikacji).
 
 | Encja TS | Tabela | Uwagi |
 |----------|--------|--------|
-| `Physiotherapist` | `physiotherapists` | `column_widths` → `jsonb` (rzadko queryowane) |
+| `physiotherapists`, `retiredPhysiotherapists`, `archivePhysiotherapistProfiles` | `physiotherapists` | **jedna tabela** + kolumna `status` (patrz niżej) |
 | `Doctor` | `doctors` | |
-| `MassagesData.scheduleHours`, `headerNote` | `massage_settings` | wiersz singleton (`id = 'default'`) |
+| `MassagesData.scheduleHours`, `headerNote`, `maxPerDay`, `todaySlotPeak` | `massage_settings` | wiersz singleton (`id = 'default'`) |
 | `navOrder`, `navLabels` | kolumny w `app_settings` | `nav_order text[]`, `nav_labels jsonb` |
 | `announcementsSeenAt` | `app_settings` | `timestamptz` |
-| `admissionNotificationsSeenAt` | `app_settings` | `jsonb` (map physioId → ISO) |
-| `admissionNotificationsReadIds` | `app_settings` | `jsonb` (map physioId → uuid[]) |
-| `clinicClosedDays` | `clinic_closed_days` | `date` PK lub `(date)` unique |
+| `admissionNotificationsSeenAt` | `physio_notification_state` | `(physiotherapist_id)` PK, `seen_at timestamptz` |
+| `admissionNotificationsReadIds` | `physio_announcement_reads` | `(physiotherapist_id, announcement_id)` PK |
+| `clinicClosedDays` | `clinic_closed_days` | `date` PK |
 | `autoArchiveSkip.*` | `auto_archive_skip` | `(domain, period_key)` PK; domain ∈ admissions/duties/vacations |
 
 **Kolumny `physiotherapists`:**  
-`id uuid PK`, `name`, `color`, `row_color`, `header_note`, `column_widths jsonb`, `sort_order int not null`.
+`id uuid PK`, `name`, `color`, `row_color`, `header_note`, `column_widths jsonb`,
+`hidden bool not null default false`, `status text not null default 'active'`, `sort_order int not null`.
+
+`status` ∈ `active` | `retired` | `archive_profile` — zastępuje trzy równoległe tablice w `AppData`.
+Assembler odtwarza je filtrem po `status`, więc kontrakt `/api/data` się nie zmienia.
+`hidden` (ukrycie w tabeli Pacjenci) jest niezależne od `status` i musi zostać osobną kolumną.
 
 **Kolumny `doctors`:**  
 `id uuid PK`, `name`, `theme_id text`.
+
+**Kolumny `massage_settings`:**  
+`id text PK`, `schedule_hours text`, `header_note text`, `max_per_day int`,
+`today_slot_peak_date date`, `today_slot_peak_count int`.
 
 ### 2.2 Dane bieżące (aktywne okresy)
 
@@ -65,21 +97,41 @@ Klucze `monthKey` = `YYYY-MM`, `yearKey` = `YYYY` (zgodnie z kodem aplikacji).
 | `admissions[monthKey][]` | `admission_sessions` + `admission_slots` | sesja 1:N sloty |
 | `vacations[yearKey][]` | `vacation_entries` | UNIQUE `(year_key, date, physiotherapist_id)` |
 | `admissionTableThemes[monthKey]` | `admission_month_themes` | PK `month_key` |
+| `removedPatientIds` | `removed_patient_ids` | `patient_id uuid PK` — tombstones, bez FK |
+| `notepadNotes` | `notepad_notes` | FK physio nullable |
 
 **`patients`:**  
-`id uuid`, `physiotherapist_id uuid FK`, `sort_order`, `text`, `discharge_date date`, `discharge_date_manual bool`, `discharge_date_before_manual date`, `owner_physio_id uuid FK`.
+`id uuid`, `physiotherapist_id uuid FK`, `sort_order`, `text`, `discharge_date date`,
+`discharge_date_manual bool`, `discharge_date_before_manual date`, `owner_physio_id uuid FK`,
+`doctor_id uuid FK nullable`, `checkup_date date`, `checkup_done bool`.
+
+`text` zostaje kolumną `text` — trzyma HTML z edytora, nie podlega normalizacji.
+
+**`massage_active_entries` / `massage_waiting_entries`:**  
+`id uuid`, `name`, `hour time`, `last_treatment_date date`, `physiotherapist_id uuid FK`,
+`planned_hour_change_date date`, `planned_hour_change_hour time`, `sort_order`.
+Tabela `waiting` dodatkowo: `start_date date not null`.
+
+`plannedHourChange` rozbite na dwie kolumny — obie NULL albo obie wypełnione (CHECK).
 
 **`admission_sessions`:**  
 `id uuid`, `month_key char(7)`, `doctor_id uuid FK`, `admission_date date`, `planned_discharge_date date`, `planned_discharge_date_manual bool`, `sort_order`.
 
 **`admission_slots`:**  
-`id uuid`, `session_id uuid FK ON DELETE CASCADE`, `patient_name`, `admission_hour time`, `physiotherapist_id uuid FK`, `status text`, `linked_patient_id uuid FK nullable`, `sort_order`.
+`id uuid`, `session_id uuid FK ON DELETE CASCADE`, `patient_name`, `admission_hour time`,
+`physiotherapist_id uuid FK`, `substitute_physiotherapist_id uuid FK nullable`,
+`status text CHECK (status in ('admitted','disqualified'))`, `linked_patient_id uuid nullable`, `sort_order`.
+
+`linked_patient_id` bez FK do `patients` — pacjent bywa wypisany, a slot zostaje w archiwum.
 
 **`duty_entries`:**  
 `month_key`, `date date`, `physiotherapist_id uuid FK nullable`.
 
 **`vacation_entries`:**  
-`year_key char(4)`, `date date`, `physiotherapist_id uuid FK`, `certainty text`.
+`year_key char(4)`, `date date`, `physiotherapist_id uuid FK`, `certainty text CHECK (certainty in ('certain','uncertain'))`.
+
+**`notepad_notes`:**  
+`id uuid`, `title`, `text`, `created_at timestamptz`, `updated_at timestamptz`, `physiotherapist_id uuid FK nullable`.
 
 ### 2.3 Archiwa
 
@@ -87,8 +139,9 @@ Klucze `monthKey` = `YYYY-MM`, `yearKey` = `YYYY` (zgodnie z kodem aplikacji).
 |----------|--------|--------|
 | `admissionArchive[]` | `admission_archive_months`, `admission_archive_sessions`, `admission_archive_slots` | mirror struktury aktywnej + `archived_at` |
 | `dutyArchive[]` | `duty_archive_months`, `duty_archive_entries` | |
-| `vacationArchive[]` | `vacation_archive_years`, `vacation_archive_entries` | |
-| `archive[]` (legacy) | `legacy_admission_archive_rows` | płaskie wiersze `Admission` |
+| `vacationArchive[]` | `vacation_archive_years`, `vacation_archive_year_entries` | archiwum roczne |
+| `vacationMonthArchive[]` | `vacation_archive_months`, `vacation_archive_month_entries` | archiwum miesięczne — osobny byt, nie duplikat rocznego |
+| `archive[]` (legacy) | `legacy_admission_archive_rows` | płaskie wiersze `Admission`, w tym `doctor` jako tekst |
 
 Archiwum przyjęć: po przeniesieniu miesiąca do archiwum **usuwać** odpowiadające wiersze z tabel aktywnych (`admissions` / `admission_month_themes`) — zgodnie z obecną logiką aplikacji.
 
@@ -97,8 +150,16 @@ Archiwum przyjęć: po przeniesieniu miesiąca do archiwum **usuwać** odpowiada
 | Encja TS | Tabela |
 |----------|--------|
 | `Announcement` | `announcements` |
+| `announcementsReadIds`, `announcementsUnreadIds` | `announcement_read_state` |
 
-**Kolumny:** `id`, `text`, `created_at`, `source`, `physiotherapist_id` FK nullable, `admission_link jsonb` nullable (monthKey, sessionId, slotId).
+**`announcements`:** `id`, `text`, `created_at`, `source CHECK (in ('manual','admission','substitution'))`,
+`physiotherapist_id` FK nullable, `admission_link jsonb` nullable (monthKey, sessionId, slotId).
+
+**`announcement_read_state`:** `announcement_id uuid PK`, `state text CHECK (state in ('read','unread'))`.
+
+Dwie tablice id-ków w `AppData` to w istocie jedna trójstanowa informacja
+(przeczytane / jawnie nieprzeczytane / brak wpisu → rozstrzyga `announcementsSeenAt`).
+Jedna tabela ze stanem eliminuje możliwość, by ten sam id trafił do obu list naraz.
 
 ### 2.5 Metadane sync
 
@@ -131,6 +192,8 @@ Indeksy (minimum):
 - `duty_entries (month_key, date)`
 - `vacation_entries (year_key, date)`
 - `announcements (created_at desc)`
+- `physio_announcement_reads (physiotherapist_id)`
+- `patients (checkup_date) where checkup_done is not true`
 
 RLS: jak dziś — brak polityk dla anon/authenticated; dostęp tylko service role z Next.js.
 
@@ -146,6 +209,17 @@ flowchart LR
   D --> E[Faza 4: Write relational]
   E --> F[Faza 5: Usunięcie JSONB]
 ```
+
+Stan na 2026-08-21: schemat, funkcje RPC, backfill i weryfikacja wykonane na
+produkcyjnym projekcie. Aplikacja przetestowana lokalnie na `DATA_STORAGE=relational`
+(odczyt, zapis, konflikt 409). Pozostaje przełączenie produkcji.
+
+**Uwaga operacyjna:** po backfillu tabele żyją własnym życiem — uruchomienie
+aplikacji na backendzie relacyjnym odpala auto-wypis, auto-archiwizację i
+przyjęcia, które modyfikują dane. Tuż przed przełączeniem produkcji trzeba
+powtórzyć `npm run backup:app-state` i `npm run db:backfill`, inaczej tabele będą
+zawierać stan sprzed rozjazdu. Do bieżącej kontroli poprawności mapowania służy
+`npm run db:verify-idempotence`, który nie zależy od pliku backupu.
 
 | Faza | Opis | Ryzyko |
 |------|------|--------|
@@ -171,13 +245,14 @@ Feature flag (env): `DATA_STORAGE=jsonb|relational|dual` — przełączanie bez 
 ### 5.2 Kolejność INSERT (respekt FK)
 
 1. `app_settings`, `massage_settings`
-2. `physiotherapists`, `doctors`
-3. `patients`, `massage_*`, `clinic_closed_days`, `auto_archive_skip`
+2. `physiotherapists` (wszystkie trzy tablice → `status`), `doctors`
+3. `patients`, `removed_patient_ids`, `massage_*`, `clinic_closed_days`, `auto_archive_skip`
 4. `admission_month_themes`, `admission_sessions`, `admission_slots`
 5. `duty_entries`, `vacation_entries`
 6. Tabele archiwów (analogicznie)
-7. `announcements`
-8. `app_revision.updated_at` ← `app_state.updated_at`
+7. `announcements`, `announcement_read_state`, `physio_announcement_reads`, `physio_notification_state`
+8. `notepad_notes`
+9. `app_revision.updated_at` ← `app_state.updated_at`
 
 ### 5.3 Walidacja po backfill
 
@@ -292,7 +367,8 @@ erDiagram
 
 ## Załącznik B — odniesienia w repo
 
-- Typy: `src/lib/types.ts` (`AppData`, linie 142–179)
+- Typy: `src/lib/types.ts` (`AppData`, linie 181–231 — 27 kluczy)
 - Obecna migracja: `supabase/migrations/20260721120000_initial_app_state.sql`
 - Repozytorium: `src/lib/supabase/app-data-repository.ts`
 - Merge: `src/lib/app-data-merge.ts`
+- Backup: `scripts/backup-app-state.mjs` (`npm run backup:app-state`)
