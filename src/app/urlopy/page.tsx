@@ -27,6 +27,7 @@ import {
   isPolishPublicHoliday,
   isWorkingDay,
   toDateInputValue,
+  todayIsoDate,
 } from "@/lib/date-utils";
 import {
   resolvePhysioColumnHeaderColor,
@@ -310,6 +311,7 @@ function VacationMonthTable({
 }) {
   const colors = resolveMonthColors(month, isDark);
   const weeks = getWeekdayOnlyMonthGrid(yearNum, month);
+  const todayIso = todayIsoDate();
   const textMuted = isDark ? "text-slate-200" : "text-slate-900";
   const cellBg = colors.cell;
   const emptyBg = isDark ? "#1e293b" : "#f8fafc";
@@ -372,20 +374,25 @@ function VacationMonthTable({
 
                   const entries = vacations.filter((v) => v.date === date);
                   const blocked = isBlockedVacationDay(date, clinicClosedDays);
+                  const isToday = date === todayIso;
                   const takenIds = new Set(entries.map((e) => e.physiotherapistId));
                   const available = vacationStaff(data).filter((p) => !takenIds.has(p.id));
 
                   return (
                     <td
                       key={date}
-                      className="p-1.5 align-top"
+                      className={`p-1.5 align-top ${
+                        isToday ? "ring-2 ring-inset ring-blue-500 dark:ring-blue-400" : ""
+                      }`}
                       style={{ backgroundColor: cellBg }}
                     >
                       <div
                         className={`mb-1.5 text-center text-[18px] font-bold tabular-nums ${
-                          blocked
-                            ? "text-red-600 dark:text-red-400"
-                            : "text-slate-900 dark:text-slate-900"
+                          isToday
+                            ? "mx-auto w-fit min-w-[3.5rem] rounded bg-blue-600 px-1.5 text-white ring-2 ring-blue-400/60 dark:ring-blue-400/70"
+                            : blocked
+                              ? "text-red-600 dark:text-red-400"
+                              : "text-slate-900 dark:text-slate-900"
                         }`}
                       >
                         {formatDatePL(date)}

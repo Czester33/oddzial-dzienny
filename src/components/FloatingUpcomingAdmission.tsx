@@ -19,7 +19,7 @@ function loadMinimized(): boolean {
   }
 }
 
-function UpcomingAdmissionPanel({ data }: { data: AppData }) {
+export function UpcomingAdmissionPanel({ data }: { data: AppData }) {
   const upcoming = useMemo(
     () => getUpcomingAdmissionThisWeek(data, todayIsoDate()),
     [data]
@@ -27,7 +27,7 @@ function UpcomingAdmissionPanel({ data }: { data: AppData }) {
 
   if (!upcoming) {
     return (
-      <div className="flex w-[320px] max-h-[340px] flex-col rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="flex w-full max-w-[320px] max-h-[340px] flex-col rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
         <div className="shrink-0 px-4 py-3">
           <h3 className="text-[18px] font-bold text-slate-800 dark:text-slate-100">
             Przyjęcia w tym tygodniu
@@ -41,7 +41,7 @@ function UpcomingAdmissionPanel({ data }: { data: AppData }) {
   }
 
   return (
-    <div className="flex w-[320px] max-h-[340px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <div className="flex w-full max-w-[320px] max-h-[340px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
       <div className="shrink-0 border-b border-slate-200 px-4 py-3 dark:border-slate-700">
         <h3 className="text-[18px] font-bold text-slate-800 dark:text-slate-100">
           Przyjęcia w tym tygodniu

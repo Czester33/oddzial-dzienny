@@ -13,9 +13,11 @@ import {
   resolveAdmissionThemeColors,
 } from "@/lib/admission-themes";
 import { getPhysioById, physioDisplayName } from "@/lib/physio-utils";
-import { formatDatePL } from "@/lib/date-utils";
+import { formatDatePL, todayIsoDate } from "@/lib/date-utils";
 import { stripHtml } from "@/lib/text-format";
 import { FloatingTodayCalendar } from "@/components/FloatingTodayCalendar";
+import { MobileCollapsible } from "@/components/MobileCollapsible";
+import { TodayCalendar } from "@/components/TodayCalendar";
 
 function KontroleContent({ data }: { data: AppData }) {
   const { error, save } = useData();
@@ -80,6 +82,12 @@ function KontroleContent({ data }: { data: AppData }) {
     <div>
       <PageHeader title="Kontrole" />
       {error && <ErrorBanner message={error} />}
+
+      <div className="mb-4">
+        <MobileCollapsible summary={`Kalendarz · ${formatDatePL(todayIsoDate())}`}>
+          <TodayCalendar variant="slate" className="mx-auto" />
+        </MobileCollapsible>
+      </div>
 
       {groups.length === 0 ? (
         <Card className="px-6 py-12 text-center text-[19px] text-slate-500 dark:text-slate-400">

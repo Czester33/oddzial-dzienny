@@ -67,12 +67,17 @@ function ThemeToggle() {
     <button
       type="button"
       onClick={toggleTheme}
-      className="rounded-md border border-slate-300 bg-white px-3 py-2 text-[15px] font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+      className="rounded-md border border-slate-300 bg-white px-2.5 py-2 text-[15px] font-medium text-slate-700 hover:bg-slate-50 sm:px-3 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
       title={switchTo}
       aria-label={switchTo}
       suppressHydrationWarning
     >
-      <span suppressHydrationWarning>{label}</span>
+      <span className="sm:hidden" suppressHydrationWarning aria-hidden="true">
+        {isDark ? "☀️" : "🌙"}
+      </span>
+      <span className="hidden sm:inline" suppressHydrationWarning>
+        {label}
+      </span>
     </button>
   );
 }
@@ -124,7 +129,7 @@ function NavTab({
             onCancelEdit();
           }
         }}
-        className={`w-full min-w-[8rem] rounded-md border px-3 py-2 text-[19px] font-medium outline-none ${
+        className={`w-full min-w-[7rem] rounded-md border px-2.5 py-2 text-[17px] font-medium outline-none sm:min-w-[8rem] sm:px-3 sm:text-[19px] ${
           active
             ? "border-blue-400 bg-blue-600 text-white"
             : "border-slate-300 bg-white text-slate-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
@@ -141,7 +146,7 @@ function NavTab({
         e.preventDefault();
         onStartEdit();
       }}
-      className={`block whitespace-nowrap rounded-md px-3 py-2 text-[19px] font-medium transition-colors ${
+      className={`block whitespace-nowrap rounded-md px-2.5 py-2 text-[17px] font-medium transition-colors sm:px-3 sm:text-[19px] ${
         active
           ? "bg-blue-600 text-white"
           : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
@@ -239,15 +244,16 @@ export function Navigation() {
       <div className="mx-auto max-w-[1600px] px-3 sm:px-4">
         <div className="flex flex-wrap items-center justify-between gap-2 py-2.5 sm:gap-3 sm:py-3">
           <div className="min-w-0">
-            <h1 className="text-[19px] font-bold text-slate-800 dark:text-slate-100">
+            <h1 className="text-[17px] font-bold text-slate-800 sm:text-[19px] dark:text-slate-100">
               Oddział dzienny
             </h1>
-            <p className="text-[19px] text-slate-500 dark:text-slate-400">Zarządzanie pacjentami i grafikiem</p>
+            <p className="hidden text-[19px] text-slate-500 sm:block dark:text-slate-400">
+              Zarządzanie pacjentami i grafikiem
+            </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            {/* Desktop only: status width changes and reflows the wrapped header on phones. */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-3">
             {saving ? (
-              <span className="hidden text-[19px] text-blue-600 md:inline dark:text-blue-400">
+              <span className="w-full text-[15px] text-blue-600 sm:w-auto md:text-[19px] dark:text-blue-400">
                 Zapisywanie...
               </span>
             ) : syncedLabel ? (
@@ -259,7 +265,7 @@ export function Navigation() {
               type="button"
               onClick={() => void undo()}
               disabled={!canUndo}
-              className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-2 text-[15px] font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2 py-2 text-[15px] font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:px-3 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
               title="Cofnij ostatnią zmianę (Ctrl+Z)"
             >
               <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" aria-hidden="true">
@@ -278,13 +284,13 @@ export function Navigation() {
                   strokeLinejoin="round"
                 />
               </svg>
-              Cofnij
+              <span className="hidden sm:inline">Cofnij</span>
             </button>
             <button
               type="button"
               onClick={() => void redo()}
               disabled={!canRedo}
-              className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-2 text-[15px] font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2 py-2 text-[15px] font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:px-3 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
               title="Ponów cofniętą zmianę (Ctrl+Y)"
             >
               <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" aria-hidden="true">
@@ -303,7 +309,7 @@ export function Navigation() {
                   strokeLinejoin="round"
                 />
               </svg>
-              Ponów
+              <span className="hidden sm:inline">Ponów</span>
             </button>
             <ThemeToggle />
             <AppGuideButton />
@@ -316,7 +322,7 @@ export function Navigation() {
             )}
           </div>
         </div>
-        <nav className="-mx-3 flex gap-1 overflow-x-auto px-3 pb-2 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
+        <nav className="app-nav-scroll -mx-3 flex gap-1 overflow-x-auto px-3 pb-2 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
           {navItems.map((item, index) => {
             const active = pathname.startsWith(item.href);
             const isDragging = draggingIndex === index;

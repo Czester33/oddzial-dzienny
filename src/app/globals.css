@@ -38,6 +38,34 @@ html {
   font-size: 19px;
 }
 
+/* Mobile: sticky nav, safe areas, horizontal tab scroll. */
+@media (max-width: 768px) {
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 70;
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .app-root main {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .app-nav-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .app-nav-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .app-nav-scroll > * {
+    scroll-snap-align: start;
+  }
+}
+
 /* Desktop: 67% scale, centered in the viewport (not stuck to the left edge). */
 @media (min-width: 769px) {
   html {

@@ -22,8 +22,10 @@ function getTodayParts(now = new Date()) {
 
 export function TodayCalendar({
   variant = "slate",
+  className = "",
 }: {
   variant?: "slate" | "peach";
+  className?: string;
 }) {
   const [today, setToday] = useState(() => getTodayParts());
   const [viewYear, setViewYear] = useState(() => getTodayParts().year);
@@ -72,11 +74,11 @@ export function TodayCalendar({
 
   return (
     <aside
-      className={`w-[300px] shrink-0 rounded-lg border p-3 shadow-sm ${
+      className={`w-full max-w-[300px] shrink-0 rounded-lg border p-3 shadow-sm ${
         isPeach
           ? "border-black bg-white text-slate-900 dark:border-slate-600 dark:bg-slate-900 dark:text-amber-50"
           : "border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-      }`}
+      } ${className}`}
     >
       <h3 className="mb-0.5 text-center text-[20px] font-bold leading-snug text-slate-800 dark:text-slate-100">
         Dzisiaj

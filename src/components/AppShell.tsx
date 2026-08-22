@@ -22,7 +22,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Navigation />
           <SyncStatusBar />
           <TextFieldArrowNavigation />
-          <main className="mx-auto max-w-[1600px] px-3 py-4 sm:px-4 sm:py-6">{children}</main>
+          <main className="mx-auto max-w-[1600px] px-3 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-4 sm:py-6">{children}</main>
         </div>
       </ConfirmProvider>
     </DataProvider>

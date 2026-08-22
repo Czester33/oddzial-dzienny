@@ -193,11 +193,14 @@ export function AppGuideButton() {
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="rounded-md border border-emerald-500 bg-emerald-500 px-3 py-1.5 text-[15px] font-medium text-white shadow-[0_0_12px_rgba(16,185,129,0.65)] hover:bg-emerald-400 hover:shadow-[0_0_16px_rgba(16,185,129,0.85)] dark:border-emerald-400 dark:bg-emerald-500 dark:text-white dark:hover:bg-emerald-400"
+        className="rounded-md border border-emerald-500 bg-emerald-500 px-2.5 py-1.5 text-[15px] font-medium text-white shadow-[0_0_12px_rgba(16,185,129,0.65)] hover:bg-emerald-400 hover:shadow-[0_0_16px_rgba(16,185,129,0.85)] sm:px-3 dark:border-emerald-400 dark:bg-emerald-500 dark:text-white dark:hover:bg-emerald-400"
         aria-expanded={open}
         aria-haspopup="dialog"
       >
-        Przewodnik
+        <span className="sm:hidden" aria-hidden="true">
+          ?
+        </span>
+        <span className="hidden sm:inline">Przewodnik</span>
       </button>
 
       {open && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useData } from "@/context/DataContext";
 import type { AppData, ColumnWidths, Patient } from "@/lib/types";
@@ -23,7 +23,11 @@ import { applyAutoDischarge, hasAutoDischargeChanges } from "@/lib/discharge-uti
 import { applyVacationNotes, hasVacationNoteChanges } from "@/lib/vacation-utils";
 import { applyDutyNotes, getActiveDutyNoteForPhysio, hasDutyNoteChanges } from "@/lib/duty-utils";
 import { FloatingTodayCalendar } from "@/components/FloatingTodayCalendar";
-import { FloatingUpcomingAdmission } from "@/components/FloatingUpcomingAdmission";
+import { FloatingUpcomingAdmission, UpcomingAdmissionPanel } from "@/components/FloatingUpcomingAdmission";
+import { MobileCollapsible } from "@/components/MobileCollapsible";
+import { TodayCalendar } from "@/components/TodayCalendar";
+import { formatDatePL, todayIsoDate } from "@/lib/date-utils";
+import { getUpcomingAdmissionThisWeek } from "@/lib/admission-utils";
 import { deepEqual } from "@/lib/app-data-merge";
 
 function PacjenciContent({ data }: { data: AppData }) {
@@ -177,6 +181,16 @@ function PacjenciContent({ data }: { data: AppData }) {
     });
   };
 
+  const todayIso = todayIsoDate();
+  const upcomingSummary = useMemo(() => {
+    const upcoming = getUpcomingAdmissionThisWeek(data, todayIso);
+    if (!upcoming) return "Brak przyjęć w tym tygodniu";
+    if (upcoming.days.length === 1) {
+      return `Przyjęcie: ${formatDatePL(upcoming.days[0].date)} (${upcoming.total})`;
+    }
+    return `Przyjęcia w tyg.: ${upcoming.days.length} dni (${upcoming.total})`;
+  }, [data, todayIso]);
+
   if (visiblePhysiotherapists(data).length === 0) {
     return (
       <div>
@@ -203,6 +217,15 @@ function PacjenciContent({ data }: { data: AppData }) {
     <>
       <div className="-mt-6">
         {error && <ErrorBanner message={error} className="mb-2" />}
+
+        <div className="mb-3 space-y-2">
+          <MobileCollapsible summary={`Kalendarz · ${formatDatePL(todayIso)}`}>
+            <TodayCalendar variant="slate" className="mx-auto" />
+          </MobileCollapsible>
+          <MobileCollapsible summary={upcomingSummary}>
+            <UpcomingAdmissionPanel data={data} />
+          </MobileCollapsible>
+        </div>
 
         <PhysioAdmissionNotificationsRail data={data} onSave={save} />
 
